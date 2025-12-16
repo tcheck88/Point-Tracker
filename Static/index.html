@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Leer México — Home</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --accent: #1f6feb;
+      --muted: #6b7280;
+      --radius: 12px;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: #0f172a;
+    }
+    .wrap {
+      max-width: 1000px;
+      margin: 36px auto;
+      padding: 20px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo-img {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: 2px solid #fff;
+    }
+    h1 {
+      font-size: 20px;
+      margin: 0;
+      color: #111827;
+      letter-spacing: -0.5px;
+    }
+    p.lead {
+      margin: 2px 0 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* Navigation Buttons */
+    a.navbtn {
+      display: inline-block;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--card);
+      box-shadow: 0 2px 5px rgba(12,20,40,0.04);
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      border: 1px solid #eef2ff;
+      transition: all 0.2s;
+    }
+    a.navbtn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(31, 111, 235, 0.1);
+      border-color: #dbeafe;
+    }
+
+    /* Main Grid Layout */
+    main {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 24px;
+    }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+
+    /* Hero Section */
+    .hero {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      border-left: 5px solid var(--accent);
+    }
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .links a.navbtn {
+      text-align: left;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: auto;
+    }
+    .links a.navbtn::after {
+      content: "→";
+      opacity: 0.5;
+    }
+
+    /* Footer & Utils */
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    footer {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 880px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <img src="/static/logo.jpg" alt="Leer México Logo" class="logo-img" onerror="this.style.display='none'">
+        <div>
+          <h1>Leer México — Point Tracker</h1>
+          <p class="lead">Staff Dashboard</p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="card hero">
+        <h2 style="margin:0; font-size: 18px;">Welcome, Staff</h2>
+        <p class="muted">
+          This dashboard is your central hub for managing the Leer México reading program.
+          Use the quick actions below to track student progress and manage daily activities.
+        </p>
+
+        <div class="links" style="margin-top:8px">
+          <a class="navbtn" href="/add_student">
+            <span><strong>Add a new student</strong><br><span style="font-weight:400; font-size:13px; color:#6b7280">Register new participants</span></span>
+          </a>
+          <a class="navbtn" href="/record_activity">
+            <span><strong>Record an activity</strong><br><span style="font-weight:400; font-size:13px; color:#6b7280">Award points for reading & tasks</span></span>
+          </a>
+          <a class="navbtn" href="/students">
+            <span><strong>Search & View Students</strong><br><span style="font-weight:400; font-size:13px; color:#6b7280">View history, totals, and profiles</span></span>
+          </a>
+          <a class="navbtn" href="/activity">
+            <span><strong>Manage Activities</strong><br><span style="font-weight:400; font-size:13px; color:#6b7280">Add, edit, or deactivate activity types</span></span>
+          </a>
+        </div>
+      </section>
+
+
+		<aside class="card">
+			<h3 style="margin-top:0; font-size:16px;">System Status</h3>
+			<ul style="padding-left:18px; margin:12px 0; color:var(--muted); font-size: 14px; line-height: 1.6;">
+			  <li>Database: <strong>Connected (SQLite)</strong></li>
+			  <li>System: <strong>Development Mode</strong></li>
+			  <li>Last Backup: <strong>Never</strong></li>
+			  <li>
+				 <a href="/logs" style="color: var(--accent); text-decoration: none;">View System Logs &rarr;</a>
+			  </li>
+			</ul>
+			<div style="margin-top:20px; border-top: 1px solid #f3f4f6; padding-top: 15px;">
+			  <strong style="font-size: 14px;">Quick Tip</strong>
+			  <div class="muted" style="margin-top:6px">
+				Remember to check for duplicate students by searching before adding a new record.
+			  </div>
+			</div>
+		</aside>
+    </main>
+
+    <footer>
+      Built for Leer México • Local Development Server
+    </footer>
+  </div>
+</body>
+</html>

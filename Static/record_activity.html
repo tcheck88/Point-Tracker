@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Record Activity</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: #f7f7f7; }
+    .wrap { max-width: 700px; margin: 36px auto; padding: 24px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-radius: 12px; }
+    h1 { margin: 0 0 16px 0; font-size: 24px; color: #0b3b61; }
+    .secondary-link { color: #666; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 20px; }
+    
+    /* Form Styles */
+    label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: #374151; }
+    input[type="text"], input[type="number"], select {
+      width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px; box-sizing: border-box; margin-bottom: 15px;
+    }
+    button.primary { background: #1f6feb; color: #fff; border: 0; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; }
+    button.primary:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    /* Search Results */
+    #studentResults { margin-top: 10px; border: 1px solid #eee; border-radius: 6px; max-height: 200px; overflow-y: auto; }
+    .student-info { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; }
+    .student-info:last-child { border-bottom: none; }
+    .student-info:hover { background: #f0f9ff; }
+    
+    /* Status Messages */
+    .status-message { margin-top: 15px; padding: 10px; border-radius: 4px; display: none; }
+    .status-message.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status-message.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+    /* Selected Student Box */
+    .selected-box { background: #e0f2fe; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #bae6fd; }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <a href="/" class="secondary-link">&larr; Back to Dashboard</a>
+  <h1>Record Activity Points</h1>
+
+  <form id="studentSearchForm">
+    <label for="studentSearch">Find Student (Name or ID)</label>
+    <div style="display: flex; gap: 10px;">
+        <input type="text" id="studentSearch" placeholder="Enter name or ID..." required>
+        <button type="submit" class="primary" style="width: auto;">Search</button>
+    </div>
+  </form>
+
+  <div id="statusMessage" class="status-message"></div>
+  <div id="studentResults"></div>
+
+  <form id="recordActivityForm" style="display: none;">
+    <div id="selectedStudentInfo" class="selected-box"></div>
+    
+    <input type="hidden" id="studentId" name="studentId">
+
+    <label for="activitySelect">Select Activity</label>
+    <select id="activitySelect" required>
+        <option value="">Loading activities...</option>
+    </select>
+
+    <label for="pointsInput">Points to Award</label>
+    <input type="number" id="pointsInput" min="1" value="1" required>
+
+    <button type="submit" id="recordButton" class="primary">Record Points</button>
+  </form>
+</div>
+
+<script>
+    // --- SCRIPT SECTION (Matches your uploaded logic exactly) ---
+    const DB_PATH = ''; 
+    const studentSearchForm = document.getElementById('studentSearchForm');
+    const studentResults = document.getElementById('studentResults');
+    const recordActivityForm = document.getElementById('recordActivityForm');
+    const selectedStudentInfo = document.getElementById('selectedStudentInfo');
+    const activitySelect = document.getElementById('activitySelect');
+    const pointsInput = document.getElementById('pointsInput');
+    const recordButton = document.getElementById('recordButton');
+    const statusMessage = document.getElementById('statusMessage');
+    
+    let activeActivities = [];
+
+    function showStatus(message, isSuccess) {
+        statusMessage.textContent = message;
+        statusMessage.className = `status-message ${isSuccess ? 'success' : 'error'}`;
+        statusMessage.style.display = 'block';
+    }
+
+    // --- Activity Fetching ---
+    async function fetchActivities() {
+        try {
+            const response = await fetch('/api/activity');
+            if (!response.ok) throw new Error('Failed to fetch activities.');
+            activeActivities = await response.json();
+            renderActivities(activeActivities);
+        } catch (e) {
+            console.error('Activity fetch error:', e);
+            showStatus('Could not load activity list. Check server logs.', false);
+        }
+    }
+
+    function renderActivities(activities) {
+        activitySelect.innerHTML = '<option value="">Select an Activity</option>';
+        activities.forEach(activity => {
+            if (activity.active === 1) { 
+                const option = document.createElement('option');
+                option.value = activity.name;
+                option.dataset.points = activity.default_points;
+                option.textContent = `${activity.name} (+${activity.default_points} pts)`;
+                activitySelect.appendChild(option);
+            }
+        });
+    }
+
+    activitySelect.addEventListener('change', function() {
+        const selectedOption = activitySelect.options[activitySelect.selectedIndex];
+        if (selectedOption && selectedOption.dataset.points) {
+            pointsInput.value = selectedOption.dataset.points;
+        } else {
+            pointsInput.value = '1';
+        }
+    });
+
+    // --- Student Searching ---
+    studentSearchForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const searchTerm = document.getElementById('studentSearch').value.trim();
+        
+        recordActivityForm.style.display = 'none';
+        studentResults.innerHTML = '';
+        showStatus('Searching...', true);
+
+        try {
+            const response = await fetch(`/api/students/search?term=${encodeURIComponent(searchTerm)}`);
+            const data = await response.json();
+
+            if (data.success && data.students.length > 0) {
+                renderSearchResults(data.students);
+                showStatus(`Found ${data.students.length} student(s). Select one below.`, true);
+            } else {
+                studentResults.innerHTML = '<p style="padding:10px; color:#666;">No active students found.</p>';
+                showStatus('Search complete. No results found.', false);
+            }
+        } catch (e) {
+            console.error('Search error:', e);
+            showStatus('Network error during student search.', false);
+        }
+    });
+
+    function renderSearchResults(students) {
+        studentResults.innerHTML = '';
+        students.forEach(student => {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'student-info';
+            resultDiv.innerHTML = `
+                <strong>${student.name} (#${student.id})</strong>
+                <div style="font-size:12px; color:#666;">Class: ${student.classroom || 'N/A'} | Current Points: ${student.total_points}</div>
+            `;
+            resultDiv.addEventListener('click', () => selectStudent(student.id, student.name));
+            studentResults.appendChild(resultDiv);
+        });
+    }
+    
+    function selectStudent(id, name) {
+        // This is the line (97) you correctly identified:
+        document.getElementById('studentId').value = id; 
+        
+        selectedStudentInfo.innerHTML = `
+            <strong>Selected Student: ${name} (#${id})</strong>
+        `;
+        studentResults.innerHTML = ''; 
+        recordActivityForm.style.display = 'block';
+        showStatus(`Selected ${name}.`, true);
+    }
+
+    // --- Transaction Submission ---
+    recordActivityForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const studentId = parseInt(document.getElementById('studentId').value);
+        const activityName = activitySelect.value;
+        const points = parseInt(pointsInput.value);
+        
+        if (!studentId || !activityName || isNaN(points) || points <= 0) {
+            showStatus('Please select a student, activity, and valid points.', false);
+            return;
+        }
+
+        recordButton.disabled = true;
+        recordButton.textContent = 'Recording...';
+        showStatus('Processing...', true);
+
+        const transactionData = {
+            student_id: studentId, // Sending 'student_id'
+            activity_name: activityName,
+            points: points,
+            performed_by: 'web_admin'
+        };
+
+        try {
+            const response = await fetch('/api/transaction/record', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(transactionData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showStatus(`Success! Recorded ${points} points for ${activityName}.`, true);
+                // Reset UI
+                document.getElementById('studentSearch').value = '';
+                recordActivityForm.style.display = 'none';
+                activitySelect.value = '';
+                pointsInput.value = '1'; 
+            } else {
+                showStatus(`Error: ${result.message}`, false);
+            }
+        } catch (error) {
+            console.error('Transaction error:', error);
+            showStatus('Network error. Could not connect.', false);
+        } finally {
+            recordButton.disabled = false;
+            recordButton.textContent = 'Record Points';
+        }
+    });
+
+    fetchActivities();
+</script>
+</body>
+</html>

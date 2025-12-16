@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Activity Manager</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: #f7f7f7; }
+    .wrap { max-width: 700px; margin: 36px auto; padding: 24px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+    th, td { padding: 8px 12px; border-bottom: 1px solid #ececec; }
+    th { background: #f3f3f9; font-weight: 600; }
+    .badge { background: #1baeae; color: #fff; border-radius: 4px; padding: 2px 9px; font-size: 14px; }
+    .small-muted { color: #a4a4b2; font-size: 13px; }
+    .ghost { background: none; border: none; color: #16a852; cursor: pointer; padding: 0 7px; font-size: 15px; }
+    .actions-td { text-align: right; }
+    .toast { display: none; position: fixed; left: 50%; top: 38px; transform: translateX(-50%); z-index: 50; background: #0ea5a4; color: #fff; padding: 11px 22px; border-radius: 7px; box-shadow: 0 .5rem 1.5rem rgba(0,0,0,0.1); font-size: 16px; }
+    @media (max-width: 600px) {
+      .wrap { padding: 5vw; box-shadow: none; }
+      th, td { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+  <h1>Activity Manager</h1>
+	<a href="/" style="font-size:14px; color:#1baeae; margin-top:-10px; display:block; text-decoration:none;">&larr; Back to Home</a>
+    <h2>Activity Manager</h2>
+    <form id="activityForm" autocomplete="off">
+      <label>Name <span style="color: #b91c1c">*</span></label><br />
+      <input type="text" name="name" required style="width: 100%; margin-bottom: 8px;" /><br />
+      <div id="nameErr" class="small-muted" style="display:none; color:#b91c1c;">Name is required.</div>
+      <label>Description</label><br />
+      <input type="text" name="description" style="width: 100%; margin-bottom: 8px;" /><br />
+      <label>Default Points</label><br />
+      <input type="number" name="defaultpoints" min="0" value="0" style="width: 100px; margin-bottom: 8px;" /><br />
+      <label>Status</label>
+      <select name="active">
+        <option value="1">Active</option>
+        <option value="0">Inactive</option>
+      </select><br /><br />
+      <button type="submit" class="badge" style="background:#ff9800;border:0;">Save Activity</button>  
+	  <a href="/" style="color:#666; margin-left:12px; text-decoration:none;">Cancel</a>
+      <button id="clearBtn" type="button">Clear</button>
+      <div id="statusMsg" class="small-muted" style="margin-top:7px;"></div>
+    </form>
+    <div style="margin-top:26px;">
+      <strong>All Activities (<span id="count">0</span> total)</strong>
+      <table id="activitiesTable">
+        <thead>
+          <tr>
+            <th>Activity</th>
+            <th>Description</th>
+            <th>Points</th>
+            <th>Status</th>
+            <th class="actions-td">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Rows rendered by JS -->
+        </tbody>
+      </table>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div id="debug-panel" style="display:none;"></div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function(c) {
+          return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+        });
+      }
+      function showToast(msg, ok=true) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.style.background = ok ? 'linear-gradient(180deg, #0ea5a4, #0b8f83)' : '#b91c1c';
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 3200);
+      }
+      async function fetchList() {
+        try {
+          const res = await fetch('/api/list_activities?active=0');
+          if (!res.ok) throw new Error("Failed to load");
+          const payload = await res.json();
+          const activities = payload.activities || [];
+          const tableBody = document.querySelector('#activitiesTable tbody');
+          const countEl = document.getElementById('count');
+          if (!tableBody || !countEl) throw new Error("Missing table elements");
+          if (activities.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="5" class="small-muted">No activities yet. Use the form to create one.</td></tr>`;
+            countEl.textContent = 0;
+            return;
+          }
+          tableBody.innerHTML = activities.map(a => {
+            const status = a.active
+                ? `<span class="badge">Active</span>`
+                : `<span class="small-muted">Inactive</span>`;
+            return `
+              <tr data-id="${a.id}">
+                <td>${escapeHtml(a.name)}</td>
+                <td><div class="small-muted">${escapeHtml(a.description || "")}</div></td>
+                <td>${a.default_points}</td>
+                <td>${status}</td>
+                <td class="actions-td">
+                  <button class="ghost" data-action="edit">Edit</button>
+                  <button class="ghost" data-action="toggle">${a.active ? 'Deactivate' : 'Activate'}</button>
+                </td>
+              </tr>`;
+          }).join('');
+          countEl.textContent = activities.length;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      fetchList();
+      const form = document.getElementById('activityForm');
+      const saveBtn = document.getElementById('saveBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const statusMsg = document.getElementById('statusMsg');
+      const tableBody = document.querySelector('#activitiesTable tbody');
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        statusMsg.textContent = '';
+        document.getElementById('nameErr').style.display = 'none';
+        const payload = {
+          name: form.name.value.trim(),
+          description: form.description.value.trim(),
+          default_points: form.defaultpoints.value || 0,
+          active: parseInt(form.active.value, 10)
+        };
+        if (!payload.name) {
+          document.getElementById('nameErr').textContent = "Name is required.";
+          document.getElementById('nameErr').style.display = 'block';
+          return;
+        }
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+        try {
+          const res = await fetch('/api/add_activity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const result = await res.json();
+          if (res.ok && result.success) {
+            showToast("Activity saved", true);
+            statusMsg.textContent = "Saved.";
+            form.reset();
+            form.defaultpoints.value = 0;
+            await fetchList();
+          } else {
+            const msg = result.message || "Save failed";
+            showToast(msg, false);
+            statusMsg.textContent = msg;
+          }
+        } catch (err) {
+          console.error(err);
+          showToast("Network error", false);
+          statusMsg.textContent = "Network error";
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save Activity";
+        }
+      });
+      clearBtn.addEventListener('click', function () {
+        form.reset();
+        form.defaultpoints.value = 0;
+        statusMsg.textContent = '';
+      });
+      tableBody.addEventListener('click', async function (e) {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const tr = btn.closest('tr');
+        const id = tr?.dataset?.id;
+        const action = btn.dataset.action;
+        if (!id) return;
+        if (action === 'edit') {
+          form.name.value = tr.children[0].innerText.trim();
+          form.description.value = tr.children[1].querySelector('.small-muted')?.innerText || '';
+          form.defaultpoints.value = tr.children[2].innerText || 0;
+          form.active.value = tr.children[3].innerHTML.includes('Active') ? 1 : 0;
+          window.scrollTo({top:0, behavior:'smooth'});
+          showToast("Loaded into form for editing; submit to save as new.", true);
+        } else if (action === 'toggle') {
+          const confirmMsg = tr.children[3].innerHTML.includes('Active')
+              ? "Deactivate this activity?" : "Activate this activity?";
+          if (!confirm(confirmMsg)) return;
+          try {
+            const res = await fetch(`/api/activity/${id}/deactivate`, { method: 'POST' });
+            if (res.ok) {
+              showToast("Status updated", true);
+              fetchList();
+            } else {
+              showToast("Update failed", false);
+            }
+          } catch (err) {
+            showToast("Network error", false);
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

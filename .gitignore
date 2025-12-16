@@ -1,0 +1,16 @@
+# --- Security (CRITICAL) ---
+.env
+
+# --- Database & Logs (Do NOT commit these) ---
+*.db
+*.db-shm
+*.db-wal
+*.log
+logs/
+
+# --- Python Junk ---
+__pycache__/
+*.pyc
+
+# --- Executables ---
+*.exe

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Student Profile: View/Edit</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: #f7f7f7; }
+    .wrap { max-width: 700px; margin: 36px auto; padding: 24px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-radius: 12px; }
+    h1 { margin: 0 0 16px 0; font-size: 24px; color: #0b3b61; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: #374151; }
+    input[type="text"], input[type="email"], input[type="tel"], select {
+      width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px; box-sizing: border-box;
+    }
+    input[type="checkbox"] { margin-right: 8px; }
+    .button-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+    button.primary { background: #1f6feb; color: #fff; border: 0; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    a.secondary { text-decoration: none; padding: 10px 18px; border-radius: 6px; border: 1px solid #d1d5db; color: #333; background: #f9f9f9; font-weight: 600; }
+    .status-message { margin-top: 15px; padding: 10px; background: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: 4px; display: none; }
+    .title-row { display: flex; justify-content: space-between; align-items: flex-end; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title-row">
+        <h1 id="pageTitle">Loading Student Profile...</h1>
+        <p id="totalPointsDisplay" style="font-size: 18px; font-weight: 700; color: #155724;">Points: 0</p>
+    </div>
+    
+    <a href="/students" class="secondary" style="margin-bottom: 20px; display: inline-block;">&larr; Back to Search</a>
+    
+    <div id="statusMessage" class="status-message"></div>
+
+    <form id="studentForm">
+        <input type="hidden" id="studentId" name="studentId">
+        
+        <div class="form-group">
+            <label for="name">Full Name (Required)</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="nickname">Nickname</label>
+            <input type="text" id="nickname" name="nickname">
+        </div>
+
+        <div class="form-group">
+            <label for="parent_name">Parent Name</label>
+            <input type="text" id="parent_name" name="parent_name">
+        </div>
+
+        <div class="form-group">
+            <label for="phone">Phone (e.g., 5512345678)</label>
+            <input type="tel" id="phone" name="phone">
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email">
+        </div>
+
+        <div class="form-group">
+            <label for="classroom">Classroom</label>
+            <input type="text" id="classroom" name="classroom">
+        </div>
+
+        <div class="form-group">
+            <label for="grade">Grade</label>
+            <input type="text" id="grade" name="grade">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center;">
+            <input type="checkbox" id="sms_consent" name="sms_consent" value="true">
+            <label for="sms_consent" style="margin: 0; display: inline;">Consent to receive SMS/Text messages</label>
+        </div>
+        
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <p style="color: #666; font-style: italic;">Created on: <span id="createdAt">...</span> by <span id="createdBy">...</span></p>
+
+		<div class="button-row">
+			<a href="/students" class="secondary">Cancel</a>
+			<a id="historyLink" href="#" class="secondary" style="background: #e0f2fe; color: #007bff; border-color: #007bff;">View Activity History</a>
+			<button type="submit" class="primary" id="saveButton">Save Changes</button>
+		</div>
+     </form>
+  </div>
+
+<script>
+    // Helper function to show messages
+    function showStatus(message, isSuccess = true) {
+        const msgDiv = document.getElementById('statusMessage');
+        msgDiv.textContent = message;
+        msgDiv.style.display = 'block';
+        if (isSuccess) {
+            msgDiv.style.backgroundColor = '#d4edda';
+            msgDiv.style.color = '#155724';
+            setTimeout(() => msgDiv.style.display = 'none', 5000);
+        } else {
+            msgDiv.style.backgroundColor = '#f8d7da';
+            msgDiv.style.color = '#721c24';
+        }
+    }
+
+    // Function to fetch student data
+    async function fetchStudentProfile() {
+        const pathSegments = window.location.pathname.split('/');
+        // The student ID is the last segment of the URL: /student/123
+        const studentId = pathSegments[pathSegments.length - 1]; 
+
+        if (!studentId || isNaN(studentId)) {
+            showStatus("Error: Invalid Student ID in URL.", false);
+            return;
+        }
+
+        try {
+            document.getElementById('pageTitle').textContent = `Loading Student ID: ${studentId}...`;
+            
+            // Call the API endpoint
+            const response = await fetch(`/api/student/${studentId}`);
+            const data = await response.json();
+
+            // CRITICAL FIX: Ensure both success and the 'student' object exist before proceeding
+            if (data.success && data.student) { 
+                const student = data.student;
+                document.getElementById('pageTitle').textContent = `Student Profile: ${student.name}`;
+                document.getElementById('totalPointsDisplay').textContent = `Points: ${student.total_points || 0}`;
+                
+                // Populate the form fields
+                document.getElementById('studentId').value = student.id;
+                document.getElementById('name').value = student.name || '';
+                document.getElementById('nickname').value = student.nickname || '';
+                document.getElementById('parent_name').value = student.parent_name || '';
+                document.getElementById('phone').value = student.phone || '';
+                document.getElementById('email').value = student.email || '';
+                document.getElementById('classroom').value = student.classroom || '';
+                document.getElementById('grade').value = student.grade || '';
+                document.getElementById('sms_consent').checked = student.sms_consent === 1; // SQLite stores boolean as 0/1
+                
+                // Display metadata
+                document.getElementById('createdAt').textContent = student.created_at || 'N/A';
+                document.getElementById('createdBy').textContent = student.created_by || 'N/A';
+                
+                // Set the dynamic history link (Guaranteed to work here)
+                document.getElementById('historyLink').href = `/student_history/${student.id}`; 
+
+                showStatus(`Successfully loaded profile for ${student.name}.`, true);
+
+            } else {
+                // Handle success=false or missing data.student key
+                document.getElementById('pageTitle').textContent = 'Student Not Found';
+                showStatus(data.message || 'The requested student could not be found.', false);
+                document.getElementById('studentForm').style.display = 'none'; // Hide form if not found
+            }
+        } catch (e) {
+            console.error('Fetch error:', e);
+            // This displays the "Network Error" message to the user
+            document.getElementById('pageTitle').textContent = 'Error';
+            showStatus('Network error. Could not load student data.', false);
+            document.getElementById('studentForm').style.display = 'none';
+        }
+    }
+
+
+// Function to handle form submission for updating the student
+    document.getElementById('studentForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const form = e.target;
+        const studentId = form.studentId.value;
+        const saveButton = document.getElementById('saveButton');
+        saveButton.disabled = true;
+        saveButton.textContent = 'Saving...';
+
+        // Collect all form data to send to the API
+        const data = {
+            name: form.name.value,
+            nickname: form.nickname.value || null,
+            parent_name: form.parent_name.value || null,
+            phone: form.phone.value || null,
+            email: form.email.value || null,
+            classroom: form.classroom.value || null,
+            grade: form.grade.value || null,
+            // Checkbox value needs to be explicitly sent as a boolean (True/False)
+            sms_consent: form.sms_consent.checked, 
+            modified_by: 'web_admin' // Placeholder for the user making the change
+        };
+        
+        // Basic frontend validation
+        if (!data.name.trim()) {
+            showStatus('Student Name cannot be empty.', false);
+            saveButton.disabled = false;
+            saveButton.textContent = 'Save Changes';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/student/${studentId}`, {
+                method: 'POST', // <-- Calls the new POST route in app.py
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showStatus('Changes saved successfully!', true);
+                // Re-fetch the data to display updated metadata (like modified_at)
+                fetchStudentProfile(); 
+            } else {
+                showStatus(`Save failed: ${result.message}`, false);
+            }
+
+        } catch (error) {
+            console.error('Update error:', error);
+            showStatus('Network error. Could not save changes.', false);
+        } finally {
+            saveButton.disabled = false;
+            saveButton.textContent = 'Save Changes';
+        }
+    });
+
+
+
+    // Run on page load
+    fetchStudentProfile();
+
+</script>
+</body>
+</html>
