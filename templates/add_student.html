@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Add Student — Leer México') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card { 
+        max-width: 640px; 
+        margin: 0 auto; 
+        background: #fff; 
+        border-radius: 6px; 
+        box-shadow: 0 6px 24px rgba(0,0,0,0.12); 
+        padding: 30px; 
+    }
+    h2 { margin: 0 0 12px 0; font-size: 20px; color: #0b3b61; }
+    label { display: block; margin-top: 12px; font-weight: 600; color: #333; }
+    input[type="text"], select, input[type="email"], input[type="tel"] { 
+        width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #d1d5db; 
+        border-radius: 4px; font-size: 14px; box-sizing: border-box; 
+    }
+    .row { display: flex; gap: 12px; }
+    .row > div { flex: 1; }
+    .help { font-size: 12px; color: #6b7280; margin-top: 6px; line-height: 1.4; }
+    .actions { margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px; }
+    
+    button { padding: 10px 14px; border-radius: 4px; font-weight: 600; cursor: pointer; border: none; }
+    .btn-secondary { background: #fff; border: 1px solid #d1d5db; color: #111; text-decoration: none; font-size: 13px; }
+    .btn-primary { background: #0b69a3; color: #fff; }
+    
+    /* Explicit styling for the View link to ensure it looks like a button */
+    .view-link {
+        padding: 6px 12px;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        color: #334155;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 12px;
+        display: inline-block;
+    }
+    .view-link:hover { background: #e2e8f0; }
+
+    .toast { margin-top: 12px; padding: 10px; border-radius: 4px; background: #fef3c7; color: #92400e; display: none; }
+    .errors { margin-top: 12px; color: #b91c1c; font-weight: 600; }
+    
+    .duplicate-panel { margin-top: 12px; background: #fff7ed; border: 1px solid #ffedd5; padding: 10px; border-radius: 4px; display: none; }
+    .duplicate-item { padding: 10px; border-bottom: 1px solid #fde8d9; display: flex; justify-content: space-between; align-items: center; }
+    .duplicate-item:last-child { border-bottom: none; }
+    .consent { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <h2>{{ _('Add Student') }}</h2>
+
+    <label for="full_name">{{ _('Full Name') }} <span style="color:#b91c1c">*</span></label>
+    <input id="full_name" type="text" autocomplete="name" placeholder="{{ _('Full name as it appears on certificates') }}" />
+	
+    <label for="nickname">{{ _('Nickname') }}</label>
+    <input id="nickname" type="text" placeholder="{{ _('Optional display name') }}" />
+
+    <label for="parent_name">{{ _('Parent / Guardian name (optional)') }}</label>
+    <input id="parent_name" type="text" placeholder="{{ _('Parent or guardian name') }}" />
+
+    <label for="email">{{ _('Email (optional)') }}</label>
+    <input id="email" type="email" placeholder="name@example.com" />
+
+    <label for="phone">{{ _('Phone (optional)') }}</label>
+    <input id="phone" type="tel" placeholder="+52 55 1234 5678" />
+    <div class="help">{{ _('Phone number in Mexico format (10-digits).') }}</div>
+
+    <div class="consent">
+      <input id="sms_consent" type="checkbox" />
+      <label for="sms_consent" style="margin:0;font-weight:600">{{ _('I agree to receive SMS messages') }}</label>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="classroom">{{ _('Classroom') }}</label>
+        <select id="classroom">
+            <option value="">{{ _('-- select --') }}</option>
+            <option>A1</option><option>B2</option>
+        </select>
+      </div>
+      <div>
+        <label for="grade">{{ _('Grade') }}</label>
+        <select id="grade">
+            <option value="">{{ _('-- select --') }}</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="duplicatePanel" class="duplicate-panel"></div>
+    <div id="errors" class="errors"></div>
+    <div id="toast" class="toast"></div>
+
+    <div class="actions">
+      <button id="btnSave" class="btn-primary">{{ _('Add Student') }}</button>
+      <button id="btnCancel" class="btn-secondary">{{ _('Cancel') }}</button>
+    </div>
+</div>
+
+<script>
+(() => {
+  const _ = (s) => s;
+  const el = {
+    fullName: document.getElementById('full_name'),
+    nickname: document.getElementById('nickname'),
+    parentName: document.getElementById('parent_name'),
+    email: document.getElementById('email'),
+    phone: document.getElementById('phone'),
+    smsConsent: document.getElementById('sms_consent'),
+    classroom: document.getElementById('classroom'),
+    grade: document.getElementById('grade'),
+    btnSave: document.getElementById('btnSave'),
+    btnCancel: document.getElementById('btnCancel'),
+    errors: document.getElementById('errors'),
+    toast: document.getElementById('toast'),
+    duplicatePanel: document.getElementById('duplicatePanel')
+  };
+
+  function showErrors(list) { el.errors.textContent = list.join(' | '); }
+  function clearErrors() { el.errors.textContent = ''; }
+  function showToast(message) {
+    el.toast.style.display = 'block';
+    el.toast.textContent = message;
+    setTimeout(() => el.toast.style.display = 'none', 5000);
+  }
+
+  async function checkDuplicates() {
+    const name = el.fullName.value.trim();
+    const phone = el.phone.value.trim();
+    const email = el.email.value.trim();
+    el.duplicatePanel.style.display = 'none';
+    el.duplicatePanel.innerHTML = '';
+    if (!name && !phone && !email) return;
+
+    try {
+      const res = await fetch('/api/check_duplicates', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ name, phone, email })
+      });
+      if (res.status === 200) {
+        const json = await res.json();
+        if (json && json.matches && json.matches.length) {
+          el.duplicatePanel.style.display = 'block';
+          el.duplicatePanel.innerHTML = `<strong>${_('Possible matches found')}</strong>`;
+          json.matches.forEach(m => {
+            const div = document.createElement('div');
+            div.className = 'duplicate-item';
+            // Use full_name for PostgreSQL and update placeholder to "No Class Assigned"
+            div.innerHTML = `
+                <div>
+                    <strong>${m.full_name}</strong>
+                    <div style="font-size:12px;color:#374151">
+                        ${m.classroom || _('No Class Assigned')} • ${m.phone || (m.email || 'no contact')}
+                    </div>
+                </div>
+                <div>
+                    <a href="/student/${m.id}" target="_blank" class="view-link">
+                        ${_('View')}
+                    </a>
+                </div>`;
+            el.duplicatePanel.appendChild(div);
+          });
+        }
+      }
+    } catch (e) { console.warn('dup check error', e); }
+  }
+
+  el.fullName.addEventListener('blur', checkDuplicates);
+  el.btnCancel.addEventListener('click', () => { window.location.href = '/'; });
+
+  el.btnSave.addEventListener('click', async () => {
+    clearErrors();
+    const payload = {
+      full_name: el.fullName.value.trim(),
+      nickname: el.nickname.value.trim(),
+      parent_name: el.parentName.value.trim(),
+      email: el.email.value.trim(),
+      phone: el.phone.value.trim(),
+      sms_consent: el.smsConsent.checked,
+      classroom: el.classroom.value,
+      grade: el.grade.value,
+      created_by: 'web_admin'
+    };
+
+    if (!payload.full_name) { showErrors([_('Full name is required.')]); return; }
+
+    try {
+      const resp = await fetch('/api/add_student', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+
+      if (resp.status === 201) {
+        showToast(_('Student created.'));
+        location.reload();
+      } else if (resp.status === 409) {
+        const json = await resp.json();
+        el.duplicatePanel.style.display = 'block';
+        el.duplicatePanel.innerHTML = `<strong>${_('Potential duplicates returned from server')}</strong>`;
+        (json.duplicates || []).forEach(m => {
+          const div = document.createElement('div');
+          div.className = 'duplicate-item';
+          div.innerHTML = `
+            <div>
+              <strong>${m.full_name}</strong>
+              <div style="font-size:12px;color:#374151">${m.classroom || _('No Class Assigned')}</div>
+            </div>
+            <div><a href="/student/${m.id}" target="_blank" class="view-link">${_('View')}</a></div>`;
+          el.duplicatePanel.appendChild(div);
+        });
+
+        const overrideBtn = document.createElement('button');
+        overrideBtn.textContent = _('Save Anyway');
+        overrideBtn.className = 'btn-primary';
+        overrideBtn.style.marginTop = '12px';
+        overrideBtn.onclick = async () => {
+           payload.confirmed_not_duplicate = true;
+           const resp2 = await fetch('/api/add_student', {
+             method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+           });
+           if (resp2.status === 201) { location.reload(); }
+        };
+        el.duplicatePanel.appendChild(overrideBtn);
+      }
+    } catch (e) { showErrors([_('Network or server error.')]); }
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Leer México{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Main vertical stack */
+    .dashboard-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* Refined Card Styling */
+    .card { 
+        background: var(--card-bg); 
+        border-radius: 12px; 
+        padding: 24px; 
+        border: 1px solid var(--border);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        height: 100%; /* Ensures side-by-side cards match height */
+    }
+
+    .card h3 { 
+        margin: 0 0 16px 0; 
+        font-size: 14px; 
+        text-transform: uppercase; 
+        letter-spacing: 0.05em;
+        color: var(--secondary); 
+        font-weight: 700; 
+    }
+
+    /* Grid for side-by-side items */
+    .bottom-row-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    /* Button Spacing & Rows */
+    .btn-group { display: flex; flex-direction: column; gap: 12px; }
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    
+    .btn { 
+        display: inline-flex; align-items: center; justify-content: center; 
+        padding: 14px 16px; border-radius: 8px; text-decoration: none; 
+        font-weight: 600; font-size: 14px; transition: 0.2s; border: none; cursor: pointer;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+    
+    .btn-secondary { background: #f1f5f9; color: #475569; }
+    .btn-secondary:hover { background: #e2e8f0; }
+    
+    .btn-outline { border: 2px solid var(--primary); color: var(--primary); background: transparent; }
+    .btn-outline:hover { background: #f0f7ff; }
+
+    /* Icons inside buttons */
+    .btn span { margin-right: 8px; font-size: 16px; opacity: 0.8; }
+
+    @media (max-width: 768px) {
+        .bottom-row-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-stack">
+    
+    <div class="card">
+        <h3>{{ _('Student Actions') }}</h3>
+        <div class="btn-group">
+            <a href="{{ url_for('record_activity_page') }}" class="btn btn-primary">{{ _('Reward Points (Activity)') }}</a>
+            <a href="{{ url_for('redeem_page') }}" class="btn btn-outline">{{ _('Redeem Points (Prizes)') }}</a>
+            <div class="btn-row">
+                <a href="{{ url_for('students_page') }}" class="btn btn-secondary">{{ _('Student Directory') }}</a>
+                <a href="{{ url_for('add_student_page') }}" class="btn btn-secondary">{{ _('Add New Student') }}</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-row-grid">
+        
+        <div class="card">
+            <h3>{{ _('Management') }}</h3>
+            <div class="btn-group">
+                <a href="{{ url_for('prizes_page') }}" class="btn btn-secondary">{{ _('Prize Inventory') }}</a>
+                <a href="{{ url_for('activity_form') }}" class="btn btn-secondary">{{ _('Activity Catalog') }}</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>{{ _('System Status') }}</h3>
+            <div class="btn-group">
+                <a href="{{ url_for('logs_page') }}" class="btn btn-secondary">
+                    <span>📄</span> {{ _('App Logs') }}
+                </a>
+                <a href="{{ url_for('audit_logs_page') }}" class="btn btn-primary">
+                    <span>🛡️</span> {{ _('System Audit Logs') }}
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

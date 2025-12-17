@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Profile') }}: {{ student_id }} - Leer México{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+    
+    .profile-header { 
+        display: flex; justify-content: space-between; align-items: center; 
+        background: white; padding: 16px 24px; border-radius: 12px; border: 1px solid var(--border);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .student-name-large { margin: 0; font-size: 26px; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; }
+
+    .header-right { display: flex; align-items: center; gap: 20px; }
+    .balance-display-mini {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 6px 16px; background: #1f6feb; color: white; border-radius: 8px; min-width: 100px;
+    }
+    .balance-val { font-size: 20px; font-weight: 700; line-height: 1; }
+    .balance-label { font-size: 9px; font-weight: 800; text-transform: uppercase; opacity: 0.8; margin-bottom: 2px; }
+
+    .profile-top-grid { display: grid; grid-template-columns: 1fr 300px; gap: 28px; align-items: stretch; }
+    .card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    
+    .label-small { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 8px; display: block; }
+
+    /* Filter Bar Styling */
+    .filter-bar { 
+        display: flex; align-items: center; gap: 12px; background: #f8fafc; 
+        padding: 8px 16px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0;
+    }
+    .filter-bar input, .filter-bar select { 
+        padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; color: #334155;
+    }
+
+    .history-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .history-table th { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); color: #64748b; font-weight: 600; font-size: 12px; }
+    .history-table td { padding: 16px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    
+    .pts-pos { color: #16a34a; font-weight: 700; }
+    .pts-neg { color: #dc2626; font-weight: 700; }
+    .meta-text { font-size: 11px; color: #64748b; line-height: 1.5; }
+
+    .action-row { display: flex; flex-direction: column; gap: 10px; }
+    .action-btn { 
+        width: 100%; padding: 10px; border-radius: 8px; font-weight: 600; font-size: 13px;
+        cursor: pointer; border: 1px solid var(--border); transition: all 0.2s; text-align: center;
+    }
+    .btn-main { background: #1f6feb; color: white; border: none; }
+    .btn-export { background: #ffffff; color: #1e293b; font-size: 11px; padding: 5px 10px; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; }
+
+    .back-btn { background: white; border: 1px solid var(--border); padding: 5px 12px; border-radius: 6px; color: #64748b; font-size: 13px; cursor: pointer; display: flex; align-items: center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <header class="profile-header">
+        <div class="header-left">
+            <button onclick="window.history.back()" class="back-btn">← {{ _('Back') }}</button>
+            <h2 id="studentName" class="student-name-large">{{ _('Loading...') }}</h2>
+        </div>
+        <div class="header-right">
+            <div class="balance-display-mini">
+                <span class="balance-label">{{ _('Balance') }}</span>
+                <div id="totalPoints" class="balance-val">0</div>
+            </div>
+            <span class="id-badge" style="background: #f1f5f9; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; color: #64748b; border: 1px solid #e2e8f0;">ID: {{ student_id }}</span>
+        </div>
+    </header>
+
+    <div class="profile-top-grid">
+        <div class="card">
+            <span class="label-small">{{ _('Contact & Student Info') }}</span>
+            <div id="contactInfo" class="meta-text" style="font-size: 13px; color: #1e293b; display: grid; grid-template-columns: 1fr 1fr; gap: 24px;"></div>
+        </div>
+        <div class="card">
+            <span class="label-small">{{ _('Quick Actions') }}</span>
+            <div class="action-row">
+                <button onclick="location.href='/record_activity?student_id={{ student_id }}'" class="action-btn btn-main">{{ _('Reward Points') }}</button>
+                <button onclick="location.href='/redeem?student_id={{ student_id }}'" class="action-btn">{{ _('Redeem Points') }}</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="card" style="padding: 16px 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h3 style="font-size: 16px; color: #0f172a;">{{ _('Activity History') }}</h3>
+            <button onclick="exportHistoryCSV()" class="btn-export">📥 {{ _('Export CSV') }}</button>
+        </div>
+
+        <div class="filter-bar">
+            <span style="font-size: 11px; font-weight: 700; color: #64748b;">{{ _('FILTER:') }}</span>
+            <select id="quickRange" onchange="setQuickRange()">
+                <option value="all">{{ _('All Time') }}</option>
+                <option value="7">{{ _('Last 7 Days') }}</option>
+                <option value="30">{{ _('Last 30 Days') }}</option>
+                <option value="90">{{ _('Last 90 Days') }}</option>
+            </select>
+            <input type="date" id="startDate" onchange="applyFilters()">
+            <span style="color: #cbd5e1;">to</span>
+            <input type="date" id="endDate" onchange="applyFilters()">
+        </div>
+        
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th style="width: 110px;">{{ _('Date') }}</th>
+                    <th>{{ _('Activity') }}</th>
+                    <th style="text-align: right; width: 100px;">{{ _('Points') }}</th>
+                </tr>
+            </thead>
+            <tbody id="historyBody">
+                <tr><td colspan="3" style="text-align:center; padding:60px; color: #94a3b8;">{{ _('Loading history...') }}</td></tr>
+            </tbody>
+        </table>
+    </main>
+</div>
+
+<script>
+const studentId = "{{ student_id }}";
+let rawHistory = [];
+const _ = (s) => s;
+
+async function loadProfile() {
+    try {
+        const [resDetail, resHistory] = await Promise.all([
+            fetch(`/api/student/${studentId}`),
+            fetch(`/api/student/${studentId}/history`)
+        ]);
+        const detail = await resDetail.json();
+        const historyData = await resHistory.json();
+
+        if (detail.success) {
+            const s = detail.student;
+            document.getElementById('studentName').innerText = s.full_name;
+            document.getElementById('contactInfo').innerHTML = `
+                <div><span class="label-small" style="font-size:9px;">Grade / Class</span> ${_('Grade')} ${s.grade || '?'} | ${_('Class')} ${s.classroom || '?'}</div>
+                <div><span class="label-small" style="font-size:9px;">Email Address</span> ${s.email || '-'}</div>
+                <div style="grid-column: span 2;"><span class="label-small" style="font-size:9px;">Phone Number</span> ${s.phone || '-'}</div>
+            `;
+        }
+
+        if (historyData.success) {
+            document.getElementById('totalPoints').innerText = historyData.total_points;
+            rawHistory = historyData.history;
+            renderHistory(rawHistory);
+        }
+    } catch (e) { console.error("Profile load failed", e); }
+}
+
+function setQuickRange() {
+    const range = document.getElementById('quickRange').value;
+    if (range === 'all') {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+    } else {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - parseInt(range));
+        document.getElementById('startDate').value = start.toISOString().split('T')[0];
+        document.getElementById('endDate').value = end.toISOString().split('T')[0];
+    }
+    applyFilters();
+}
+
+function applyFilters() {
+    const start = document.getElementById('startDate').value;
+    const end = document.getElementById('endDate').value;
+    
+    let filtered = rawHistory;
+    if (start) filtered = filtered.filter(h => new Date(h.timestamp) >= new Date(start));
+    if (end) {
+        const endFull = new Date(end);
+        endFull.setHours(23, 59, 59);
+        filtered = filtered.filter(h => new Date(h.timestamp) <= endFull);
+    }
+    renderHistory(filtered);
+}
+
+function renderHistory(history) {
+    const body = document.getElementById('historyBody');
+    if (!history || history.length === 0) {
+        body.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:60px; color:#64748b;">${_('No transactions found for the selected range.')}</td></tr>`;
+        return;
+    }
+    body.innerHTML = history.map(h => {
+        const isPos = h.points >= 0;
+        return `
+            <tr>
+                <td class="meta-text" style="font-weight: 500;">${new Date(h.timestamp).toLocaleDateString()}</td>
+                <td>
+                    <div style="font-weight:600; color:#1e293b; font-size: 15px;">${h.activity_type}</div>
+                    <div class="meta-text" style="margin: 4px 0;">${h.description || ''}</div>
+                    <div class="meta-text" style="color:#1f6feb; font-weight:700; text-transform: uppercase; font-size: 9px;">Logged by: ${h.recorded_by || 'system'}</div>
+                </td>
+                <td style="text-align:right;" class="${isPos ? 'pts-pos' : 'pts-neg'}">${isPos ? '+' : ''}${h.points}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function exportHistoryCSV() {
+    const start = document.getElementById('startDate').value;
+    const end = document.getElementById('endDate').value;
+    const filtered = rawHistory.filter(h => {
+        const d = new Date(h.timestamp);
+        const sMatch = !start || d >= new Date(start);
+        const eMatch = !end || d <= new Date(end + 'T23:59:59');
+        return sMatch && eMatch;
+    });
+
+    if (!filtered.length) return;
+    const name = document.getElementById('studentName').innerText.replace(/\s+/g, '_');
+    const headers = ["Date", "Activity", "Description", "Staff", "Points"];
+    const rows = filtered.map(h => [
+        new Date(h.timestamp).toLocaleDateString(),
+        h.activity_type,
+        `"${(h.description || '').replace(/"/g, '""')}"`,
+        h.recorded_by,
+        h.points
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const link = document.createElement("a");
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", `History_${name}_ID${studentId}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+window.onload = loadProfile;
+</script>
+{% endblock %}

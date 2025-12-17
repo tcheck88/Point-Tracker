@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="{{ get_locale() }}">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ _('Activity History') }}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: #f7f7f7; color: #333; }
+    .wrap { max-width: 900px; margin: 24px auto; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    h1 { margin: 0; font-size: 22px; color: #0b3b61; }
+    .points-display { font-size: 18px; font-weight: 700; color: #1f6feb; }
+    .secondary-link { color: #1f6feb; text-decoration: none; font-size: 13px; display: inline-block; margin-bottom: 15px; }
+    .table-container { overflow-x: auto; margin-top: 10px; border: 1px solid #e5e7eb; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+    th { background: #f9fafb; padding: 12px; font-weight: 600; color: #4b5563; border-bottom: 1px solid #e5e7eb; }
+    td { padding: 12px; border-bottom: 1px solid #f3f4f6; }
+    .point-plus { color: #059669; font-weight: bold; }
+    .point-minus { color: #dc2626; font-weight: bold; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <a href="javascript:history.back()" class="secondary-link">&larr; {{ _('Back to Students') }}</a>
+    <button onclick="downloadCsv()" style="cursor:pointer; background:#065f46; color:#fff; border:none; padding:8px 12px; border-radius:6px; font-size:12px;">{{ _('Download CSV') }}</button>
+  </div>
+
+  <div class="header-row">
+    <h1 id="pageTitle">{{ _('Activity History') }}</h1>
+    <div id="currentPoints" class="points-display"></div>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ _('Date/Time') }}</th>
+          <th>{{ _('Activity') }}</th>
+          <th>{{ _('Points') }}</th>
+          <th>{{ _('Recorded By') }}</th>
+          <th>{{ _('Trans. ID') }}</th>
+        </tr>
+      </thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const studentId = "{{ student_id }}";
+
+window.addEventListener('DOMContentLoaded', async () => {
+    const tableBody = document.getElementById('historyBody');
+    try {
+        const res = await fetch(`/api/student/${studentId}/history`);
+        const data = await res.json();
+
+        if (data.success) {
+            document.getElementById('pageTitle').textContent = `Activity History for ${data.student_name}`;
+            document.getElementById('currentPoints').textContent = `Total: ${data.total_points} pts`;
+            
+            tableBody.innerHTML = '';
+            data.history.forEach(row => {
+                const tr = document.createElement('tr');
+                const timestamp = row.timestamp ? new Date(row.timestamp).toLocaleString() : 'N/A';
+                const pClass = row.points >= 0 ? 'point-plus' : 'point-minus';
+                const pPrefix = row.points > 0 ? '+' : '';
+
+                tr.innerHTML = `
+                    <td>${timestamp}</td>
+                    <td><strong>${row.activity_type}</strong></td>
+                    <td class="${pClass}">${pPrefix}${row.points}</td>
+                    <td style="color: #6b7280;">${row.recorded_by || 'System'}</td>
+                    <td style="color: #9ca3af; font-size: 12px;">#${row.id}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+    } catch (err) { console.error("Load error:", err); }
+});
+
+function downloadCsv() {
+    let csv = 'Date,Activity,Points,User,ID\n';
+    document.querySelectorAll('#historyBody tr').forEach(tr => {
+        csv += Array.from(tr.querySelectorAll('td')).map(td => `"${td.textContent}"`).join(',') + '\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `student_${studentId}_history.csv`;
+    a.click();
+}
+</script>
+</body>
+</html>

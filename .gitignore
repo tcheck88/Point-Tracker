@@ -1,0 +1,36 @@
+# --- Security (CRITICAL) ---
+.env
+
+# --- Database & Logs (Do NOT commit these) ---
+*.db
+*.db-shm
+*.db-wal
+*.log
+logs/
+
+# --- Python Junk ---
+__pycache__/
+*.pyc
+
+# --- Executables ---
+*.exe
+
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+logs/
+*.log
+
+
+# OS-specific files
+.DS_Store
+Thumbs.db

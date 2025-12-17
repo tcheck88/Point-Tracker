@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="{{ get_locale() }}">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ _('Student Directory') }}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: #f7f7f7; color: #333; }
+    .wrap { max-width: 850px; margin: 15px auto; padding: 15px; background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    h1 { margin: 0 0 8px 0; font-size: 20px; color: #0b3b61; }
+    .secondary-link { color: #1f6feb; text-decoration: none; font-size: 12px; display: inline-block; margin-bottom: 10px; }
+    
+    /* Compact Search Container */
+    .search-container { background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #f3f4f6; margin-bottom: 15px; }
+    .search-row { display: flex; gap: 8px; align-items: center; }
+    input[type="text"] { flex: 1; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+    
+    .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; transition: background 0.2s; height: 36px; }
+    .btn-primary { background: #1f6feb; color: #fff; }
+    .btn-secondary { background: #e5e7eb; color: #374151; }
+    .btn-primary:hover { background: #165ecb; }
+
+    /* Filter Bar */
+    .filter-bar { margin: 12px 0; display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    
+    /* Two-Column Compact Grid */
+    #studentList { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 8px; }
+    
+    .student-card { border: 1px solid #e5e7eb; padding: 10px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; background: #fff; text-decoration: none; color: inherit; transition: all 0.2s; }
+    .student-card:hover { border-color: #1f6feb; background: #f0f9ff; transform: translateY(-1px); }
+    
+    .student-info h4 { margin: 0; font-size: 14px; color: #111827; }
+    .student-info p { margin: 2px 0 0 0; font-size: 12px; color: #6b7280; }
+    
+    .points-badge { background: #e0f2fe; color: #0369a1; font-weight: bold; padding: 2px 8px; border-radius: 12px; font-size: 12px; min-width: 45px; text-align: center; }
+
+    .status-message { margin-top: 10px; padding: 8px; border-radius: 4px; display: none; font-size: 13px; text-align: center; }
+    .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+    @media (max-width: 600px) { #studentList { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <a href="{{ url_for('index') }}" class="secondary-link">&larr; {{ _('Back to Dashboard') }}</a>
+  <h1>{{ _('Student Directory') }}</h1>
+
+  <div class="search-container">
+    <form id="searchForm" class="search-row">
+      <input type="text" id="searchInput" placeholder="{{ _('Search by name, nickname, or ID...') }}" required>
+      <button type="submit" class="btn btn-primary">{{ _('Search') }}</button>
+      <button type="button" class="btn btn-secondary" onclick="clearSearch()">{{ _('Reset') }}</button>
+    </form>
+  </div>
+
+  <div class="filter-bar">
+      <h2 style="margin:0; font-size: 16px; color: #0b3b61;">{{ _('Search Results') }}</h2>
+      <label style="font-size: 12px; font-weight: normal; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+          <input type="checkbox" id="hideZeroPoints" onchange="renderStudentList()"> {{ _('Hide zero points') }}
+      </label>
+  </div>
+
+  <div id="statusMessage" class="status-message"></div>
+  <div id="studentList"></div>
+</div>
+
+<script>
+let currentStudents = [];
+const _ = (s) => s;
+
+// --- 1. RESTORE CONTEXT ON LOAD ---
+window.addEventListener('DOMContentLoaded', () => {
+    const savedTerm = sessionStorage.getItem('studentSearchTerm');
+    const savedHideZero = sessionStorage.getItem('studentHideZero');
+
+    if (savedTerm) {
+        document.getElementById('searchInput').value = savedTerm;
+        if (savedHideZero === 'true') {
+            document.getElementById('hideZeroPoints').checked = true;
+        }
+        performSearch(); // Auto-execute previous search
+    }
+});
+
+async function performSearch(e) {
+    if (e) e.preventDefault();
+    const termInput = document.getElementById('searchInput');
+    const term = termInput.value.trim();
+    const list = document.getElementById('studentList');
+    const sm = document.getElementById('statusMessage');
+    const hideZero = document.getElementById('hideZeroPoints').checked;
+    
+    // --- 2. SAVE CONTEXT TO SESSION STORAGE ---
+    sessionStorage.setItem('studentSearchTerm', term);
+    sessionStorage.setItem('studentHideZero', hideZero);
+
+    sm.style.display = 'none';
+    list.innerHTML = `<p style="grid-column: 1/-1; text-align:center; font-size:13px; padding: 20px;">${_('Searching...')}</p>`;
+
+    try {
+        const res = await fetch(`/api/students/search?term=${encodeURIComponent(term)}`);
+        const data = await res.json();
+        
+        if (data.success) {
+            currentStudents = data.students || [];
+            renderStudentList();
+        } else {
+            showError(data.message);
+        }
+    } catch (err) {
+        showError(_("Error connecting to server."));
+    }
+}
+
+function renderStudentList() {
+    const list = document.getElementById('studentList');
+    const hideZero = document.getElementById('hideZeroPoints').checked;
+    
+    // Update storage if checkbox toggled
+    sessionStorage.setItem('studentHideZero', hideZero);
+
+    list.innerHTML = '';
+    
+    const filtered = currentStudents.filter(s => {
+        // Handle postgres numeric cache
+        const points = s.total_points || 0;
+        if (hideZero && points <= 0) return false;
+        return true;
+    });
+
+    if (filtered.length === 0) {
+        list.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:#666; font-size:13px; padding: 20px;">${_('No matching students found.')}</p>`;
+        return;
+    }
+
+    filtered.forEach(s => {
+        const card = document.createElement('a');
+        card.className = 'student-card';
+        card.href = `/student/${s.id}`;
+        
+        card.innerHTML = `
+            <div class="student-info">
+                <h4>${s.full_name} <small style="color:#666; font-weight:normal;">(#${s.id})</small></h4>
+                <p>${s.classroom || 'N/A'} | ${s.grade || ''}</p>
+            </div>
+            <div class="points-badge">
+                ${s.total_points || 0} pts
+            </div>
+        `;
+        list.appendChild(card);
+    });
+}
+
+function showError(msg) {
+    const sm = document.getElementById('statusMessage');
+    sm.textContent = msg;
+    sm.className = 'status-message error';
+    sm.style.display = 'block';
+    document.getElementById('studentList').innerHTML = '';
+}
+
+function clearSearch() {
+    // --- 3. CLEAR SESSION STORAGE ---
+    sessionStorage.removeItem('studentSearchTerm');
+    sessionStorage.removeItem('studentHideZero');
+    
+    document.getElementById('searchInput').value = '';
+    document.getElementById('hideZeroPoints').checked = false;
+    document.getElementById('studentList').innerHTML = '';
+    document.getElementById('statusMessage').style.display = 'none';
+    currentStudents = [];
+}
+
+document.getElementById('searchForm').addEventListener('submit', performSearch);
+</script>
+</body>
+</html>

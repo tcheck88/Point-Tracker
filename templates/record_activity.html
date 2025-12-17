@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Reward Points') }} - Leer México{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Spacing & Dashboard Logic */
+    .record-container { 
+        max-width: 1100px; 
+        margin: 0 auto; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 28px; /* High-efficiency spacing */
+    }
+    
+    .record-grid { 
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        gap: 28px; 
+        align-items: stretch; 
+    }
+    
+    .card { 
+        background: white; 
+        border-radius: 12px; 
+        border: 1px solid var(--border); 
+        padding: 24px; 
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+    }
+    
+    h3 { 
+        margin: 0 0 16px 0; 
+        font-size: 16px; 
+        color: #0f172a; 
+        border-bottom: 1px solid #f1f5f9; 
+        padding-bottom: 10px; 
+    }
+
+    /* Side-by-Side Search & Selector */
+    .search-flex { display: flex; flex-direction: column; gap: 12px; height: 100%; }
+    #studentSearch { 
+        width: 100%; 
+        padding: 12px; 
+        border: 1px solid var(--border); 
+        border-radius: 8px; 
+        font-size: 14px; 
+    }
+    
+    .student-list-box { 
+        flex-grow: 1; 
+        border: 1px solid var(--border); 
+        border-radius: 8px; 
+        overflow-y: auto; 
+        min-height: 220px; 
+        background: #fff;
+    }
+    
+    .list-item { 
+        padding: 12px 16px; 
+        cursor: pointer; 
+        border-bottom: 1px solid #f1f5f9; 
+        font-size: 13px; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+        transition: 0.2s;
+    }
+    .list-item:hover { background: #f0f9ff; }
+    .list-item.selected { background: #1f6feb; color: white; border-color: #1f6feb; }
+    .list-item.selected small { color: #bfdbfe; }
+
+    /* Space-Efficient Selected Banner */
+    .selected-banner { 
+        background: #f8fafc; 
+        border: 1px solid #e2e8f0; 
+        padding: 12px 16px; 
+        border-radius: 10px; 
+        margin-bottom: 20px; 
+        display: none; /* Controlled by JS */
+        justify-content: space-between; 
+        align-items: center;
+    }
+
+    /* Horizontal Form Grid */
+    .form-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+    input, select, textarea { 
+        padding: 10px; 
+        border: 1px solid var(--border); 
+        border-radius: 8px; 
+        font-size: 14px; 
+    }
+
+    /* Roomy Activity History */
+    .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .history-table th { 
+        text-align: left; 
+        padding: 12px; 
+        border-bottom: 1px solid var(--border); 
+        background: #f8fafc; 
+        color: #64748b; 
+        font-weight: 600; 
+    }
+    .history-table td { 
+        padding: 16px 12px; 
+        border-bottom: 1px solid #f1f5f9; 
+    }
+    
+    .pts-pos { color: #16a34a; font-weight: 700; }
+    .meta-text { font-size: 11px; color: #64748b; line-height: 1.5; }
+
+    .btn-post { 
+        width: 100%; 
+        padding: 14px; 
+        font-weight: 700; 
+        background: #1f6feb; 
+        color: white; 
+        border: none; 
+        border-radius: 8px; 
+        cursor: pointer; 
+        transition: 0.2s;
+    }
+    .btn-post:hover { background: #165ecb; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="record-container">
+    <div class="record-grid">
+        <div class="card search-flex">
+            <h3>{{ _('Student Search') }}</h3>
+            <input type="text" id="studentSearch" placeholder="{{ _('Search by name or ID...') }}" oninput="searchStudents()">
+            <div id="studentListBox" class="student-list-box">
+                <div style="padding:40px; text-align:center; color:#94a3b8; font-size:13px;">{{ _('Search results will appear here') }}</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>{{ _('Reward Points') }}</h3>
+            
+            <div id="selectedBanner" class="selected-banner">
+                <strong id="selName" style="font-size:16px;"></strong>
+                <span style="font-size:14px; font-weight:600;">{{ _('Balance') }}: <span id="selPoints" style="color:#1f6feb;">0</span></span>
+                <input type="hidden" id="selId">
+            </div>
+
+            <form id="recordForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>{{ _('Activity') }}</label>
+                        <select id="activityId" onchange="updatePoints()" required>
+                            <option value="">{{ _('-- Select Activity --') }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>{{ _('Points Override') }}</label>
+                        <input type="number" id="points" required>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>{{ _('Description') }}</label>
+                    <input type="text" id="description" placeholder="{{ _('Optional notes...') }}">
+                </div>
+
+                <button type="submit" class="btn-post">{{ _('Post Transaction') }}</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card" style="padding: 12px 24px;">
+        <h3 style="border:none; margin:0; padding:12px 0;">{{ _('Recent Transactions') }}</h3>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th style="width: 120px;">{{ _('Date') }}</th>
+                    <th>{{ _('Activity') }}</th>
+                    <th style="text-align:right; width: 100px;">{{ _('Points') }}</th>
+                </tr>
+            </thead>
+            <tbody id="studentHistoryBody">
+                <tr><td colspan="3" style="text-align:center; padding:60px; color:#94a3b8;">{{ _('Select a student to view their history') }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+let rawActivities = [];
+const _ = (s) => s;
+
+// Robust Initialization
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadActivities();
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const preselectedId = urlParams.get('student_id');
+    if (preselectedId) {
+        fetchStudentById(preselectedId);
+    }
+});
+
+async function loadActivities() {
+    const res = await fetch('/api/activity');
+    rawActivities = await res.json();
+    const select = document.getElementById('activityId');
+    rawActivities.forEach(act => {
+        const opt = document.createElement('option');
+        opt.value = act.id;
+        opt.innerText = act.name;
+        opt.dataset.points = act.default_points;
+        select.appendChild(opt);
+    });
+}
+
+async function fetchStudentById(id) {
+    const res = await fetch(`/api/student/${id}`);
+    const data = await res.json();
+    if (data.success && data.student) {
+        selectStudent(data.student.id, data.student.full_name, data.student.total_points);
+    }
+}
+
+async function searchStudents() {
+    const term = document.getElementById('studentSearch').value;
+    const list = document.getElementById('studentListBox');
+    if (term.length < 2) return;
+
+    const res = await fetch(`/api/students/search?term=${encodeURIComponent(term)}`);
+    const data = await res.json();
+    
+    if (data.success) {
+        list.innerHTML = data.students.map(s => `
+            <div class="list-item" id="student-item-${s.id}" onclick="selectStudent(${s.id}, '${s.full_name.replace(/'/g, "\\'")}', ${s.total_points})">
+                <span><strong>${s.full_name}</strong> <small style="color:#64748b; margin-left:8px;">${s.classroom || ''}</small></span>
+                <span style="font-weight:600;">${s.total_points} pts</span>
+            </div>
+        `).join('');
+    }
+}
+
+async function selectStudent(id, name, points) {
+    // UI selection state logic
+    document.querySelectorAll('.list-item').forEach(el => el.classList.remove('selected'));
+    const item = document.getElementById(`student-item-${id}`);
+    if (item) item.classList.add('selected');
+
+    document.getElementById('selId').value = id;
+    document.getElementById('selName').innerText = name;
+    document.getElementById('selPoints').innerText = points;
+    document.getElementById('selectedBanner').style.display = 'flex'; 
+    
+    // Refresh History for this student
+    const res = await fetch(`/api/student/${id}/history`);
+    const data = await res.json();
+    if (data.success) renderHistory(data.history);
+}
+
+function renderHistory(history) {
+    const body = document.getElementById('studentHistoryBody');
+    if (!history.length) {
+        body.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:60px;">${_('No transactions found.')}</td></tr>`;
+        return;
+    }
+    body.innerHTML = history.slice(0, 10).map(h => `
+        <tr>
+            <td class="meta-text" style="font-weight:500;">${new Date(h.timestamp).toLocaleDateString()}</td>
+            <td>
+                <div style="font-weight:600; font-size:15px; color:#1e293b;">${h.activity_type}</div>
+                <div class="meta-text" style="margin: 2px 0;">${h.description || ''}</div>
+                <div class="meta-text" style="color:#1f6feb; font-weight:700; text-transform:uppercase; font-size:9px;">Logged by: ${h.recorded_by || 'system'}</div>
+            </td>
+            <td style="text-align:right;" class="${h.points >= 0 ? 'pts-pos' : ''}">
+                ${h.points >= 0 ? '+' : ''}${h.points}
+            </td>
+        </tr>
+    `).join('');
+}
+
+function updatePoints() {
+    const select = document.getElementById('activityId');
+    const points = select.options[select.selectedIndex].dataset.points;
+    if (points) document.getElementById('points').value = points;
+}
+
+document.getElementById('recordForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const student_id = document.getElementById('selId').value;
+    if (!student_id) return;
+
+    const payload = {
+        student_id: parseInt(student_id),
+        activity_name: document.getElementById('activityId').options[document.getElementById('activityId').selectedIndex].text,
+        points: parseInt(document.getElementById('points').value),
+        description: document.getElementById('description').value
+    };
+
+    const res = await fetch('/api/transaction/record', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+    if (result.success) {
+        // Optimistic UI update
+        const currentVal = parseInt(document.getElementById('selPoints').innerText);
+        selectStudent(student_id, document.getElementById('selName').innerText, currentVal + payload.points);
+        document.getElementById('recordForm').reset();
+    }
+};
+</script>
+{% endblock %}

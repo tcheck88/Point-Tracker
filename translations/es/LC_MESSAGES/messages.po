@@ -1,0 +1,557 @@
+# Spanish translations for Leer México Point Tracker.
+# Copyright (C) 2025
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Leer México Point Tracker\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-12-16 21:06-0800\n"
+"PO-Revision-Date: 2025-12-16 21:15-0800\n"
+"Last-Translator: Gemini AI <>\n"
+"Language: es\n"
+"Language-Team: es <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: venv/Lib/site-packages/click/_termui_impl.py:608
+#, python-brace-format
+msgid "{editor}: Editing failed"
+msgstr "{editor}: Error de edición"
+
+#: venv/Lib/site-packages/click/_termui_impl.py:612
+#, python-brace-format
+msgid "{editor}: Editing failed: {e}"
+msgstr "{editor}: Error de edición: {e}"
+
+#: venv/Lib/site-packages/click/core.py:1104
+#: venv/Lib/site-packages/click/core.py:1141
+#, python-brace-format
+msgid "{text} {deprecated_message}"
+msgstr "{text} {deprecated_message}"
+
+#: venv/Lib/site-packages/click/core.py:1160
+msgid "Options"
+msgstr "Opciones"
+
+#: venv/Lib/site-packages/click/core.py:1222
+#, python-brace-format
+msgid "Got unexpected extra argument ({args})"
+msgid_plural "Got unexpected extra arguments ({args})"
+msgstr[0] "Se recibió un argumento adicional inesperado ({args})"
+msgstr[1] "Se recibieron argumentos adicionales inesperados ({args})"
+
+#: venv/Lib/site-packages/click/core.py:1241
+#, python-brace-format
+msgid "DeprecationWarning: The command {name!r} is deprecated.{extra_message}"
+msgstr "DeprecationWarning: El comando {name!r} está obsoleto.{extra_message}"
+
+#: venv/Lib/site-packages/click/core.py:1425
+msgid "Aborted!"
+msgstr "¡Abortado!"
+
+#: venv/Lib/site-packages/click/core.py:1799
+msgid "Commands"
+msgstr "Comandos"
+
+#: venv/Lib/site-packages/click/core.py:1830
+msgid "Missing command."
+msgstr "Falta el comando."
+
+#: venv/Lib/site-packages/click/core.py:1908
+#, python-brace-format
+msgid "No such command {name!r}."
+msgstr "No existe el comando {name!r}."
+
+#: venv/Lib/site-packages/click/core.py:2332
+msgid "Value must be an iterable."
+msgstr "El valor debe ser un iterable."
+
+#: venv/Lib/site-packages/click/core.py:2355
+#, python-brace-format
+msgid "Takes {nargs} values but 1 was given."
+msgid_plural "Takes {nargs} values but {len} were given."
+msgstr[0] "Toma {nargs} valor pero se proporcionó 1."
+msgstr[1] "Toma {nargs} valores pero se proporcionaron {len}."
+
+#: venv/Lib/site-packages/click/core.py:2505
+#, python-brace-format
+msgid ""
+"DeprecationWarning: The {param_type} {name!r} is "
+"deprecated.{extra_message}"
+msgstr "DeprecationWarning: El {param_type} {name!r} está obsoleto.{extra_message}"
+
+#: venv/Lib/site-packages/click/core.py:2956
+#, python-brace-format
+msgid "env var: {var}"
+msgstr "var de entorno: {var}"
+
+#: venv/Lib/site-packages/click/core.py:2959
+#, python-brace-format
+msgid "default: {default}"
+msgstr "predeterminado: {default}"
+
+#: venv/Lib/site-packages/click/core.py:2963
+msgid "required"
+msgstr "requerido"
+
+#: venv/Lib/site-packages/click/core.py:3023
+msgid "(dynamic)"
+msgstr "(dinámico)"
+
+#: venv/Lib/site-packages/click/decorators.py:465
+#, python-format
+msgid "%(prog)s, version %(version)s"
+msgstr "%(prog)s, versión %(version)s"
+
+#: venv/Lib/site-packages/click/decorators.py:522
+msgid "Show the version and exit."
+msgstr "Mostrar la versión y salir."
+
+#: venv/Lib/site-packages/click/decorators.py:548
+msgid "Show this message and exit."
+msgstr "Mostrar este mensaje y salir."
+
+#: venv/Lib/site-packages/click/exceptions.py:50
+#: venv/Lib/site-packages/click/exceptions.py:89
+#, python-brace-format
+msgid "Error: {message}"
+msgstr "Error: {message}"
+
+#: venv/Lib/site-packages/click/exceptions.py:81
+#, python-brace-format
+msgid "Try '{command} {option}' for help."
+msgstr "Intente '{command} {option}' para obtener ayuda."
+
+#: venv/Lib/site-packages/click/exceptions.py:130
+#, python-brace-format
+msgid "Invalid value: {message}"
+msgstr "Valor inválido: {message}"
+
+#: venv/Lib/site-packages/click/exceptions.py:132
+#, python-brace-format
+msgid "Invalid value for {param_hint}: {message}"
+msgstr "Valor inválido para {param_hint}: {message}"
+
+#: venv/Lib/site-packages/click/exceptions.py:190
+msgid "Missing argument"
+msgstr "Falta el argumento"
+
+#: venv/Lib/site-packages/click/exceptions.py:192
+msgid "Missing option"
+msgstr "Falta la opción"
+
+#: venv/Lib/site-packages/click/exceptions.py:194
+msgid "Missing parameter"
+msgstr "Falta el parámetro"
+
+#: venv/Lib/site-packages/click/exceptions.py:196
+#, python-brace-format
+msgid "Missing {param_type}"
+msgstr "Falta {param_type}"
+
+#: venv/Lib/site-packages/click/exceptions.py:203
+#, python-brace-format
+msgid "Missing parameter: {param_name}"
+msgstr "Falta el parámetro: {param_name}"
+
+#: venv/Lib/site-packages/click/exceptions.py:223
+#, python-brace-format
+msgid "No such option: {name}"
+msgstr "No existe la opción: {name}"
+
+#: venv/Lib/site-packages/click/exceptions.py:235
+#, python-brace-format
+msgid "Did you mean {possibility}?"
+msgid_plural "(Possible options: {possibilities})"
+msgstr[0] "¿Quiso decir {possibility}?"
+msgstr[1] "(Opciones posibles: {possibilities})"
+
+#: venv/Lib/site-packages/click/exceptions.py:282
+msgid "unknown error"
+msgstr "error desconocido"
+
+#: venv/Lib/site-packages/click/exceptions.py:289
+#, python-brace-format
+msgid "Could not open file {filename!r}: {message}"
+msgstr "No se pudo abrir el archivo {filename!r}: {message}"
+
+#: venv/Lib/site-packages/click/formatting.py:156
+msgid "Usage:"
+msgstr "Uso:"
+
+#: venv/Lib/site-packages/click/parser.py:199
+#, python-brace-format
+msgid "Argument {name!r} takes {nargs} values."
+msgstr "El argumento {name!r} toma {nargs} valores."
+
+#: venv/Lib/site-packages/click/parser.py:381
+#, python-brace-format
+msgid "Option {name!r} does not take a value."
+msgstr "La opción {name!r} no toma un valor."
+
+#: venv/Lib/site-packages/click/parser.py:444
+#, python-brace-format
+msgid "Option {name!r} requires an argument."
+msgid_plural "Option {name!r} requires {nargs} arguments."
+msgstr[0] "La opción {name!r} requiere un argumento."
+msgstr[1] "La opción {name!r} requiere {nargs} argumentos."
+
+#: venv/Lib/site-packages/click/shell_completion.py:332
+msgid "Shell completion is not supported for Bash versions older than 4.4."
+msgstr "La completación de comandos no es compatible con versiones de Bash anteriores a la 4.4."
+
+#: venv/Lib/site-packages/click/shell_completion.py:339
+msgid "Couldn't detect Bash version, shell completion is not supported."
+msgstr "No se pudo detectar la versión de Bash, la completación de comandos no es compatible."
+
+#: venv/Lib/site-packages/click/termui.py:162
+msgid "Repeat for confirmation"
+msgstr "Repetir para confirmar"
+
+#: venv/Lib/site-packages/click/termui.py:178
+msgid "Error: The value you entered was invalid."
+msgstr "Error: El valor ingresado no es válido."
+
+#: venv/Lib/site-packages/click/termui.py:180
+#, python-brace-format
+msgid "Error: {e.message}"
+msgstr "Error: {e.message}"
+
+#: venv/Lib/site-packages/click/termui.py:191
+msgid "Error: The two entered values do not match."
+msgstr "Error: Los dos valores ingresados no coinciden."
+
+#: venv/Lib/site-packages/click/termui.py:247
+msgid "Error: invalid input"
+msgstr "Error: entrada inválida"
+
+#: venv/Lib/site-packages/click/termui.py:866
+msgid "Press any key to continue..."
+msgstr "Presione cualquier tecla para continuar..."
+
+#: venv/Lib/site-packages/click/types.py:332
+#, python-brace-format
+msgid ""
+"Choose from:\n"
+"\t{choices}"
+msgstr ""
+"Elija entre:\n"
+"\t{choices}"
+
+#: venv/Lib/site-packages/click/types.py:369
+#, python-brace-format
+msgid "{value!r} is not {choice}."
+msgid_plural "{value!r} is not one of {choices}."
+msgstr[0] "{value!r} no es {choice}."
+msgstr[1] "{value!r} no es uno de {choices}."
+
+#: venv/Lib/site-packages/click/types.py:460
+#, python-brace-format
+msgid "{value!r} does not match the format {format}."
+msgid_plural "{value!r} does not match the formats {formats}."
+msgstr[0] "{value!r} no coincide con el formato {format}."
+msgstr[1] "{value!r} no coincide con los formatos {formats}."
+
+#: venv/Lib/site-packages/click/types.py:482
+#, python-brace-format
+msgid "{value!r} is not a valid {number_type}."
+msgstr "{value!r} no es un {number_type} válido."
+
+#: venv/Lib/site-packages/click/types.py:538
+#, python-brace-format
+msgid "{value} is not in the range {range}."
+msgstr "{value} no está en el rango {range}."
+
+#: venv/Lib/site-packages/click/types.py:719
+#, python-brace-format
+msgid "{value!r} is not a valid boolean. Recognized values: {states}"
+msgstr "{value!r} no es un booleano válido. Valores reconocidos: {states}"
+
+#: venv/Lib/site-packages/click/types.py:747
+#, python-brace-format
+msgid "{value!r} is not a valid UUID."
+msgstr "{value!r} no es un UUID válido."
+
+#: venv/Lib/site-packages/click/types.py:937
+msgid "file"
+msgstr "archivo"
+
+#: venv/Lib/site-packages/click/types.py:939
+msgid "directory"
+msgstr "directorio"
+
+#: venv/Lib/site-packages/click/types.py:941
+msgid "path"
+msgstr "ruta"
+
+#: venv/Lib/site-packages/click/types.py:988
+#, python-brace-format
+msgid "{name} {filename!r} does not exist."
+msgstr "{name} {filename!r} no existe."
+
+#: venv/Lib/site-packages/click/types.py:997
+#, python-brace-format
+msgid "{name} {filename!r} is a file."
+msgstr "{name} {filename!r} es un archivo."
+
+#: venv/Lib/site-packages/click/types.py:1005
+#, python-brace-format
+msgid "{name} {filename!r} is a directory."
+msgstr "{name} {filename!r} es un directorio."
+
+#: venv/Lib/site-packages/click/types.py:1014
+#, python-brace-format
+msgid "{name} {filename!r} is not readable."
+msgstr "{name} {filename!r} no se puede leer."
+
+#: venv/Lib/site-packages/click/types.py:1023
+#, python-brace-format
+msgid "{name} {filename!r} is not writable."
+msgstr "{name} {filename!r} no se puede escribir."
+
+#: venv/Lib/site-packages/click/types.py:1032
+#, python-brace-format
+msgid "{name} {filename!r} is not executable."
+msgstr "{name} {filename!r} no es ejecutable."
+
+#: venv/Lib/site-packages/click/types.py:1099
+#, python-brace-format
+msgid "{len_type} values are required, but {len_value} was given."
+msgid_plural "{len_type} values are required, but {len_value} were given."
+msgstr[0] "Se requiere {len_type} valor, pero se proporcionó {len_value}."
+msgstr[1] "Se requieren {len_type} valores, pero se proporcionaron {len_value}."
+
+# --- Common / Shared ---
+msgid "Leer México — Home"
+msgstr "Leer México — Inicio"
+
+msgid "Back to Home"
+msgstr "Volver al Inicio"
+
+msgid "Back to Dashboard"
+msgstr "Volver al Panel"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Save Changes"
+msgstr "Guardar Cambios"
+
+msgid "Saving..."
+msgstr "Guardando..."
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Network error."
+msgstr "Error de red."
+
+msgid "Unassigned"
+msgstr "Sin asignar"
+
+# --- index.html ---
+msgid "Leer México Logo"
+msgstr "Logotipo de Leer México"
+
+msgid "Leer México — Point Tracker"
+msgstr "Leer México — Rastreador de Puntos"
+
+msgid "Staff Dashboard"
+msgstr "Panel de Administración"
+
+msgid "Welcome, Staff"
+msgstr "Bienvenido, Personal"
+
+msgid ""
+"This dashboard is your central hub "
+"for managing the Leer México reading "
+"program. Use the quick actions below "
+"to track student progress and manage "
+"daily activities."
+msgstr ""
+"Este panel es su centro de control"
+" para gestionar el programa de "
+"lectura Leer México. Utilice las "
+"acciones rápidas a continuación para "
+"seguir el progreso del estudiante y "
+"gestionar las actividades diarias."
+
+msgid "Add a new student"
+msgstr "Añadir un nuevo estudiante"
+
+msgid "Register new participants"
+msgstr "Registrar nuevos participantes"
+
+msgid "Record an activity"
+msgstr "Registrar una actividad"
+
+msgid "Award points for reading & tasks"
+msgstr "Otorgar puntos por lectura y tareas"
+
+msgid "Search & View Students"
+msgstr "Buscar y Ver Estudiantes"
+
+msgid "View history, totals, and profiles"
+msgstr "Ver historial, totales y perfiles"
+
+msgid "Manage Activities"
+msgstr "Gestionar Actividades"
+
+msgid "Add, edit, or deactivate activity types"
+msgstr "Añadir, editar o desactivar tipos de actividad"
+
+msgid "System Status"
+msgstr "Estado del Sistema"
+
+msgid "Database:"
+msgstr "Base de Datos:"
+
+msgid "Connected (PostgreSQL)"
+msgstr "Conectado (PostgreSQL)"
+
+msgid "System:"
+msgstr "Sistema:"
+
+msgid "Development Mode"
+msgstr "Modo de Desarrollo"
+
+msgid "Last Backup:"
+msgstr "Última Copia de Seguridad:"
+
+msgid "Never"
+msgstr "Nunca"
+
+msgid "View System Logs"
+msgstr "Ver Registros del Sistema"
+
+msgid "Quick Tip"
+msgstr "Consejo Rápido"
+
+msgid ""
+"Remember to check for duplicate students"
+" by searching before adding a new "
+"record."
+msgstr ""
+"Recuerde buscar estudiantes duplicados antes"
+" de añadir un nuevo registro."
+
+msgid "Built for Leer México"
+msgstr "Creado para Leer México"
+
+msgid "Local Development Server"
+msgstr "Servidor de Desarrollo Local"
+
+# --- add_student.html ---
+msgid "Add Student — Leer México"
+msgstr "Añadir Estudiante — Leer México"
+
+msgid "Add Student"
+msgstr "Añadir Estudiante"
+
+msgid "Full Name"
+msgstr "Nombre Completo"
+
+msgid "Full name as it appears on certificates"
+msgstr "Nombre completo como aparece en los certificados"
+
+msgid "Nickname"
+msgstr "Apodo"
+
+msgid "Optional display name"
+msgstr "Nombre de usuario opcional"
+
+msgid "Parent / Guardian name (optional)"
+msgstr "Nombre del Padre / Tutor (opcional)"
+
+msgid "Parent or guardian name"
+msgstr "Nombre del padre o tutor"
+
+msgid "Phone (optional)"
+msgstr "Teléfono (opcional)"
+
+msgid ""
+"If you consent to SMS, please "
+"enter a phone number in Mexico "
+"format (10-digit national number, optional "
+"+52)."
+msgstr ""
+"Si da su consentimiento para SMS, "
+"ingrese un número de teléfono en "
+"formato de México (número nacional de"
+" 10 dígitos, +52 opcional)."
+
+msgid "I agree to receive SMS messages"
+msgstr "Acepto recibir mensajes SMS"
+
+msgid "Classroom"
+msgstr "Aula"
+
+msgid "Grade"
+msgstr "Grado"
+
+msgid "-- select --"
+msgstr "-- seleccionar --"
+
+msgid "Possible matches found"
+msgstr "Se encontraron posibles coincidencias"
+
+msgid "no contact"
+msgstr "sin contacto"
+
+msgid "View"
+msgstr "Ver"
+
+msgid "Full name is required."
+msgstr "El nombre completo es obligatorio."
+
+msgid "Email looks invalid."
+msgstr "El correo electrónico parece inválido."
+
+msgid "Phone is required if consenting to SMS."
+msgstr "El teléfono es obligatorio si acepta SMS."
+
+msgid "Phone looks invalid for Mexico."
+msgstr "El teléfono parece inválido para México."
+
+msgid "Student created (ID: "
+msgstr "Estudiante creado (ID: "
+
+msgid "Potential duplicates returned from server"
+msgstr "Posibles duplicados devueltos por el servidor"
+
+msgid "Save Anyway"
+msgstr "Guardar de todas formas"
+
+# --- student_profile.html ---
+msgid "Student Profile: View/Edit"
+msgstr "Perfil del Estudiante: Ver/Editar"
+
+msgid "Loading Student Profile..."
+msgstr "Cargando Perfil del Estudiante..."
+
+msgid "Points:"
+msgstr "Puntos:"
+
+msgid "Back to Search"
+msgstr "Volver a la Búsqueda"
+
+msgid "Full Name (Required)"
+msgstr "Nombre Completo (Obligatorio)"
+
+msgid "Parent Name"
+msgstr "Nombre del Padre"
+
+msgid "Phone (e.g., 5512345678)"
+msgstr "Teléfono (ej., 5512345678)"
+
+msgid "Email"
+msgstr "Correo Electrónico"
+
+msgid "Consent to receive SMS/Text messages"
+msgstr "Consentimiento para recibir mensajes de texto/SMS"
+
+msgid "Created o"
+msgstr "Creado el"

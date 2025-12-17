@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Prize Manager') }} - Leer México{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card { background: var(--card-bg); border-radius: 12px; padding: 25px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; }
+    h2 { margin: 0 0 16px 0; font-size: 16px; color: #0b3b61; font-weight: 700; }
+    .secondary-link { color: var(--primary); text-decoration: none; font-size: 13px; display: inline-block; margin-bottom: 12px; font-weight: 600; }
+    
+    .form-container { background: #f9fafb; padding: 16px; border-radius: 8px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 12px; }
+    .form-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 120px; }
+    label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 12px; color: #374151; }
+    input[type="text"], input[type="number"], select { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; box-sizing: border-box; }
+    
+    .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; height: 36px; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #e5e7eb; color: #374151; }
+    .btn-danger { background: #fee2e2; color: #991b1b; }
+    .btn-danger:hover { background: #fecaca; }
+
+    .filter-bar { margin: 16px 0; display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    #prizeList { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 12px; }
+    
+    .prize-card { border: 1px solid var(--border); padding: 12px 16px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; background: #fff; transition: transform 0.1s; }
+    .prize-card:hover { border-color: var(--primary); }
+    .prize-info h4 { margin: 0; font-size: 14px; color: #111827; }
+    .prize-info p { margin: 2px 0 0 0; font-size: 12px; color: #6b7280; }
+    
+    .status-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; margin-left: 6px; }
+    .status-active { background: #dcfce7; color: #166534; }
+    .status-inactive { background: #fee2e2; color: #991b1b; }
+
+    @media (max-width: 600px) { #prizeList { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <a href="{{ url_for('index') }}" class="secondary-link">&larr; {{ _('Back to Dashboard') }}</a>
+  <h2>{{ _('Prize Manager') }}</h2>
+
+  <form id="prizeForm" class="form-container">
+    <div class="form-row">
+      <div class="form-group" style="flex: 2;">
+        <label>{{ _('Prize Name') }} *</label>
+        <input type="text" id="prizeName" required>
+      </div>
+      <div class="form-group">
+        <label>{{ _('Point Cost') }}</label>
+        <input type="number" id="pointCost" value="10" min="0">
+      </div>
+      <div class="form-group">
+        <label>{{ _('Stock') }}</label>
+        <input type="number" id="stockCount" value="0" min="0">
+      </div>
+      <div class="form-group">
+        <label>{{ _('Status') }}</label>
+        <select id="prizeStatus">
+          <option value="1">{{ _('Active') }}</option>
+          <option value="0">{{ _('Inactive') }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex: 3;">
+        <label>{{ _('Description (Optional)') }}</label>
+        <input type="text" id="prizeDesc">
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="submit" class="btn btn-primary">{{ _('Save Prize') }}</button>
+        <button type="button" class="btn btn-secondary" onclick="resetForm()">{{ _('Clear') }}</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="filter-bar">
+      <h2 style="margin:0;">{{ _('Current Inventory') }}</h2>
+      <div style="display: flex; gap: 15px; align-items: center; flex-grow: 1; justify-content: flex-end;">
+          <input type="text" id="inventorySearch" placeholder="{{ _('Search by name...') }}" style="max-width: 300px; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;">
+          <label style="font-size: 12px; font-weight: normal; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="hideInactive" onchange="renderPrizeList()"> {{ _('Hide inactive items') }}
+          </label>
+      </div>
+  </div>
+
+  <div id="prizeList"></div>
+</div>
+
+<script>
+let allPrizes = [];
+const _ = (s) => s;
+
+// RESTORE SEARCH CONTEXT ON LOAD
+window.addEventListener('DOMContentLoaded', () => {
+    const savedFilter = sessionStorage.getItem('prizeFilterTerm');
+    const savedHideInactive = sessionStorage.getItem('prizeHideInactive');
+
+    if (savedFilter) document.getElementById('inventorySearch').value = savedFilter;
+    if (savedHideInactive === 'true') document.getElementById('hideInactive').checked = true;
+    
+    loadPrizes();
+});
+
+async function loadPrizes() {
+    try {
+        const res = await fetch('/api/prizes');
+        const data = await res.json();
+        allPrizes = data.prizes || [];
+        renderPrizeList();
+    } catch (e) { console.error("Error loading prizes:", e); }
+}
+
+function renderPrizeList() {
+    const prizeList = document.getElementById('prizeList');
+    const searchTerm = document.getElementById('inventorySearch').value.toLowerCase();
+    const hideInactive = document.getElementById('hideInactive').checked;
+    
+    // SAVE CONTEXT
+    sessionStorage.setItem('prizeFilterTerm', searchTerm);
+    sessionStorage.setItem('prizeHideInactive', hideInactive);
+
+    prizeList.innerHTML = '';
+    const filtered = allPrizes.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(searchTerm);
+        const isActive = (p.active === true || p.active === 1);
+        return matchesSearch && (!hideInactive || isActive);
+    });
+
+    if (filtered.length === 0) {
+        prizeList.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:#666; font-size:12px; padding: 20px;">${_('No matching prizes found.')}</p>`;
+        return;
+    }
+
+    filtered.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'prize-card';
+        const isActive = (p.active === true || p.active === 1);
+        card.innerHTML = `
+            <div class="prize-info">
+                <h4>${p.name} <span class="status-badge ${isActive ? 'status-active' : 'status-inactive'}">${isActive ? 'Active' : 'Inactive'}</span></h4>
+                <p><strong>${p.point_cost} pts</strong> | {{ _('Stock:') }} ${p.stock_count}</p>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" style="height: 30px; padding: 0 12px; font-size: 11px;" onclick='editPrize(${JSON.stringify(p)})'>{{ _('Edit') }}</button>
+                <button class="btn btn-danger" style="height: 30px; padding: 0 12px; font-size: 11px;" onclick="deletePrize(${p.id}, '${p.name}')">{{ _('Delete') }}</button>
+            </div>
+        `;
+        prizeList.appendChild(card);
+    });
+}
+
+async function deletePrize(id, name) {
+    if (!confirm(`${_('Are you sure you want to delete')} '${name}'?`)) return;
+    try {
+        const res = await fetch(`/api/prizes/delete/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) { loadPrizes(); } 
+        else { alert(data.message); }
+    } catch (e) { alert(_("Error connecting to server.")); }
+}
+
+document.getElementById('inventorySearch').addEventListener('input', renderPrizeList);
+
+document.getElementById('prizeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const prizeData = {
+        name: document.getElementById('prizeName').value,
+        description: document.getElementById('prizeDesc').value,
+        point_cost: parseInt(document.getElementById('pointCost').value),
+        stock_count: parseInt(document.getElementById('stockCount').value),
+        active: parseInt(document.getElementById('prizeStatus').value)
+    };
+    // Correct endpoint from functional code
+    const res = await fetch('/api/prizes/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(prizeData)
+    });
+    if (res.ok) { resetForm(); loadPrizes(); }
+});
+
+function editPrize(p) {
+    document.getElementById('prizeName').value = p.name;
+    document.getElementById('prizeDesc').value = p.description || '';
+    document.getElementById('pointCost').value = p.point_cost;
+    document.getElementById('stockCount').value = p.stock_count;
+    document.getElementById('prizeStatus').value = (p.active === true || p.active === 1) ? "1" : "0";
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetForm() {
+    document.getElementById('prizeForm').reset();
+    document.getElementById('prizeName').focus();
+    sessionStorage.removeItem('prizeFilterTerm');
+    sessionStorage.removeItem('prizeHideInactive');
+}
+</script>
+{% endblock %}

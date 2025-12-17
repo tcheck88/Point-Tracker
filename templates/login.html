@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}
+Login - Point Tracker
+{% endblock %}
+
+{% block extra_css %}
+.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 160px); /* account for header */
+}
+
+.login-box {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+.login-box h1 {
+    text-align: center;
+    color: #333;
+}
+.error {
+    color: #d32f2f;
+    background: #ffebee;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+.form-group {
+    margin-bottom: 20px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+    font-weight: bold;
+}
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+}
+.login-box button {
+    width: 100%;
+    padding: 12px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.login-box button:hover {
+    background: #5568d3;
+}
+{% endblock %}
+
+{% block content %}
+<div class="login-page">
+    <div class="login-box">
+        <h1>Point Tracker</h1>
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">{{ _('Login') }}</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

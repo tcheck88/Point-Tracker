@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Manage Activities') }} - Leer México{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Retaining your original Look & Feel */
+    .wrap-catalog { max-width: 850px; margin: 0 auto; }
+    h2 { margin: 15px 0 10px 0; font-size: 16px; color: #0b3b61; }
+    
+    /* Compact Row-Based Form */
+    .form-container { 
+        background: #f9fafb; padding: 12px; border-radius: 8px; 
+        border: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 8px; 
+    }
+    .form-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 120px; }
+    label { display: block; margin-bottom: 3px; font-weight: 600; font-size: 12px; color: #374151; }
+    input[type="text"], input[type="number"], select { 
+        width: 100%; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; 
+        font-size: 13px; box-sizing: border-box; 
+    }
+    
+    .btn-small { 
+        padding: 6px 16px; border-radius: 6px; border: none; cursor: pointer; 
+        font-weight: 600; font-size: 13px; transition: background 0.2s; height: 32px; 
+    }
+    .btn-save { background: var(--primary); color: #fff; }
+    .btn-save:hover { background: var(--primary-dark); }
+    .btn-clear { background: #e5e7eb; color: #374151; }
+    .btn-del { background: #fee2e2; color: #991b1b; }
+    .btn-del:hover { background: #fecaca; }
+
+    /* Compact Grid Layout */
+    .filter-bar { margin: 12px 0; display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    #activityList { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 8px; }
+    
+    .activity-card { 
+        border: 1px solid #e5e7eb; padding: 8px 12px; border-radius: 8px; 
+        display: flex; justify-content: space-between; align-items: center; background: #fff; 
+    }
+    .activity-info h4 { margin: 0; font-size: 13px; color: #111827; }
+    .activity-info p { margin: 1px 0 0 0; font-size: 11px; color: #6b7280; }
+    
+    .status-badge { font-size: 10px; padding: 1px 5px; border-radius: 4px; font-weight: bold; text-transform: uppercase; margin-left: 5px; }
+    .status-active { background: #dcfce7; color: #166534; }
+    .status-inactive { background: #fee2e2; color: #991b1b; }
+
+    @media (max-width: 600px) { #activityList { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrap-catalog">
+  <div style="margin-bottom: 12px;">
+    <a href="{{ url_for('index') }}" style="text-decoration:none; font-size:13px; color:var(--primary);">← {{ _('Back to Dashboard') }}</a>
+  </div>
+  
+  <h1 style="font-size: 20px; color: #0b3b61; margin-bottom: 12px;">{{ _('Manage Activities') }}</h1>
+
+  <form id="activityForm" class="form-container">
+    <div class="form-row">
+      <div class="form-group" style="flex: 2;">
+        <label>{{ _('Activity Name') }} *</label>
+        <input type="text" id="actName" required>
+      </div>
+      <div class="form-group">
+        <label>{{ _('Default Points') }}</label>
+        <input type="number" id="actPoints" value="5" min="1">
+      </div>
+      <div class="form-group">
+        <label>{{ _('Status') }}</label>
+        <select id="actStatus">
+          <option value="1">{{ _('Active') }}</option>
+          <option value="0">{{ _('Inactive') }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex: 3;">
+        <label>{{ _('Description (Optional)') }}</label>
+        <input type="text" id="actDesc" placeholder="{{ _('Briefly explain the criteria...') }}">
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="submit" class="btn-small btn-save">{{ _('Save Activity') }}</button>
+        <button type="button" class="btn-small btn-clear" onclick="resetForm()">{{ _('Clear') }}</button>
+      </div>
+    </div>
+  </form>
+
+  <h2 style="border-top: 1px solid #eee; padding-top: 15px; margin-top: 20px;">{{ _('Configured Activities') }}</h2>
+  
+  <div class="filter-bar">
+      <input type="text" id="actSearch" placeholder="{{ _('Search by name...') }}" 
+             style="flex: 1; max-width: 300px; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;">
+      <label style="font-size: 12px; font-weight: normal; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+          <input type="checkbox" id="hideInactive" checked onchange="renderActivityList()"> {{ _('Hide inactive items') }}
+      </label>
+  </div>
+
+  <div id="activityList"></div>
+</div>
+
+<script>
+let allActivities = [];
+
+window.addEventListener('DOMContentLoaded', () => {
+    // Retained: Context Persistence
+    const savedFilter = sessionStorage.getItem('activityFilterTerm');
+    const savedHideInactive = sessionStorage.getItem('activityHideInactive');
+
+    if (savedFilter) document.getElementById('actSearch').value = savedFilter;
+    if (savedHideInactive === 'false') {
+        document.getElementById('hideInactive').checked = false;
+    } else {
+        document.getElementById('hideInactive').checked = true;
+    }
+    
+    loadActivities();
+});
+
+async function loadActivities() {
+    try {
+        const res = await fetch('/api/list_activities'); // Uses backend endpoint from app.py
+        const data = await res.json();
+        allActivities = data.activities || [];
+        renderActivityList();
+    } catch (e) { console.error("Error loading activities:", e); }
+}
+
+function renderActivityList() {
+    const list = document.getElementById('activityList');
+    const searchTerm = document.getElementById('actSearch').value.toLowerCase();
+    const hideInactive = document.getElementById('hideInactive').checked;
+    
+    // Save state for session persistence
+    sessionStorage.setItem('activityFilterTerm', searchTerm);
+    sessionStorage.setItem('activityHideInactive', hideInactive);
+
+    list.innerHTML = '';
+    const filtered = allActivities.filter(a => {
+        const matchesSearch = a.name.toLowerCase().includes(searchTerm);
+        const isActive = (a.active === true || a.active === 1);
+        if (hideInactive && !isActive) return false;
+        return matchesSearch;
+    });
+
+    if (filtered.length === 0) {
+        list.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:#666; font-size:12px; padding: 10px;">{{ _('No matching activities found.') }}</p>`;
+        return;
+    }
+
+    filtered.forEach(a => {
+        const card = document.createElement('div');
+        card.className = 'activity-card';
+        const isActive = (a.active === true || a.active === 1);
+        
+        card.innerHTML = `
+            <div class="activity-info">
+                <h4>${a.name} <span class="status-badge ${isActive ? 'status-active' : 'status-inactive'}">${isActive ? 'Active' : 'Inactive'}</span></h4>
+                <p><strong>${a.default_points} pts</strong></p>
+            </div>
+            <div style="display:flex; gap:5px;">
+                <button class="btn-small btn-clear" style="height: 28px; padding: 0 10px; font-size: 11px;" onclick='editActivity(${JSON.stringify(a)})'>{{ _('Edit') }}</button>
+                <button class="btn-small btn-del" style="height: 28px; padding: 0 10px; font-size: 11px;" onclick="deleteActivity(${a.id}, '${a.name}')">{{ _('Delete') }}</button>
+            </div>
+        `;
+        list.appendChild(card);
+    });
+}
+
+async function deleteActivity(id, name) {
+    if (!confirm(`{{ _('Are you sure you want to delete') }} '${name}'?`)) return;
+    try {
+        const res = await fetch(`/api/activity/delete/${id}`, { method: 'DELETE' }); // Linked to app.py deletion logic
+        const data = await res.json();
+        if (data.success) { 
+            loadActivities(); 
+        } else { 
+            alert(data.message); // Displays error if transactions exist
+        }
+    } catch (e) { alert("Error connecting to server."); }
+}
+
+document.getElementById('actSearch').addEventListener('input', renderActivityList);
+
+document.getElementById('activityForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const actData = {
+        name: document.getElementById('actName').value,
+        description: document.getElementById('actDesc').value,
+        default_points: parseInt(document.getElementById('actPoints').value),
+        active: parseInt(document.getElementById('actStatus').value)
+    };
+
+    const res = await fetch('/api/add_activity', { // Linked to app.py creation logic
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(actData)
+    });
+
+    if (res.ok) { 
+        resetForm(); 
+        loadActivities(); 
+    }
+});
+
+function editActivity(a) {
+    document.getElementById('actName').value = a.name;
+    document.getElementById('actDesc').value = a.description || '';
+    document.getElementById('actPoints').value = a.default_points;
+    document.getElementById('actStatus').value = (a.active === true || a.active === 1) ? "1" : "0";
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetForm() {
+    document.getElementById('activityForm').reset();
+    document.getElementById('actName').focus();
+}
+</script>
+{% endblock %}
