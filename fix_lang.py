@@ -332,6 +332,15 @@ msgstr "Actividades Configuradas"
 msgid "No matching activities found."
 msgstr "No se encontraron actividades."
 
+msgid "Reports"
+msgstr "Reportes"
+
+msgid "Download Redemption Log"
+msgstr "Descargar Bitácora de Canjes"
+
+msgid "Download Current Inventory"
+msgstr "Descargar Inventario Actual"
+
 msgid "Are you sure you want to delete"
 msgstr "¿Estás seguro de eliminar"
 """

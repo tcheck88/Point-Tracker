@@ -86,7 +86,18 @@
                 <a href="{{ url_for('prizes_page') }}" class="btn btn-secondary">{{ _('Prize Inventory') }}</a>
                 <a href="{{ url_for('activity_form') }}" class="btn btn-secondary">{{ _('Activity Catalog') }}</a>
             </div>
+            
+            <h3 style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 15px;">{{ _('Reports') }}</h3>
+            <div class="btn-group">
+                <a href="/api/reports/redemptions/csv" class="btn btn-outline">
+                    <span>📉</span> {{ _('Download Redemption Log') }}
+                </a>
+                <a href="/api/reports/inventory/csv" class="btn btn-outline">
+                    <span>📦</span> {{ _('Download Current Inventory') }}
+                </a>
+            </div>
         </div>
+		
 
         <div class="card">
             <h3>{{ _('System Status') }}</h3>
