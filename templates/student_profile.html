@@ -64,7 +64,12 @@
             <h2 id="studentName" class="student-name-large">{{ _('Loading...') }}</h2>
         </div>
         <div class="header-right">
-            <div class="balance-display-mini">
+            <a href="{{ url_for('edit_student_page', student_id=student_id) }}" 
+               style="text-decoration: none; font-size: 13px; font-weight: 600; color: #1f6feb; border: 1px solid #1f6feb; padding: 6px 12px; border-radius: 6px; margin-right: 12px;">
+               ✏️ {{ _('Edit Details') }}
+            </a>
+					
+			<div class="balance-display-mini">
                 <span class="balance-label">{{ _('Balance') }}</span>
                 <div id="totalPoints" class="balance-val">0</div>
             </div>

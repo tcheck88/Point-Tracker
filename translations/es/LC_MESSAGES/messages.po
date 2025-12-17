@@ -147,8 +147,11 @@ msgstr "Paso 4: Haga clic en el botón \"Canjear\" junto al premio."
 msgid "Required"
 msgstr "Obligatorio"
 
-msgid "Full Name, Classroom, Grade."
-msgstr "Nombre Completo, Salón, Grado."
+msgid "Full Name."
+msgstr "Nombre Completo."
+
+msgid "The Full Name will be used to search for the student so it needs to accurate and unique."
+msgstr "El Nombre Completo se usará para buscar al estudiante, por lo que debe ser exacto y único."
 
 msgid "Note:"
 msgstr "Nota:"
@@ -174,8 +177,14 @@ msgstr "para quitar los puntos."
 msgid "I can't find a student."
 msgstr "No encuentro a un estudiante."
 
-msgid "Try searching by just their First Name or ID number."
-msgstr "Intente buscar solo por su primer nombre o número de ID."
+msgid "Use the Student Directory to see a list of students with similar names in case there is a spelling mistake."
+msgstr "Use el Directorio de Estudiantes para ver una lista de nombres similares en caso de errores de ortografía."
+
+msgid "I made a mistake on student name."
+msgstr "Me equivoqué en el nombre del estudiante."
+
+msgid "Use the Student Directory to find the student. Click on the student and then use the Edit Details button to update their name."
+msgstr "Busque al estudiante en el Directorio. Haga clic en él y use el botón Editar Datos para corregir su nombre."
 
 msgid "The system is stuck."
 msgstr "El sistema está trabado."
@@ -189,8 +198,8 @@ msgstr "Gestión de Estudiantes"
 msgid "Adding a New Student"
 msgstr "Agregar Nuevo Estudiante"
 
-msgid "Navigate to \"Add New Student\". Enter their Full Name, Grade, and Classroom. Always check the directory first to ensure they do not already exist."
-msgstr "Vaya a \"Agregar Nuevo Estudiante\". Ingrese Nombre Completo, Grado y Salón. ¡Siempre verifique el directorio primero para asegurarse de que no existan!"
+msgid "Navigate to \"Add New Student\". Enter their Full Name. Always check the directory first to ensure they do not already exist. Make sure you enter the name correctly otherwise it may not be possible to find them in the system later."
+msgstr "Vaya a \"Agregar Nuevo Estudiante\". Ingrese su Nombre Completo. Verifique el directorio antes para evitar duplicados. Asegúrese de escribirlo bien o será difícil encontrarlo después."
 
 msgid "Viewing History"
 msgstr "Ver Historial"
@@ -221,6 +230,30 @@ msgstr "Reporte de Inventario:"
 
 msgid "See current stock levels for stocktaking."
 msgstr "Vea los niveles actuales para el conteo de existencias."
+
+msgid "Edit Student"
+msgstr "Editar Estudiante"
+
+msgid "Edit Student Details"
+msgstr "Editar Datos del Estudiante"
+
+msgid "Update the information below."
+msgstr "Actualice la información a continuación."
+
+msgid "Save Changes"
+msgstr "Guardar Cambios"
+
+msgid "Back to Profile"
+msgstr "Volver al Perfil"
+
+msgid "Edit Details"
+msgstr "Editar Datos"
+
+msgid "Student updated successfully!"
+msgstr "¡Estudiante actualizado con éxito!"
+
+msgid "Failed to update student."
+msgstr "Error al actualizar estudiante."
 
 msgid "Frequently Asked Questions"
 msgstr "Preguntas Frecuentes"

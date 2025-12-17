@@ -87,7 +87,17 @@
   let currentBalance = 0;
   let allPrizes = [];
 
-  document.addEventListener('DOMContentLoaded', fetchPrizes);
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchPrizes();
+    
+    // NEW: Check URL for student_id
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramId = urlParams.get('student_id');
+    if (paramId) {
+        // If ID exists, select student (name will be fetched automatically)
+        selectStudent(paramId);
+    }
+  });
 
   document.getElementById('studentSearch').oninput = async (e) => {
     const term = e.target.value.trim();
@@ -104,23 +114,32 @@
     }
   };
 
-  async function selectStudent(id, name) {
+  async function selectStudent(id, name = null) {
     selectedId = id;
     document.getElementById('studentResults').style.display = 'none';
     document.getElementById('studentSearch').value = '';
+    
+    // Fetch History & Balance
     const res = await fetch(`/api/student/${id}/history`);
     const data = await res.json();
+    
     if (data.success) {
       currentBalance = data.total_points;
-      document.getElementById('dispName').textContent = name;
+      
+      // Use provided name OR name from API (fixing the profile link issue)
+      const finalName = name || data.student_name || 'Student';
+      
+      document.getElementById('dispName').textContent = finalName;
       document.getElementById('dispPoints').textContent = currentBalance;
       document.getElementById('selectedDisplay').style.display = 'flex';
+      
       document.getElementById('historyBody').innerHTML = data.history.slice(0, 8).map(h => `
         <tr>
           <td>${new Date(h.timestamp).toLocaleDateString()}</td>
           <td>${h.activity_type}</td>
           <td style="text-align:right; font-weight:700; color:${h.points < 0 ? '#dc2626' : '#059669'}">${h.points}</td>
         </tr>`).join('');
+        
       renderPrizes();
     }
   }
@@ -137,16 +156,22 @@
     const hideUnaffordable = document.getElementById('filterPoints').checked;
     const searchTerm = document.getElementById('prizeSearch').value.toLowerCase();
     container.innerHTML = '';
+    
     allPrizes.forEach(p => {
       if (!p.active) return;
       const matchesSearch = p.name.toLowerCase().includes(searchTerm);
       const canAfford = currentBalance >= p.point_cost && p.stock_count > 0;
+      
       if (!matchesSearch || (hideUnaffordable && !canAfford)) return;
+      
       const div = document.createElement('div');
       div.className = `prize-row ${!canAfford ? 'disabled' : ''}`;
+      // Add visual tooltip if disabled
+      const titleAttr = !canAfford ? 'title="{{ _("Not enough points or out of stock") }}"' : '';
+      
       div.onclick = () => { if(canAfford && selectedId) redeemPrize(p.id, p.name); };
       div.innerHTML = `
-        <div class="prize-details">
+        <div class="prize-details" ${titleAttr}>
           <strong>${p.name}</strong> <span class="prize-meta">${p.point_cost} pts | Stock: ${p.stock_count}</span>
         </div>
         <button class="btn-nav" style="padding:2px 8px; font-size:10px;" ${(!canAfford || !selectedId) ? 'disabled' : ''}>{{ _('Redeem') }}</button>`;
@@ -161,9 +186,13 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ student_id: selectedId, prize_id: prizeId })
     });
-    if ((await res.json()).success) {
-      fetchPrizes();
+    
+    const result = await res.json();
+    if (result.success) {
+      // Refresh balance and history after successful redemption
       selectStudent(selectedId, document.getElementById('dispName').textContent);
+    } else {
+      alert("Error: " + result.message);
     }
   }
 </script>

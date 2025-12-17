@@ -82,7 +82,8 @@ TRANSLATIONS = {
     "Step 4: Click the \"Redeem\" button next to the prize.": "Paso 4: Haga clic en el botón \"Canjear\" junto al premio.",
 
     "Required": "Obligatorio",
-    "Full Name, Classroom, Grade.": "Nombre Completo, Salón, Grado.",
+    "Full Name.": "Nombre Completo.",
+    "The Full Name will be used to search for the student so it needs to accurate and unique.": "El Nombre Completo se usará para buscar al estudiante, por lo que debe ser exacto y único.",
     "Note:": "Nota:",
     "Always search the directory first to make sure they don't already exist!": "¡Siempre busque en el directorio primero para asegurarse de que no existen!",
 
@@ -94,7 +95,10 @@ TRANSLATIONS = {
     "to remove the points.": "para quitar los puntos.",
     
     "I can't find a student.": "No encuentro a un estudiante.",
-    "Try searching by just their First Name or ID number.": "Intente buscar solo por su primer nombre o número de ID.",
+    "Use the Student Directory to see a list of students with similar names in case there is a spelling mistake.": "Use el Directorio de Estudiantes para ver una lista de nombres similares en caso de errores de ortografía.",
+    
+    "I made a mistake on student name.": "Me equivoqué en el nombre del estudiante.",
+    "Use the Student Directory to find the student. Click on the student and then use the Edit Details button to update their name.": "Busque al estudiante en el Directorio. Haga clic en él y use el botón Editar Datos para corregir su nombre.",
     
     "The system is stuck.": "El sistema está trabado.",
     "Refresh the page (F5 or Ctrl+R).": "Refresque la página (F5 o Ctrl+R).",
@@ -102,7 +106,7 @@ TRANSLATIONS = {
     # Manual Section
     "Managing Students": "Gestión de Estudiantes",
     "Adding a New Student": "Agregar Nuevo Estudiante",
-    "Navigate to \"Add New Student\". Enter their Full Name, Grade, and Classroom. Always check the directory first to ensure they do not already exist.": "Vaya a \"Agregar Nuevo Estudiante\". Ingrese Nombre Completo, Grado y Salón. ¡Siempre verifique el directorio primero para asegurarse de que no existan!",
+    "Navigate to \"Add New Student\". Enter their Full Name. Always check the directory first to ensure they do not already exist. Make sure you enter the name correctly otherwise it may not be possible to find them in the system later.": "Vaya a \"Agregar Nuevo Estudiante\". Ingrese su Nombre Completo. Verifique el directorio antes para evitar duplicados. Asegúrese de escribirlo bien o será difícil encontrarlo después.",
     
     "Viewing History": "Ver Historial",
     "Go to the Student Directory, search for a student, and click \"View Profile\". You can see their last 10 transactions and download their full history.": "Vaya al Directorio, busque al estudiante y haga clic en \"Ver Perfil\". Puede ver sus últimas 10 transacciones y descargar el historial completo.",
@@ -116,6 +120,14 @@ TRANSLATIONS = {
     "See who bought what and when.": "Vea quién canjeó qué y cuándo.",
     "Inventory Report:": "Reporte de Inventario:",
     "See current stock levels for stocktaking.": "Vea los niveles actuales para el conteo de existencias.",
+    "Edit Student": "Editar Estudiante",
+    "Edit Student Details": "Editar Datos del Estudiante",
+    "Update the information below.": "Actualice la información a continuación.",
+    "Save Changes": "Guardar Cambios",
+    "Back to Profile": "Volver al Perfil",
+    "Edit Details": "Editar Datos",
+    "Student updated successfully!": "¡Estudiante actualizado con éxito!",
+    "Failed to update student.": "Error al actualizar estudiante.",
 
     # FAQ Section
     "Frequently Asked Questions": "Preguntas Frecuentes",

@@ -50,12 +50,32 @@
     .faq-q { font-weight: 700; color: #0f172a; margin-bottom: 6px; display: block; }
     .faq-a { color: #475569; margin: 0; line-height: 1.5; }
 
-    /* Print Styles */
+    /* --- UPDATED PRINT STYLES --- */
     @media print {
-        .nav-bar, .tabs, .btn-print { display: none; }
-        .help-container { max-width: 100%; }
-        .tab-content { display: block !important; margin-bottom: 30px; }
-        .help-box { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+        /* Hide buttons and tabs */
+        .nav-bar, .tabs, .btn-print, .header-right { display: none !important; }
+        
+        /* Reset container width */
+        .help-container { max-width: 100% !important; margin: 0 !important; width: 100% !important; }
+        
+        /* FORCE ALL CONTENT TO SHOW */
+        .tab-content { 
+            display: block !important; 
+            opacity: 1 !important;
+            visibility: visible !important;
+            margin-bottom: 40px; 
+            page-break-after: always; /* Start new section on new page */
+        }
+        
+        /* Remove animation interference */
+        .tab-content, .tab-content.active { animation: none !important; }
+
+        /* Print-friendly borders */
+        .help-box { 
+            border: 1px solid #000; 
+            box-shadow: none !important; 
+            break-inside: avoid; 
+        }
     }
 </style>
 {% endblock %}
@@ -74,7 +94,6 @@
     </div>
 
     <div id="cheatsheet" class="tab-content active">
-        
         <h3 style="margin-top: 0; color: #64748b; text-transform: uppercase; font-size: 13px;">{{ _('Top 3 Daily Actions') }}</h3>
 
         <div class="help-box">
@@ -100,23 +119,21 @@
         <div class="help-box">
             <h2>3️⃣ {{ _('Add a New Student') }}</h2>
             <div class="step">● {{ _('Go to') }}: <strong>{{ _('Dashboard') }}</strong> → "<strong>{{ _('Add New Student') }}</strong>".</div>
-            <div class="step">● <strong>{{ _('Required') }}:</strong> {{ _('Full Name, Classroom, Grade.') }}</div>
+            <div class="step">● <strong>{{ _('Required') }}:</strong> {{ _('Full Name.') }}</div>
+			<div class="step">● {{ _('The Full Name will be used to search for the student so it needs to accurate and unique.') }}</div>
             <div class="tip">⚠️ <strong>{{ _('Note:') }}</strong> {{ _('Always search the directory first to make sure they don\'t already exist!') }}</div>
         </div>
 
         <div class="help-box" style="border-left: 5px solid #ef4444;">
             <h2 style="color: #ef4444;">🛑 {{ _('Troubleshooting Quick Tips') }}</h2>
-            
             <p><strong>{{ _('I made a mistake giving points!') }}</strong><br>
             {{ _('Go to Reward Points. Select the student. Choose "Manual Adjustment" (or similar) and enter a') }} <strong>{{ _('negative number') }}</strong> (e.g., -50) {{ _('to remove the points.') }}</p>
-            
             <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 15px 0;">
-
             <p><strong>{{ _('I can\'t find a student.') }}</strong><br>
-            {{ _('Try searching by just their First Name or ID number.') }}</p>
-
-            <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 15px 0;">
-
+            {{ _('Use the Student Directory to see a list of students with similar names in case there is a spelling mistake.') }}</p>
+			<hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 15px 0;">
+            <p><strong>{{ _('I made a mistake on student name.') }}</strong><br>
+            {{ _('Use the Student Directory to find the student. Click on the student and then use the Edit Details button to update their name.') }}</p><hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 15px 0;">
             <p><strong>{{ _('The system is stuck.') }}</strong><br>
             {{ _('Refresh the page (F5 or Ctrl+R).') }}</p>
         </div>
@@ -126,7 +143,7 @@
         <div class="help-box">
             <h2>{{ _('Managing Students') }}</h2>
             <h3>{{ _('Adding a New Student') }}</h3>
-            <p class="step">{{ _('Navigate to "Add New Student". Enter their Full Name, Grade, and Classroom. Always check the directory first to ensure they do not already exist.') }}</p>
+            <p class="step">{{ _('Navigate to "Add New Student". Enter their Full Name. Always check the directory first to ensure they do not already exist. Make sure you enter the name correctly otherwise it may not be possible to find them in the system later.') }}</p>
             
             <h3>{{ _('Viewing History') }}</h3>
             <p class="step">{{ _('Go to the Student Directory, search for a student, and click "View Profile". You can see their last 10 transactions and download their full history.') }}</p>

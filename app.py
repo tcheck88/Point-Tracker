@@ -219,6 +219,8 @@ def audit_logs_page():
 @login_required
 def help_page():
     return render_template('help.html')
+    
+    
 
 
 # ---- Student Management API ----
@@ -256,6 +258,77 @@ def api_add_student():
     else:
         logger.error(f"Student creation failed: {message}")
         return jsonify({"success": False, "message": message}), 400
+        
+
+# ---- Edit Student Functionality ----
+
+@app.route('/student/<int:student_id>/edit')
+@login_required
+def edit_student_page(student_id):
+    return render_template('edit_student.html', student_id=student_id)
+
+@app.route('/api/student/<int:student_id>/update', methods=['POST'])
+@login_required
+def api_update_student(student_id):
+    data = request.get_json() or {}
+    staff_identity = session.get('username', 'system')
+
+    # Validate required fields
+    if not data.get('full_name'):
+        return jsonify({"success": False, "message": "Full Name is required."}), 400
+
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        
+        # Check if student exists
+        cur.execute("SELECT full_name FROM students WHERE id = %s", (student_id,))
+        existing = cur.fetchone()
+        if not existing:
+            return jsonify({"success": False, "message": "Student not found."}), 404
+
+        # Update the record
+        cur.execute("""
+            UPDATE students 
+            SET full_name = %s,
+                nickname = %s,
+                grade = %s,
+                classroom = %s,
+                parent_name = %s,
+                phone = %s,
+                email = %s,
+                sms_consent = %s
+            WHERE id = %s
+        """, (
+            data['full_name'],
+            data.get('nickname'),
+            data.get('grade'),
+            data.get('classroom'),
+            data.get('parent_name'),
+            data.get('phone'),
+            data.get('email'),
+            bool(data.get('sms_consent')),
+            student_id
+        ))
+
+        # Log the change
+        transaction_manager.log_audit_event(
+            action_type="UPDATE_STUDENT",
+            details=f"Updated details for student ID {student_id} ({data['full_name']})",
+            recorded_by=staff_identity
+        )
+
+        conn.commit()
+        return jsonify({"success": True, "message": "Student updated successfully!"}), 200
+
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error updating student {student_id}: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
 
 @app.route('/api/check_duplicates', methods=['POST'])
 @login_required

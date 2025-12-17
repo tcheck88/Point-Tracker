@@ -7,17 +7,26 @@ from dotenv import load_dotenv
 load_dotenv()
 logger = logging.getLogger(__name__)
 
-
 def get_db_connection():
     """Establishes connection to Supabase (PostgreSQL) with a safety timeout."""
-    db_url = os.getenv("DATABASE_URL")
+    
+    # 1. Production Database URL (Fallback)
+    # REPLACE THIS with your actual Production connection string
+    # We added '?sslmode=require' to the end to ensure security
+    prod_url = "postgresql://postgres.YOUR_USER:YOUR_PASSWORD@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require"
+    
+    # 2. Get URL: Try .env first (Dev), otherwise use Prod Fallback
+    db_url = os.getenv("DATABASE_URL", prod_url)
+
     if not db_url:
         logger.error("DATABASE_URL is missing.")
         return None
+
     try:
-        # Added connect_timeout=5 to prevent the 30-second Gunicorn 'hang'
-        # This will raise a real error after 5 seconds if the network is unreachable
-        print(f"DEBUG: Attempting connection to {db_url.split('@')[1]}")
+        # Mask password for logging
+        safe_url = db_url.split('@')[1] if '@' in db_url else 'UNKNOWN'
+        print(f"DEBUG: Attempting connection to {safe_url}")
+        
         conn = psycopg2.connect(
             db_url, 
             cursor_factory=RealDictCursor, 
@@ -26,10 +35,8 @@ def get_db_connection():
         print("DEBUG: Connection Successful")
         return conn
     except Exception as e:
-        # This will now appear in your logs after only 5 seconds!
         logger.error(f"DATABASE CONNECTION FAILURE: {e}")
         return None
-
 
 def init_db():
     """Creates all necessary tables in Supabase."""
@@ -80,7 +87,7 @@ def init_db():
             );
         """)
 
-        # 4. Activities (Catalog) - REQUIRED for /api/activity
+        # 4. Activities (Catalog)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS activities (
                 id SERIAL PRIMARY KEY,
@@ -91,15 +98,15 @@ def init_db():
             );
         """)
 
-        # 5. Audit Log - REQUIRED for student_search.py
+        # 5. Audit Log
         cur.execute("""
             CREATE TABLE IF NOT EXISTS audit_log (
                 id SERIAL PRIMARY KEY,
                 event_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 event_type TEXT,
-                action_type TEXT,  -- Matches transaction_manager.py
+                action_type TEXT,
                 actor TEXT,
-                recorded_by TEXT,  -- Matches session-based tracking
+                recorded_by TEXT,
                 target_table TEXT,
                 target_id INTEGER,
                 details TEXT
