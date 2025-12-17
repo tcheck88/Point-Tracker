@@ -39,11 +39,23 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key-change-this")
 # ---- 2. Babel Localization Setup ----
 
 def get_locale():
+    # 1. Check URL parameters (highest priority) and save to session
     if 'lang' in request.args:
-        lang = request.args['lang']
-        if lang in app.config.get('LANGUAGES', {}):
+        lang = request.args.get('lang')
+        if lang in app.config['LANGUAGES']:
+            session['lang'] = lang  # <--- NEW: Saves choice to session
+            print(f"DEBUG: Language set to {lang} via URL")  # <--- DEBUG
             return lang
-    return request.accept_languages.best_match(['en', 'es'])
+            
+    # 2. Check Session (persistence)
+    if 'lang' in session:           # <--- NEW: Remembers choice on next page load
+        print(f"DEBUG: Language loaded from SESSION: {session['lang']}") # <--- DEBUG
+        return session['lang']
+        
+    # 3. Fallback to Browser Headers
+    print("DEBUG: Using default browser language")
+    return request.accept_languages.best_match(app.config['LANGUAGES'].keys())
+
 
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 app.config['BABEL_TRANSLATION_DIRECTORIES'] = os.path.join(basedir, 'translations') 
