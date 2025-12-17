@@ -38,6 +38,11 @@ def get_locale():
 app.config['LANGUAGES'] = {'en': 'English', 'es': 'Español'}
 babel = Babel(app, locale_selector=get_locale)
 
+# ---- NEW FIX: Make get_locale available to templates ----
+@app.context_processor
+def inject_locale():
+    return dict(get_locale=get_locale)
+
 # ---- 3. Authentication Decorator ----
 def login_required(f):
     @wraps(f)
@@ -74,22 +79,32 @@ def login():
         print("DEBUG: Processing POST request") 
         username, password = request.form.get('username'), request.form.get('password')
         conn = get_db_connection() # This will trigger your db_utils print
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
-        user = cur.fetchone()
-        conn.close()
+        
+        # Guard clause if DB connection fails
+        if not conn:
+            return render_template('login.html', error="System Error: Database Unreachable")
+
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM users WHERE username = %s", (username,))
+            user = cur.fetchone()
+        except Exception as e:
+            print(f"DATABASE QUERY ERROR: {e}")
+            return render_template('login.html', error="Database Error")
+        finally:
+            conn.close()
+
         if user and check_password_hash(user['password_hash'], password):
             session['username'] = user['username']
             return redirect(url_for('index'))
         return render_template('login.html', error="Invalid credentials")
+    
     print("DEBUG: Rendering login.html template") # Trace 2
     try:
         return render_template('login.html')
     except Exception as e:
         print(f"CRITICAL TEMPLATE ERROR: {e}") # Catch missing template
         return "Error loading login page", 500
-
-
 
 @app.route('/logout')
 def logout():
@@ -250,5 +265,5 @@ def api_view_audit_logs():
 
 if __name__ == '__main__':
     # Initialize DB tables if they don't exist
-#    init_db()
+    # init_db()
     app.run(debug=True)
