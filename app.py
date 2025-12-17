@@ -211,6 +211,11 @@ def redeem_page():
 @login_required
 def audit_logs_page():
     return render_template('audit_logs.html')
+    
+@app.route('/help')
+@login_required
+def help_page():
+    return render_template('help.html')
 
 
 # ---- Student Management API ----
