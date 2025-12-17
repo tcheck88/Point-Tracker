@@ -7,18 +7,27 @@ from dotenv import load_dotenv
 load_dotenv()
 logger = logging.getLogger(__name__)
 
+
 def get_db_connection():
-    """Establishes connection to Supabase (PostgreSQL)."""
+    """Establishes connection to Supabase (PostgreSQL) with a safety timeout."""
     db_url = os.getenv("DATABASE_URL")
     if not db_url:
         logger.error("DATABASE_URL is missing.")
         return None
     try:
-        conn = psycopg2.connect(db_url, cursor_factory=RealDictCursor)
+        # Added connect_timeout=5 to prevent the 30-second Gunicorn 'hang'
+        # This will raise a real error after 5 seconds if the network is unreachable
+        conn = psycopg2.connect(
+            db_url, 
+            cursor_factory=RealDictCursor, 
+            connect_timeout=5
+        )
         return conn
     except Exception as e:
-        logger.error(f"Connection failed: {e}")
+        # This will now appear in your logs after only 5 seconds!
+        logger.error(f"DATABASE CONNECTION FAILURE: {e}")
         return None
+
 
 def init_db():
     """Creates all necessary tables in Supabase."""
