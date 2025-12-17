@@ -1,4 +1,9 @@
+import os
+import sys
+import subprocess
 
+# --- 1. The Spanish Translation Content ---
+PO_CONTENT = r"""
 msgid ""
 msgstr ""
 "Project-Id-Version: Leer Mexico 1.0\n"
@@ -329,3 +334,56 @@ msgstr "No se encontraron actividades."
 
 msgid "Are you sure you want to delete"
 msgstr "¿Estás seguro de eliminar"
+"""
+
+# --- 2. Setup Directories ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TRANS_DIR = os.path.join(BASE_DIR, 'translations')
+ES_DIR = os.path.join(TRANS_DIR, 'es', 'LC_MESSAGES')
+PO_FILE = os.path.join(ES_DIR, 'messages.po')
+MO_FILE = os.path.join(ES_DIR, 'messages.mo')
+
+def run():
+    print("--- FIXING TRANSLATIONS ---")
+    
+    # 1. Create Directories
+    if not os.path.exists(ES_DIR):
+        print(f"Creating directory: {ES_DIR}")
+        os.makedirs(ES_DIR)
+
+    # 2. Write the .po file
+    print(f"Writing fresh translation keys to: {PO_FILE}")
+    with open(PO_FILE, 'w', encoding='utf-8') as f:
+        f.write(PO_CONTENT)
+
+    # 3. Compile to .mo
+    print("Compiling .po to .mo binary...")
+    
+    # Method A: Try using pybabel command line (Standard)
+    try:
+        subprocess.run(['pybabel', 'compile', '-d', 'translations'], check=True)
+        print("SUCCESS: Compiled using 'pybabel' command.")
+    except Exception:
+        print("WARNING: 'pybabel' command failed or not found. Trying Python internal compile...")
+        
+        # Method B: Python internal compile (Backup if CLI fails)
+        try:
+            from babel.messages.frontend import compile_catalog
+            from babel.messages.catalog import Catalog
+            from babel.messages.pofile import read_po
+            from babel.messages.mofile import write_mo
+            
+            with open(PO_FILE, 'r', encoding='utf-8') as f:
+                catalog = read_po(f)
+            
+            with open(MO_FILE, 'wb') as f:
+                write_mo(f, catalog)
+                
+            print(f"SUCCESS: Compiled internally to {MO_FILE}")
+        except ImportError:
+            print("CRITICAL ERROR: Could not compile. Please ensure 'Babel' is installed (pip install Babel).")
+        except Exception as e:
+            print(f"CRITICAL ERROR: {e}")
+
+if __name__ == "__main__":
+    run()
