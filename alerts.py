@@ -38,17 +38,25 @@ def send_alert(subject, message, error_obj=None):
         logger.warning(f"EMAIL SUPPRESSED: Alert '{subject}' blocked by cooldown ({int(COOLDOWN_SECONDS - time_since_last)}s remaining).")
         return False
 
-    # 2. Retrieve Configuration
+# 2. Retrieve Configuration
     smtp_server = os.getenv('MAIL_SERVER')
     smtp_port = os.getenv('MAIL_PORT')
     sender_email = os.getenv('MAIL_USERNAME')
     sender_password = os.getenv('MAIL_PASSWORD')
     recipient_email = os.getenv('ADMIN_EMAIL')
 
-    if not all([smtp_server, smtp_port, sender_email, sender_password, recipient_email]):
-        logger.error("Alert failed: Missing email configuration in .env file.")
-        return False
+    # Add the safety check here
+    try:
+        port = int(smtp_port) if smtp_port else 587
+    except (ValueError, TypeError):
+        port = 587 # Default to TLS port
 
+    if not all([smtp_server, sender_email, sender_password, recipient_email]):
+        # Change logger.error to print to avoid the infinite crash loop
+        print("ALERT SYSTEM DISABLED: Missing email environment variables.")
+        return False
+    
+    
     try:
         # 3. Build HTML Content
         html_content = f"""
@@ -76,6 +84,7 @@ def send_alert(subject, message, error_obj=None):
         </html>
         """
 
+
         # 4. Send Email
         msg = MIMEMultipart()
         msg['From'] = sender_email
@@ -83,13 +92,24 @@ def send_alert(subject, message, error_obj=None):
         msg['Subject'] = f"[Leer México] {subject}"
         msg.attach(MIMEText(html_content, 'html'))
 
-        server = smtplib.SMTP(smtp_server, int(smtp_port))
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
-        server.login(sender_email, sender_password)
-        server.send_message(msg)
-        server.quit()
+        # Use SMTP_SSL for port 465, or standard SMTP + starttls for 587
+        try:
+            if port == 465:
+                server = smtplib.SMTP_SSL(smtp_server, port, timeout=10)
+            else:
+                server = smtplib.SMTP(smtp_server, port, timeout=10)
+                server.starttls()  # Upgrade to secure connection
+            
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+            server.quit()
+            
+            _last_alert_time = current_time
+            return True
+        except Exception as e:
+            print(f"SMTP Error: {e}") # Avoid logger.error here too
+            return False
+
 
         # 5. UPDATE TIMESTAMP
         # Only update this if the email actually sent successfully
