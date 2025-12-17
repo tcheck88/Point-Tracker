@@ -1,401 +1,144 @@
 import os
 import sys
-import subprocess
 
-# --- 1. The Spanish Translation Content ---
-PO_CONTENT = r"""
+# 1. DEFINE PATHS
+basedir = os.path.abspath(os.path.dirname(__file__))
+translations_dir = os.path.join(basedir, 'translations')
+es_dir = os.path.join(translations_dir, 'es', 'LC_MESSAGES')
+po_file = os.path.join(es_dir, 'messages.po')
+mo_file = os.path.join(es_dir, 'messages.mo')
+
+# 2. ENSURE DIRECTORIES EXIST
+os.makedirs(es_dir, exist_ok=True)
+
+# 3. DEFINE TRANSLATIONS
+PO_HEADER = r"""
 msgid ""
 msgstr ""
-"Project-Id-Version: Leer Mexico 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Project-Id-Version: 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-
-# --- Common Buttons & Labels ---
-msgid "Back"
-msgstr "Atrás"
-
-msgid "Back to Dashboard"
-msgstr "Volver al Panel"
-
-msgid "Home"
-msgstr "Inicio"
-
-msgid "Loading..."
-msgstr "Cargando..."
-
-msgid "Date"
-msgstr "Fecha"
-
-msgid "Activity"
-msgstr "Actividad"
-
-msgid "Points"
-msgstr "Puntos"
-
-msgid "Description"
-msgstr "Descripción"
-
-msgid "Edit"
-msgstr "Editar"
-
-msgid "Delete"
-msgstr "Eliminar"
-
-msgid "Cancel"
-msgstr "Cancelar"
-
-msgid "Clear"
-msgstr "Limpiar"
-
-msgid "Save"
-msgstr "Guardar"
-
-msgid "Status"
-msgstr "Estado"
-
-msgid "Active"
-msgstr "Activo"
-
-msgid "Inactive"
-msgstr "Inactivo"
-
-msgid "View"
-msgstr "Ver"
-
-msgid "Login"
-msgstr "Iniciar Sesión"
-
-# --- Dashboard (index.html) ---
-msgid "Dashboard"
-msgstr "Panel de Control"
-
-msgid "Student Actions"
-msgstr "Acciones de Alumno"
-
-msgid "Reward Points (Activity)"
-msgstr "Otorgar Puntos (Actividad)"
-
-msgid "Redeem Points (Prizes)"
-msgstr "Canjear Puntos (Premios)"
-
-msgid "Student Directory"
-msgstr "Directorio de Alumnos"
-
-msgid "Add New Student"
-msgstr "Agregar Nuevo Alumno"
-
-msgid "Management"
-msgstr "Administración"
-
-msgid "Prize Inventory"
-msgstr "Inventario de Premios"
-
-msgid "Activity Catalog"
-msgstr "Catálogo de Actividades"
-
-msgid "System Status"
-msgstr "Estado del Sistema"
-
-msgid "App Logs"
-msgstr "Registros (Logs)"
-
-msgid "System Audit Logs"
-msgstr "Auditoría del Sistema"
-
-# --- Student Profile (student_profile.html) ---
-msgid "Profile"
-msgstr "Perfil"
-
-msgid "Balance"
-msgstr "Saldo"
-
-msgid "Contact & Student Info"
-msgstr "Contacto e Info del Alumno"
-
-msgid "Quick Actions"
-msgstr "Acciones Rápidas"
-
-msgid "Reward Points"
-msgstr "Otorgar Puntos"
-
-msgid "Redeem Points"
-msgstr "Canjear Puntos"
-
-msgid "Activity History"
-msgstr "Historial de Actividades"
-
-msgid "Export CSV"
-msgstr "Exportar CSV"
-
-msgid "FILTER:"
-msgstr "FILTRO:"
-
-msgid "All Time"
-msgstr "Todo el Tiempo"
-
-msgid "Last 7 Days"
-msgstr "Últimos 7 Días"
-
-msgid "Last 30 Days"
-msgstr "Últimos 30 Días"
-
-msgid "Last 90 Days"
-msgstr "Últimos 90 Días"
-
-msgid "Loading history..."
-msgstr "Cargando historial..."
-
-msgid "No transactions found for the selected range."
-msgstr "No se encontraron transacciones en este rango."
-
-msgid "Grade"
-msgstr "Grado"
-
-msgid "Class"
-msgstr "Clase"
-
-# --- Record Activity (record_activity.html) ---
-msgid "Student Search"
-msgstr "Buscar Alumno"
-
-msgid "Search by name or ID..."
-msgstr "Buscar por nombre o ID..."
-
-msgid "Search results will appear here"
-msgstr "Los resultados aparecerán aquí"
-
-msgid "-- Select Activity --"
-msgstr "-- Seleccionar Actividad --"
-
-msgid "Points Override"
-msgstr "Ajuste Manual de Puntos"
-
-msgid "Optional notes..."
-msgstr "Notas opcionales..."
-
-msgid "Post Transaction"
-msgstr "Registrar Transacción"
-
-msgid "Recent Transactions"
-msgstr "Transacciones Recientes"
-
-msgid "Select a student to view their history"
-msgstr "Selecciona un alumno para ver su historial"
-
-msgid "No transactions found."
-msgstr "No se encontraron transacciones."
-
-# --- Add Student (add_student.html) ---
-msgid "Add Student"
-msgstr "Agregar Alumno"
-
-msgid "Add Student — Leer México"
-msgstr "Agregar Alumno — Leer México"
-
-msgid "Full Name"
-msgstr "Nombre Completo"
-
-msgid "Full name as it appears on certificates"
-msgstr "Nombre tal como aparece en actas"
-
-msgid "Nickname"
-msgstr "Apodo"
-
-msgid "Optional display name"
-msgstr "Nombre corto opcional"
-
-msgid "Parent / Guardian name (optional)"
-msgstr "Nombre del Padre/Tutor (opcional)"
-
-msgid "Parent or guardian name"
-msgstr "Nombre del padre o tutor"
-
-msgid "Email (optional)"
-msgstr "Correo (opcional)"
-
-msgid "Phone (optional)"
-msgstr "Teléfono (opcional)"
-
-msgid "Phone number in Mexico format (10-digits)."
-msgstr "Número a 10 dígitos."
-
-msgid "I agree to receive SMS messages"
-msgstr "Acepto recibir mensajes SMS"
-
-msgid "Classroom"
-msgstr "Salón"
-
-msgid "-- select --"
-msgstr "-- seleccionar --"
-
-msgid "Possible matches found"
-msgstr "Posibles coincidencias encontradas"
-
-msgid "No Class Assigned"
-msgstr "Sin Salón Asignado"
-
-msgid "Student created."
-msgstr "Alumno creado exitosamente."
-
-msgid "Full name is required."
-msgstr "El nombre completo es obligatorio."
-
-msgid "Potential duplicates returned from server"
-msgstr "Posibles duplicados detectados"
-
-msgid "Save Anyway"
-msgstr "Guardar de todas formas"
-
-# --- Prizes (prizes.html & redeem.html) ---
-msgid "Prize Manager"
-msgstr "Gestor de Premios"
-
-msgid "Prize Name"
-msgstr "Nombre del Premio"
-
-msgid "Point Cost"
-msgstr "Costo en Puntos"
-
-msgid "Stock"
-msgstr "Existencias"
-
-msgid "Description (Optional)"
-msgstr "Descripción (Opcional)"
-
-msgid "Save Prize"
-msgstr "Guardar Premio"
-
-msgid "Current Inventory"
-msgstr "Inventario Actual"
-
-msgid "Search by name..."
-msgstr "Buscar por nombre..."
-
-msgid "Hide inactive items"
-msgstr "Ocultar inactivos"
-
-msgid "No matching prizes found."
-msgstr "No se encontraron premios."
-
-msgid "Redeem Prizes"
-msgstr "Canjear Premios"
-
-msgid "Identify Student"
-msgstr "Identificar Alumno"
-
-msgid "Search Name or ID..."
-msgstr "Buscar Nombre o ID..."
-
-msgid "Recent History"
-msgstr "Historial Reciente"
-
-msgid "Select a student"
-msgstr "Selecciona un alumno"
-
-msgid "Redeemable Prizes"
-msgstr "Premios Disponibles"
-
-msgid "Filter by prize name..."
-msgstr "Filtrar por nombre..."
-
-msgid "Hide unaffordable"
-msgstr "Ocultar inalcanzables"
-
-msgid "Redeem"
-msgstr "Canjear"
-
-msgid "Confirm redemption of"
-msgstr "Confirmar canje de"
-
-msgid "Pts"
-msgstr "Pts"
-
-# --- Activities (add_activity.html) ---
-msgid "Manage Activities"
-msgstr "Gestionar Actividades"
-
-msgid "Activity Name"
-msgstr "Nombre de Actividad"
-
-msgid "Default Points"
-msgstr "Puntos Predeterminados"
-
-msgid "Briefly explain the criteria..."
-msgstr "Explicar brevemente los criterios..."
-
-msgid "Save Activity"
-msgstr "Guardar Actividad"
-
-msgid "Configured Activities"
-msgstr "Actividades Configuradas"
-
-msgid "No matching activities found."
-msgstr "No se encontraron actividades."
-
-msgid "Reports"
-msgstr "Reportes"
-
-msgid "Download Redemption Log"
-msgstr "Descargar Bitácora de Canjes"
-
-msgid "Download Current Inventory"
-msgstr "Descargar Inventario Actual"
-
-msgid "Help"
-msgstr "Ayuda"
-
-msgid "Are you sure you want to delete"
-msgstr "¿Estás seguro de eliminar"
 """
 
-# --- 2. Setup Directories ---
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TRANS_DIR = os.path.join(BASE_DIR, 'translations')
-ES_DIR = os.path.join(TRANS_DIR, 'es', 'LC_MESSAGES')
-PO_FILE = os.path.join(ES_DIR, 'messages.po')
-MO_FILE = os.path.join(ES_DIR, 'messages.mo')
-
-def run():
-    print("--- FIXING TRANSLATIONS ---")
+TRANSLATIONS = {
+    # --- NAVIGATION & GENERAL ---
+    "Dashboard": "Panel de Control",
+    "Student Actions": "Acciones de Estudiantes",
+    "Management": "Administración",
+    "System Status": "Estado del Sistema",
+    "Help": "Ayuda",
+    "Back to Dashboard": "Volver al Panel",
+    "Back": "Atrás",
+    "Search": "Buscar",
+    "Reset": "Reiniciar",
     
-    # 1. Create Directories
-    if not os.path.exists(ES_DIR):
-        print(f"Creating directory: {ES_DIR}")
-        os.makedirs(ES_DIR)
+    # --- BUTTONS ---
+    "Reward Points (Activity)": "Otorgar Puntos (Actividad)",
+    "Redeem Points (Prizes)": "Canjear Puntos (Premios)",
+    "Student Directory": "Directorio de Estudiantes",
+    "Add New Student": "Agregar Nuevo Estudiante",
+    "Prize Inventory": "Inventario de Premios",
+    "Activity Catalog": "Catálogo de Actividades",
+    "App Logs": "Registros de la App",
+    "System Audit Logs": "Auditoría del Sistema",
+    "Reports": "Reportes",
+    "View Redemption Log": "Ver Bitácora de Canjes",
+    "View Inventory Report": "Ver Reporte de Inventario",
+    "Download CSV": "Descargar CSV",
 
-    # 2. Write the .po file
-    print(f"Writing fresh translation keys to: {PO_FILE}")
-    with open(PO_FILE, 'w', encoding='utf-8') as f:
-        f.write(PO_CONTENT)
-
-    # 3. Compile to .mo
-    print("Compiling .po to .mo binary...")
+    # --- HELP & DOCUMENTATION ---
+    "Help & Documentation": "Ayuda y Documentación",
+    "Staff Support Center": "Centro de Soporte al Personal",
+    "Print Guide": "Imprimir Guía",
+    "Cheat Sheet": "Hoja de Referencia",
+    "User Manual": "Manual de Usuario",
+    "FAQ": "Preguntas Frecuentes",
     
-    # Method A: Try using pybabel command line (Standard)
-    try:
-        subprocess.run(['pybabel', 'compile', '-d', 'translations'], check=True)
-        print("SUCCESS: Compiled using 'pybabel' command.")
-    except Exception:
-        print("WARNING: 'pybabel' command failed or not found. Trying Python internal compile...")
+    # Cheat Sheet Steps
+    "How to Reward Points": "Cómo Otorgar Puntos",
+    "Go to": "Ir a",
+    "Click": "Hacer clic en",
+    "for the student (Type name → Click their name).": "el estudiante (Escriba nombre → Seleccione de la lista).",
+    "Select the": "Seleccione la",
+    "Activity": "Actividad",
+    "from the list.": "de la lista.",
+    "Post Transaction": "Registrar Transacción",
+    "The new balance appears immediately at the top.": "El nuevo saldo aparece inmediatamente arriba.",
+    
+    "How to Redeem a Prize": "Cómo Canjear un Premio",
+    "for the student.": "el estudiante.",
+    "Check their": "Verifique su",
+    "Balance": "Saldo",
+    "Find the prize and click": "Encuentre el premio y haga clic en",
+    "Redeem": "Canjear",
+    
+    # Manual Section
+    "Managing Students": "Gestión de Estudiantes",
+    "Adding a New Student": "Agregar Nuevo Estudiante",
+    "Navigate to \"Add New Student\". Enter their Full Name, Grade, and Classroom. Always check the directory first to ensure they do not already exist.": "Vaya a \"Agregar Nuevo Estudiante\". Ingrese Nombre Completo, Grado y Salón. ¡Siempre verifique el directorio primero para asegurarse de que no existan!",
+    
+    "Viewing History": "Ver Historial",
+    "Go to the Student Directory, search for a student, and click \"View Profile\". You can see their last 10 transactions and download their full history.": "Vaya al Directorio, busque al estudiante y haga clic en \"Ver Perfil\". Puede ver sus últimas 10 transacciones y descargar el historial completo.",
+    
+    "Managing Inventory": "Gestión de Inventario",
+    "Adding/Updating Prizes": "Agregar/Actualizar Premios",
+    "Go to \"Prize Inventory\". To add a new prize, use the form at the top. To update stock for an existing prize, find it in the list below and click \"Edit\".": "Vaya a \"Inventario de Premios\". Para agregar uno nuevo, use el formulario superior. Para actualizar existencias, busque el premio abajo y haga clic en \"Editar\".",
+    
+    "Access reports from the Dashboard. You can view them on-screen or download CSV files for Excel.": "Acceda a los reportes desde el Panel. Puede verlos en pantalla o descargar archivos CSV para Excel.",
+    "Redemption Log:": "Bitácora de Canjes:",
+    "See who bought what and when.": "Vea quién canjeó qué y cuándo.",
+    "Inventory Report:": "Reporte de Inventario:",
+    "See current stock levels for stocktaking.": "Vea los niveles actuales para el conteo de existencias.",
+
+    # FAQ Section
+    "Frequently Asked Questions": "Preguntas Frecuentes",
+    "I entered the wrong points! How do I undo it?": "¡Ingresé los puntos incorrectos! ¿Cómo lo deshago?",
+    "Go to \"Reward Points\", select the student, and post a transaction with a **negative** point value (e.g., -50) to reverse the error.": "Vaya a \"Otorgar Puntos\", seleccione al estudiante y registre una transacción con valor **negativo** (ej. -50) para revertir el error.",
+    
+    "Why is the Redeem button grayed out?": "¿Por qué el botón Canjear está gris?",
+    "Either the student does not have enough points, OR the item is out of stock.": "El estudiante no tiene suficientes puntos O el artículo está agotado.",
+    
+    "Can I delete a student?": "¿Puedo eliminar a un estudiante?",
+    "No. We do not delete students to preserve historical data. Please ask an administrator to mark them as inactive.": "No. No eliminamos estudiantes para preservar los datos históricos. Pida a un administrador que los marque como inactivos.",
+    
+    "The Spanish translation is missing?": "¿Falta la traducción al español?",
+    "Refresh the page. If it persists, click \"ES\" in the top right corner.": "Refresque la página. Si persiste, haga clic en \"ES\" en la esquina superior derecha."
+}
+
+# 4. WRITE PO FILE
+print(f"Generating {po_file}...")
+with open(po_file, 'w', encoding='utf-8') as f:
+    f.write(PO_HEADER)
+    for k, v in TRANSLATIONS.items():
+        # Escape quotes just in case
+        k_esc = k.replace('"', '\\"')
+        v_esc = v.replace('"', '\\"')
+        f.write(f'\nmsgid "{k_esc}"\n')
+        f.write(f'msgstr "{v_esc}"\n')
+
+# 5. COMPILE TO MO FILE
+try:
+    # Removed unnecessary 'import pybabel' to prevent errors
+    from babel.messages.pofile import read_po
+    from babel.messages.mofile import write_mo
+    
+    print(f"Compiling to {mo_file}...")
+    with open(po_file, 'rb') as f:
+        catalog = read_po(f)
+    
+    with open(mo_file, 'wb') as f:
+        write_mo(f, catalog)
         
-        # Method B: Python internal compile (Backup if CLI fails)
-        try:
-            from babel.messages.frontend import compile_catalog
-            from babel.messages.catalog import Catalog
-            from babel.messages.pofile import read_po
-            from babel.messages.mofile import write_mo
-            
-            with open(PO_FILE, 'r', encoding='utf-8') as f:
-                catalog = read_po(f)
-            
-            with open(MO_FILE, 'wb') as f:
-                write_mo(f, catalog)
-                
-            print(f"SUCCESS: Compiled internally to {MO_FILE}")
-        except ImportError:
-            print("CRITICAL ERROR: Could not compile. Please ensure 'Babel' is installed (pip install Babel).")
-        except Exception as e:
-            print(f"CRITICAL ERROR: {e}")
+    print("SUCCESS: Translations updated!")
 
-if __name__ == "__main__":
-    run()
+except ImportError:
+    print("ERROR: 'Babel' library not found.")
+    print("Please run this command manually:")
+    print("pip install Babel")

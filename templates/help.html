@@ -1,89 +1,166 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Staff Help & Cheat Sheet') }}{% endblock %}
+{% block title %}{{ _('Help & Documentation') }}{% endblock %}
 
 {% block extra_css %}
 <style>
-    .help-container { max-width: 850px; margin: 0 auto; }
+    .help-container { max-width: 900px; margin: 0 auto; }
+    
+    /* Header & Print */
+    .help-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .help-header h1 { margin: 0; color: #0f172a; font-size: 24px; }
+    .btn-print { 
+        background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; 
+        padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; 
+        text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-print:hover { background: #e2e8f0; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 10px; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px; }
+    .tab-btn {
+        padding: 10px 16px; background: none; border: none; 
+        font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; 
+        margin-bottom: -2px; font-size: 14px;
+    }
+    .tab-btn:hover { color: #1f6feb; }
+    .tab-btn.active { color: #1f6feb; border-bottom-color: #1f6feb; }
+
+    /* Content Sections */
+    .tab-content { display: none; animation: fadeIn 0.2s; }
+    .tab-content.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Boxes & Typography */
     .help-box { 
-        border: 1px solid #e2e8f0; 
-        padding: 20px; 
-        border-radius: 12px; 
-        background: #fff; 
-        margin-bottom: 24px; 
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0; padding: 24px; border-radius: 12px; 
+        background: #fff; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
     }
     .help-box h2 { color: #1f6feb; margin-top: 0; font-size: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px; }
-    .step { margin-bottom: 10px; font-size: 15px; line-height: 1.5; color: #334155; }
+    .help-box h3 { margin: 20px 0 10px; font-size: 15px; color: #0f172a; }
+    
+    .step { margin-bottom: 12px; font-size: 15px; line-height: 1.6; color: #334155; }
     .step strong { color: #0f172a; font-weight: 700; }
+    
     .tip { 
-        background: #eff6ff; 
-        padding: 12px 16px; 
-        border-left: 4px solid #1f6feb; 
-        font-size: 14px; 
-        color: #1e40af;
-        border-radius: 0 6px 6px 0;
-        margin-top: 15px;
+        background: #eff6ff; padding: 12px 16px; border-left: 4px solid #1f6feb; 
+        font-size: 14px; color: #1e40af; border-radius: 0 6px 6px 0; margin-top: 15px; 
     }
-    .print-btn {
-        float: right;
-        background: #f1f5f9;
-        color: #475569;
-        border: 1px solid #cbd5e1;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        cursor: pointer;
-        text-decoration: none;
-        font-weight: 600;
-    }
-    .print-btn:hover { background: #e2e8f0; }
+    
+    .faq-item { margin-bottom: 20px; }
+    .faq-q { font-weight: 700; color: #0f172a; margin-bottom: 6px; display: block; }
+    .faq-a { color: #475569; margin: 0; line-height: 1.5; }
+
+    /* Print Styles */
     @media print {
-        .nav-bar, .print-btn { display: none; }
-        body { background: white; }
+        .nav-bar, .tabs, .btn-print { display: none; }
+        .help-container { max-width: 100%; }
+        .tab-content { display: block !important; margin-bottom: 30px; }
         .help-box { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+        h1::after { content: " - Full Documentation"; font-size: 16px; color: #666; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="help-container">
-    <a href="#" onclick="window.print(); return false;" class="print-btn">🖨️ {{ _('Print Guide') }}</a>
-    <h1 style="color: #0b3b61; margin-bottom: 24px;">{{ _('Staff Help Guide') }}</h1>
-
-    <div class="help-box">
-        <h2>1️⃣ {{ _('How to Reward Points') }}</h2>
-        <div class="step">1. {{ _('Go to') }} <strong>{{ _('Dashboard') }}</strong> → {{ _('Click') }} <strong>{{ _('Reward Points (Activity)') }}</strong>.</div>
-        <div class="step">2. <strong>{{ _('Search') }}</strong> {{ _('for the student (Type name → Click their name in the list).') }}</div>
-        <div class="step">3. {{ _('Select the') }} <strong>{{ _('Activity') }}</strong> {{ _('from the dropdown menu.') }}</div>
-        <div class="step">4. {{ _('(Optional) Add a note or adjust points manually.') }}</div>
-        <div class="step">5. {{ _('Click') }} <strong>{{ _('Post Transaction') }}</strong>.</div>
-        <div class="tip">✅ <strong>{{ _('Success') }}:</strong> {{ _('The student\'s new point balance will appear at the top immediately.') }}</div>
+    <div class="help-header">
+        <h1>{{ _('Staff Support Center') }}</h1>
+        <button onclick="window.print()" class="btn-print">🖨️ {{ _('Print Guide') }}</button>
     </div>
 
-    <div class="help-box">
-        <h2>2️⃣ {{ _('How to Redeem a Prize') }}</h2>
-        <div class="step">1. {{ _('Go to') }} <strong>{{ _('Dashboard') }}</strong> → {{ _('Click') }} <strong>{{ _('Redeem Points (Prizes)') }}</strong>.</div>
-        <div class="step">2. <strong>{{ _('Search') }}</strong> {{ _('for the student and select them.') }}</div>
-        <div class="step">3. {{ _('Check their') }} <strong>{{ _('Balance') }}</strong> {{ _('(Large blue number).') }}</div>
-        <div class="step">4. {{ _('Find the prize in the list. (If grayed out, they need more points).') }}</div>
-        <div class="step">5. {{ _('Click the') }} <strong>{{ _('Redeem') }}</strong> {{ _('button.') }}</div>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab(event, 'cheatsheet')">⚡ {{ _('Cheat Sheet') }}</button>
+        <button class="tab-btn" onclick="openTab(event, 'manual')">📖 {{ _('User Manual') }}</button>
+        <button class="tab-btn" onclick="openTab(event, 'faq')">❓ {{ _('FAQ') }}</button>
     </div>
 
-    <div class="help-box">
-        <h2>3️⃣ {{ _('How to Add a Student') }}</h2>
-        <div class="step">1. {{ _('Go to') }} <strong>{{ _('Dashboard') }}</strong> → {{ _('Click') }} <strong>{{ _('Add New Student') }}</strong>.</div>
-        <div class="step">2. {{ _('Enter') }} <strong>{{ _('Full Name') }}</strong> {{ _('(Must match certificates),') }} <strong>{{ _('Grade') }}</strong>, {{ _('and') }} <strong>{{ _('Classroom') }}</strong>.</div>
-        <div class="step">3. {{ _('Click') }} <strong>{{ _('Add Student') }}</strong>.</div>
-        <div class="tip">⚠️ <strong>{{ _('Stop!') }}</strong> {{ _('Always search the directory FIRST to make sure the student doesn\'t already exist.') }}</div>
+    <div id="cheatsheet" class="tab-content active">
+        <div class="help-box">
+            <h2>1️⃣ {{ _('How to Reward Points') }}</h2>
+            <div class="step">1. {{ _('Go to') }} <strong>{{ _('Dashboard') }}</strong> → {{ _('Click') }} <strong>{{ _('Reward Points (Activity)') }}</strong>.</div>
+            <div class="step">2. <strong>{{ _('Search') }}</strong> {{ _('for the student (Type name → Click their name).') }}</div>
+            <div class="step">3. {{ _('Select the') }} <strong>{{ _('Activity') }}</strong> {{ _('from the list.') }}</div>
+            <div class="step">4. {{ _('Click') }} <strong>{{ _('Post Transaction') }}</strong>.</div>
+            <div class="tip">✅ {{ _('The new balance appears immediately at the top.') }}</div>
+        </div>
+
+        <div class="help-box">
+            <h2>2️⃣ {{ _('How to Redeem a Prize') }}</h2>
+            <div class="step">1. {{ _('Go to') }} <strong>{{ _('Dashboard') }}</strong> → {{ _('Click') }} <strong>{{ _('Redeem Points (Prizes)') }}</strong>.</div>
+            <div class="step">2. <strong>{{ _('Search') }}</strong> {{ _('for the student.') }}</div>
+            <div class="step">3. {{ _('Check their') }} <strong>{{ _('Balance') }}</strong>.</div>
+            <div class="step">4. {{ _('Find the prize and click') }} <strong>{{ _('Redeem') }}</strong>.</div>
+        </div>
     </div>
 
-    <div class="help-box">
-        <h2>❓ {{ _('Troubleshooting') }}</h2>
-        <p><strong>{{ _('I made a mistake giving points!') }}</strong><br>
-        {{ _('Go to "Reward Points", select the student, choose "Manual Adjustment", and enter a') }} <strong>{{ _('negative number') }}</strong> (e.g., -50) {{ _('to remove them.') }}</p>
-        
-        <p><strong>{{ _('The Spanish translation isn\'t showing?') }}</strong><br>
-        {{ _('Refresh the page. If it persists, add') }} <code>?lang=es</code> {{ _('to the end of the website address once.') }}</p>
+    <div id="manual" class="tab-content">
+        <div class="help-box">
+            <h2>{{ _('Managing Students') }}</h2>
+            <h3>{{ _('Adding a New Student') }}</h3>
+            <p class="step">{{ _('Navigate to "Add New Student". Enter their Full Name, Grade, and Classroom. Always check the directory first to ensure they do not already exist.') }}</p>
+            
+            <h3>{{ _('Viewing History') }}</h3>
+            <p class="step">{{ _('Go to the Student Directory, search for a student, and click "View Profile". You can see their last 10 transactions and download their full history.') }}</p>
+        </div>
+
+        <div class="help-box">
+            <h2>{{ _('Managing Inventory') }}</h2>
+            <h3>{{ _('Adding/Updating Prizes') }}</h3>
+            <p class="step">{{ _('Go to "Prize Inventory". To add a new prize, use the form at the top. To update stock for an existing prize, find it in the list below and click "Edit".') }}</p>
+        </div>
+
+        <div class="help-box">
+            <h2>{{ _('Reports') }}</h2>
+            <p class="step">{{ _('Access reports from the Dashboard. You can view them on-screen or download CSV files for Excel.') }}</p>
+            <ul>
+                <li class="step"><strong>{{ _('Redemption Log:') }}</strong> {{ _('See who bought what and when.') }}</li>
+                <li class="step"><strong>{{ _('Inventory Report:') }}</strong> {{ _('See current stock levels for stocktaking.') }}</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="faq" class="tab-content">
+        <div class="help-box">
+            <h2>{{ _('Frequently Asked Questions') }}</h2>
+            
+            <div class="faq-item">
+                <span class="faq-q">{{ _('I entered the wrong points! How do I undo it?') }}</span>
+                <p class="faq-a">{{ _('Go to "Reward Points", select the student, and post a transaction with a **negative** point value (e.g., -50) to reverse the error.') }}</p>
+            </div>
+
+            <div class="faq-item">
+                <span class="faq-q">{{ _('Why is the Redeem button grayed out?') }}</span>
+                <p class="faq-a">{{ _('Either the student does not have enough points, OR the item is out of stock.') }}</p>
+            </div>
+
+            <div class="faq-item">
+                <span class="faq-q">{{ _('Can I delete a student?') }}</span>
+                <p class="faq-a">{{ _('No. We do not delete students to preserve historical data. Please ask an administrator to mark them as inactive.') }}</p>
+            </div>
+            
+            <div class="faq-item">
+                <span class="faq-q">{{ _('The Spanish translation is missing?') }}</span>
+                <p class="faq-a">{{ _('Refresh the page. If it persists, click "ES" in the top right corner.') }}</p>
+            </div>
+        </div>
     </div>
 </div>
+
+<script>
+function openTab(evt, tabName) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tab-content");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+        tabcontent[i].classList.remove('active');
+    }
+    tablinks = document.getElementsByClassName("tab-btn");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    document.getElementById(tabName).style.display = "block";
+    document.getElementById(tabName).classList.add('active');
+    evt.currentTarget.className += " active";
+}
+</script>
 {% endblock %}

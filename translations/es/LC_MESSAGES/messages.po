@@ -1,71 +1,43 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Leer Mexico 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Project-Id-Version: 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-# --- Common Buttons & Labels ---
-msgid "Back"
-msgstr "Atrás"
-
-msgid "Back to Dashboard"
-msgstr "Volver al Panel"
-
-msgid "Home"
-msgstr "Inicio"
-
-msgid "Loading..."
-msgstr "Cargando..."
-
-msgid "Date"
-msgstr "Fecha"
-
-msgid "Activity"
-msgstr "Actividad"
-
-msgid "Points"
-msgstr "Puntos"
-
-msgid "Description"
-msgstr "Descripción"
-
-msgid "Edit"
-msgstr "Editar"
-
-msgid "Delete"
-msgstr "Eliminar"
-
-msgid "Cancel"
-msgstr "Cancelar"
-
-msgid "Clear"
-msgstr "Limpiar"
-
-msgid "Save"
-msgstr "Guardar"
-
-msgid "Status"
-msgstr "Estado"
-
-msgid "Active"
-msgstr "Activo"
-
-msgid "Inactive"
-msgstr "Inactivo"
-
-msgid "View"
-msgstr "Ver"
-
-msgid "Login"
-msgstr "Iniciar Sesión"
-
-# --- Dashboard (index.html) ---
 msgid "Dashboard"
 msgstr "Panel de Control"
 
 msgid "Student Actions"
-msgstr "Acciones de Alumno"
+msgstr "Acciones de Estudiantes"
+
+msgid "Management"
+msgstr "Administración"
+
+msgid "System Status"
+msgstr "Estado del Sistema"
+
+msgid "Help"
+msgstr "Ayuda"
+
+msgid "Back to Dashboard"
+msgstr "Volver al Panel"
+
+msgid "Back"
+msgstr "Atrás"
+
+msgid "Search"
+msgstr "Buscar"
+
+msgid "Reset"
+msgstr "Reiniciar"
 
 msgid "Reward Points (Activity)"
 msgstr "Otorgar Puntos (Actividad)"
@@ -74,13 +46,10 @@ msgid "Redeem Points (Prizes)"
 msgstr "Canjear Puntos (Premios)"
 
 msgid "Student Directory"
-msgstr "Directorio de Alumnos"
+msgstr "Directorio de Estudiantes"
 
 msgid "Add New Student"
-msgstr "Agregar Nuevo Alumno"
-
-msgid "Management"
-msgstr "Administración"
+msgstr "Agregar Nuevo Estudiante"
 
 msgid "Prize Inventory"
 msgstr "Inventario de Premios"
@@ -88,256 +57,149 @@ msgstr "Inventario de Premios"
 msgid "Activity Catalog"
 msgstr "Catálogo de Actividades"
 
-msgid "System Status"
-msgstr "Estado del Sistema"
-
 msgid "App Logs"
-msgstr "Registros (Logs)"
+msgstr "Registros de la App"
 
 msgid "System Audit Logs"
 msgstr "Auditoría del Sistema"
 
-# --- Student Profile (student_profile.html) ---
-msgid "Profile"
-msgstr "Perfil"
+msgid "Reports"
+msgstr "Reportes"
 
-msgid "Balance"
-msgstr "Saldo"
+msgid "View Redemption Log"
+msgstr "Ver Bitácora de Canjes"
 
-msgid "Contact & Student Info"
-msgstr "Contacto e Info del Alumno"
+msgid "View Inventory Report"
+msgstr "Ver Reporte de Inventario"
 
-msgid "Quick Actions"
-msgstr "Acciones Rápidas"
+msgid "Download CSV"
+msgstr "Descargar CSV"
 
-msgid "Reward Points"
-msgstr "Otorgar Puntos"
+msgid "Help & Documentation"
+msgstr "Ayuda y Documentación"
 
-msgid "Redeem Points"
-msgstr "Canjear Puntos"
+msgid "Staff Support Center"
+msgstr "Centro de Soporte al Personal"
 
-msgid "Activity History"
-msgstr "Historial de Actividades"
+msgid "Print Guide"
+msgstr "Imprimir Guía"
 
-msgid "Export CSV"
-msgstr "Exportar CSV"
+msgid "Cheat Sheet"
+msgstr "Hoja de Referencia"
 
-msgid "FILTER:"
-msgstr "FILTRO:"
+msgid "User Manual"
+msgstr "Manual de Usuario"
 
-msgid "All Time"
-msgstr "Todo el Tiempo"
+msgid "FAQ"
+msgstr "Preguntas Frecuentes"
 
-msgid "Last 7 Days"
-msgstr "Últimos 7 Días"
+msgid "How to Reward Points"
+msgstr "Cómo Otorgar Puntos"
 
-msgid "Last 30 Days"
-msgstr "Últimos 30 Días"
+msgid "Go to"
+msgstr "Ir a"
 
-msgid "Last 90 Days"
-msgstr "Últimos 90 Días"
+msgid "Click"
+msgstr "Hacer clic en"
 
-msgid "Loading history..."
-msgstr "Cargando historial..."
+msgid "for the student (Type name → Click their name)."
+msgstr "el estudiante (Escriba nombre → Seleccione de la lista)."
 
-msgid "No transactions found for the selected range."
-msgstr "No se encontraron transacciones en este rango."
+msgid "Select the"
+msgstr "Seleccione la"
 
-msgid "Grade"
-msgstr "Grado"
+msgid "Activity"
+msgstr "Actividad"
 
-msgid "Class"
-msgstr "Clase"
-
-# --- Record Activity (record_activity.html) ---
-msgid "Student Search"
-msgstr "Buscar Alumno"
-
-msgid "Search by name or ID..."
-msgstr "Buscar por nombre o ID..."
-
-msgid "Search results will appear here"
-msgstr "Los resultados aparecerán aquí"
-
-msgid "-- Select Activity --"
-msgstr "-- Seleccionar Actividad --"
-
-msgid "Points Override"
-msgstr "Ajuste Manual de Puntos"
-
-msgid "Optional notes..."
-msgstr "Notas opcionales..."
+msgid "from the list."
+msgstr "de la lista."
 
 msgid "Post Transaction"
 msgstr "Registrar Transacción"
 
-msgid "Recent Transactions"
-msgstr "Transacciones Recientes"
+msgid "The new balance appears immediately at the top."
+msgstr "El nuevo saldo aparece inmediatamente arriba."
 
-msgid "Select a student to view their history"
-msgstr "Selecciona un alumno para ver su historial"
+msgid "How to Redeem a Prize"
+msgstr "Cómo Canjear un Premio"
 
-msgid "No transactions found."
-msgstr "No se encontraron transacciones."
+msgid "for the student."
+msgstr "el estudiante."
 
-# --- Add Student (add_student.html) ---
-msgid "Add Student"
-msgstr "Agregar Alumno"
+msgid "Check their"
+msgstr "Verifique su"
 
-msgid "Add Student — Leer México"
-msgstr "Agregar Alumno — Leer México"
+msgid "Balance"
+msgstr "Saldo"
 
-msgid "Full Name"
-msgstr "Nombre Completo"
-
-msgid "Full name as it appears on certificates"
-msgstr "Nombre tal como aparece en actas"
-
-msgid "Nickname"
-msgstr "Apodo"
-
-msgid "Optional display name"
-msgstr "Nombre corto opcional"
-
-msgid "Parent / Guardian name (optional)"
-msgstr "Nombre del Padre/Tutor (opcional)"
-
-msgid "Parent or guardian name"
-msgstr "Nombre del padre o tutor"
-
-msgid "Email (optional)"
-msgstr "Correo (opcional)"
-
-msgid "Phone (optional)"
-msgstr "Teléfono (opcional)"
-
-msgid "Phone number in Mexico format (10-digits)."
-msgstr "Número a 10 dígitos."
-
-msgid "I agree to receive SMS messages"
-msgstr "Acepto recibir mensajes SMS"
-
-msgid "Classroom"
-msgstr "Salón"
-
-msgid "-- select --"
-msgstr "-- seleccionar --"
-
-msgid "Possible matches found"
-msgstr "Posibles coincidencias encontradas"
-
-msgid "No Class Assigned"
-msgstr "Sin Salón Asignado"
-
-msgid "Student created."
-msgstr "Alumno creado exitosamente."
-
-msgid "Full name is required."
-msgstr "El nombre completo es obligatorio."
-
-msgid "Potential duplicates returned from server"
-msgstr "Posibles duplicados detectados"
-
-msgid "Save Anyway"
-msgstr "Guardar de todas formas"
-
-# --- Prizes (prizes.html & redeem.html) ---
-msgid "Prize Manager"
-msgstr "Gestor de Premios"
-
-msgid "Prize Name"
-msgstr "Nombre del Premio"
-
-msgid "Point Cost"
-msgstr "Costo en Puntos"
-
-msgid "Stock"
-msgstr "Existencias"
-
-msgid "Description (Optional)"
-msgstr "Descripción (Opcional)"
-
-msgid "Save Prize"
-msgstr "Guardar Premio"
-
-msgid "Current Inventory"
-msgstr "Inventario Actual"
-
-msgid "Search by name..."
-msgstr "Buscar por nombre..."
-
-msgid "Hide inactive items"
-msgstr "Ocultar inactivos"
-
-msgid "No matching prizes found."
-msgstr "No se encontraron premios."
-
-msgid "Redeem Prizes"
-msgstr "Canjear Premios"
-
-msgid "Identify Student"
-msgstr "Identificar Alumno"
-
-msgid "Search Name or ID..."
-msgstr "Buscar Nombre o ID..."
-
-msgid "Recent History"
-msgstr "Historial Reciente"
-
-msgid "Select a student"
-msgstr "Selecciona un alumno"
-
-msgid "Redeemable Prizes"
-msgstr "Premios Disponibles"
-
-msgid "Filter by prize name..."
-msgstr "Filtrar por nombre..."
-
-msgid "Hide unaffordable"
-msgstr "Ocultar inalcanzables"
+msgid "Find the prize and click"
+msgstr "Encuentre el premio y haga clic en"
 
 msgid "Redeem"
 msgstr "Canjear"
 
-msgid "Confirm redemption of"
-msgstr "Confirmar canje de"
+msgid "Managing Students"
+msgstr "Gestión de Estudiantes"
 
-msgid "Pts"
-msgstr "Pts"
+msgid "Adding a New Student"
+msgstr "Agregar Nuevo Estudiante"
 
-# --- Activities (add_activity.html) ---
-msgid "Manage Activities"
-msgstr "Gestionar Actividades"
+msgid "Navigate to \"Add New Student\". Enter their Full Name, Grade, and Classroom. Always check the directory first to ensure they do not already exist."
+msgstr "Vaya a \"Agregar Nuevo Estudiante\". Ingrese Nombre Completo, Grado y Salón. ¡Siempre verifique el directorio primero para asegurarse de que no existan!"
 
-msgid "Activity Name"
-msgstr "Nombre de Actividad"
+msgid "Viewing History"
+msgstr "Ver Historial"
 
-msgid "Default Points"
-msgstr "Puntos Predeterminados"
+msgid "Go to the Student Directory, search for a student, and click \"View Profile\". You can see their last 10 transactions and download their full history."
+msgstr "Vaya al Directorio, busque al estudiante y haga clic en \"Ver Perfil\". Puede ver sus últimas 10 transacciones y descargar el historial completo."
 
-msgid "Briefly explain the criteria..."
-msgstr "Explicar brevemente los criterios..."
+msgid "Managing Inventory"
+msgstr "Gestión de Inventario"
 
-msgid "Save Activity"
-msgstr "Guardar Actividad"
+msgid "Adding/Updating Prizes"
+msgstr "Agregar/Actualizar Premios"
 
-msgid "Configured Activities"
-msgstr "Actividades Configuradas"
+msgid "Go to \"Prize Inventory\". To add a new prize, use the form at the top. To update stock for an existing prize, find it in the list below and click \"Edit\"."
+msgstr "Vaya a \"Inventario de Premios\". Para agregar uno nuevo, use el formulario superior. Para actualizar existencias, busque el premio abajo y haga clic en \"Editar\"."
 
-msgid "No matching activities found."
-msgstr "No se encontraron actividades."
+msgid "Access reports from the Dashboard. You can view them on-screen or download CSV files for Excel."
+msgstr "Acceda a los reportes desde el Panel. Puede verlos en pantalla o descargar archivos CSV para Excel."
 
-msgid "Reports"
-msgstr "Reportes"
+msgid "Redemption Log:"
+msgstr "Bitácora de Canjes:"
 
-msgid "Download Redemption Log"
-msgstr "Descargar Bitácora de Canjes"
+msgid "See who bought what and when."
+msgstr "Vea quién canjeó qué y cuándo."
 
-msgid "Download Current Inventory"
-msgstr "Descargar Inventario Actual"
+msgid "Inventory Report:"
+msgstr "Reporte de Inventario:"
 
-msgid "Help"
-msgstr "Ayuda"
+msgid "See current stock levels for stocktaking."
+msgstr "Vea los niveles actuales para el conteo de existencias."
 
-msgid "Are you sure you want to delete"
-msgstr "¿Estás seguro de eliminar"
+msgid "Frequently Asked Questions"
+msgstr "Preguntas Frecuentes"
+
+msgid "I entered the wrong points! How do I undo it?"
+msgstr "¡Ingresé los puntos incorrectos! ¿Cómo lo deshago?"
+
+msgid "Go to \"Reward Points\", select the student, and post a transaction with a **negative** point value (e.g., -50) to reverse the error."
+msgstr "Vaya a \"Otorgar Puntos\", seleccione al estudiante y registre una transacción con valor **negativo** (ej. -50) para revertir el error."
+
+msgid "Why is the Redeem button grayed out?"
+msgstr "¿Por qué el botón Canjear está gris?"
+
+msgid "Either the student does not have enough points, OR the item is out of stock."
+msgstr "El estudiante no tiene suficientes puntos O el artículo está agotado."
+
+msgid "Can I delete a student?"
+msgstr "¿Puedo eliminar a un estudiante?"
+
+msgid "No. We do not delete students to preserve historical data. Please ask an administrator to mark them as inactive."
+msgstr "No. No eliminamos estudiantes para preservar los datos históricos. Pida a un administrador que los marque como inactivos."
+
+msgid "The Spanish translation is missing?"
+msgstr "¿Falta la traducción al español?"
+
+msgid "Refresh the page. If it persists, click \"ES\" in the top right corner."
+msgstr "Refresque la página. Si persiste, haga clic en \"ES\" en la esquina superior derecha."
