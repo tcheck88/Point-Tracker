@@ -703,48 +703,70 @@ def api_view_audit_logs_data():
         return jsonify({"success": True, "logs": audit_history}), 200
     finally:
         conn.close()
-        
-# ---- 11. Reporting API (CSV Downloads) ----
-
-@app.route('/api/reports/redemptions/csv')
-@login_required
-def download_redemption_report():
-    import csv
-    import io
     
+# ---- 11. Reporting (View & CSV) ----
+
+# 1. Redemption Report
+@app.route('/reports/redemptions')
+@login_required
+def view_redemptions_report():
     conn = get_db_connection()
     try:
         cur = conn.cursor()
-        # Filter strictly for Prize Redemptions
+        # Query for display
         cur.execute("""
-            SELECT 
-                al.event_time,
-                s.full_name,
-                s.grade,
-                s.classroom,
-                al.activity_type,
-                al.points,
-                al.recorded_by
+            SELECT al.timestamp, s.full_name, s.grade, s.classroom, 
+                   al.activity_type, al.points, al.recorded_by
             FROM activity_log al
             JOIN students s ON al.student_id = s.id
             WHERE al.activity_type LIKE 'Redemption:%'
-            ORDER BY al.event_time DESC
+            ORDER BY al.timestamp DESC
         """)
         rows = cur.fetchall()
         
-        # Create CSV in memory
+        # Normalize data for template
+        data = []
+        for row in rows:
+            is_dict = isinstance(row, dict)
+            data.append({
+                'timestamp': row['timestamp'] if is_dict else row[0],
+                'full_name': row['full_name'] if is_dict else row[1],
+                'grade': row['grade'] if is_dict else row[2],
+                'classroom': row['classroom'] if is_dict else row[3],
+                'activity_type': row['activity_type'] if is_dict else row[4],
+                'points': row['points'] if is_dict else row[5],
+                'recorded_by': row['recorded_by'] if is_dict else row[6]
+            })
+        return render_template('report_redemptions.html', rows=data)
+    finally:
+        conn.close()
+
+@app.route('/api/reports/redemptions/csv')
+@login_required
+def download_redemption_csv():
+    import csv
+    import io
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT al.timestamp, s.full_name, s.grade, s.classroom, 
+                   al.activity_type, al.points, al.recorded_by
+            FROM activity_log al
+            JOIN students s ON al.student_id = s.id
+            WHERE al.activity_type LIKE 'Redemption:%'
+            ORDER BY al.timestamp DESC
+        """)
+        rows = cur.fetchall()
+        
         output = io.StringIO()
         writer = csv.writer(output)
+        writer.writerow(['Date', 'Student', 'Grade', 'Classroom', 'Prize', 'Points', 'Staff'])
         
-        # Headers
-        writer.writerow(['Date/Time', 'Student Name', 'Grade', 'Classroom', 'Prize (Activity)', 'Points Cost', 'Staff Member'])
-        
-        # Data
         for row in rows:
-            # Handle both dict and tuple rows depending on DB config
             is_dict = isinstance(row, dict)
             writer.writerow([
-                row['event_time'] if is_dict else row[0],
+                row['timestamp'] if is_dict else row[0],
                 row['full_name'] if is_dict else row[1],
                 row['grade'] if is_dict else row[2],
                 row['classroom'] if is_dict else row[3],
@@ -754,25 +776,44 @@ def download_redemption_report():
             ])
             
         output.seek(0)
-        
         return send_file(
             io.BytesIO(output.getvalue().encode('utf-8-sig')),
             mimetype='text/csv',
             as_attachment=True,
-            download_name=f"Redemption_Log_{datetime.datetime.now().strftime('%Y-%m-%d')}.csv"
+            download_name=f"Redemptions_{datetime.datetime.now().strftime('%Y-%m-%d')}.csv"
         )
-    except Exception as e:
-        logger.error(f"Redemption report error: {e}")
-        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+# 2. Inventory Report
+@app.route('/reports/inventory')
+@login_required
+def view_inventory_report():
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT name, point_cost, stock_count, active, description FROM prize_inventory ORDER BY name")
+        rows = cur.fetchall()
+        
+        data = []
+        for row in rows:
+            is_dict = isinstance(row, dict)
+            data.append({
+                'name': row['name'] if is_dict else row[0],
+                'point_cost': row['point_cost'] if is_dict else row[1],
+                'stock_count': row['stock_count'] if is_dict else row[2],
+                'active': row['active'] if is_dict else row[3],
+                'description': row['description'] if is_dict else row[4]
+            })
+        return render_template('report_inventory.html', rows=data)
     finally:
         conn.close()
 
 @app.route('/api/reports/inventory/csv')
 @login_required
-def download_inventory_report():
+def download_inventory_csv():
     import csv
     import io
-    
     conn = get_db_connection()
     try:
         cur = conn.cursor()
@@ -781,8 +822,7 @@ def download_inventory_report():
         
         output = io.StringIO()
         writer = csv.writer(output)
-        
-        writer.writerow(['Prize Name', 'Point Cost', 'Current Stock', 'Status', 'Description'])
+        writer.writerow(['Prize Name', 'Cost', 'Stock', 'Status', 'Description'])
         
         for row in rows:
             is_dict = isinstance(row, dict)
@@ -795,18 +835,17 @@ def download_inventory_report():
             ])
             
         output.seek(0)
-        
         return send_file(
             io.BytesIO(output.getvalue().encode('utf-8-sig')),
             mimetype='text/csv',
             as_attachment=True,
-            download_name=f"Inventory_Status_{datetime.datetime.now().strftime('%Y-%m-%d')}.csv"
+            download_name=f"Inventory_{datetime.datetime.now().strftime('%Y-%m-%d')}.csv"
         )
-    except Exception as e:
-        logger.error(f"Inventory report error: {e}")
-        return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()
+
+
+
 
 if __name__ == '__main__':
     logger.info("Starting Point Tracker Application...")
