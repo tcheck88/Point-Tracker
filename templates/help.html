@@ -38,7 +38,7 @@
     .help-box h2 { color: #1f6feb; margin-top: 0; font-size: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px; }
     .help-box h3 { margin: 20px 0 10px; font-size: 15px; color: #0f172a; }
     
-    .step { margin-bottom: 12px; font-size: 15px; line-height: 1.6; color: #334155; }
+    .step { margin-bottom: 8px; font-size: 15px; line-height: 1.6; color: #334155; }
     .step strong { color: #0f172a; font-weight: 700; }
     
     .tip { 
@@ -56,7 +56,6 @@
         .help-container { max-width: 100%; }
         .tab-content { display: block !important; margin-bottom: 30px; }
         .help-box { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
-        h1::after { content: " - Full Documentation"; font-size: 16px; color: #666; }
     }
 </style>
 {% endblock %}
@@ -75,21 +74,51 @@
     </div>
 
     <div id="cheatsheet" class="tab-content active">
+        
+        <h3 style="margin-top: 0; color: #64748b; text-transform: uppercase; font-size: 13px;">{{ _('Top 3 Daily Actions') }}</h3>
+
         <div class="help-box">
-            <h2>1️⃣ {{ _('How to Reward Points') }}</h2>
-            <div class="step">1. {{ _('Go to') }} <strong>{{ _('Dashboard') }}</strong> → {{ _('Click') }} <strong>{{ _('Reward Points (Activity)') }}</strong>.</div>
-            <div class="step">2. <strong>{{ _('Search') }}</strong> {{ _('for the student (Type name → Click their name).') }}</div>
-            <div class="step">3. {{ _('Select the') }} <strong>{{ _('Activity') }}</strong> {{ _('from the list.') }}</div>
-            <div class="step">4. {{ _('Click') }} <strong>{{ _('Post Transaction') }}</strong>.</div>
-            <div class="tip">✅ {{ _('The new balance appears immediately at the top.') }}</div>
+            <h2>1️⃣ {{ _('Reward Points (Record Activity)') }}</h2>
+            <div class="step">● {{ _('Go to') }}: <strong>{{ _('Dashboard') }}</strong> → {{ _('Click') }} "<strong>{{ _('Reward Points (Activity)') }}</strong>".</div>
+            <div class="step">● {{ _('Step 1: Search for the student (Type name → Select from list).') }}</div>
+            <div class="step">● {{ _('Step 2: Select the Activity from the dropdown.') }}</div>
+            <div class="step">● {{ _('Step 3: (Optional) Add a note or adjust points.') }}</div>
+            <div class="step">● {{ _('Step 4: Click "Post Transaction".') }}</div>
+            <div class="tip">✅ <strong>{{ _('Success') }}:</strong> {{ _('The student\'s new balance appears immediately at the top.') }}</div>
         </div>
 
         <div class="help-box">
-            <h2>2️⃣ {{ _('How to Redeem a Prize') }}</h2>
-            <div class="step">1. {{ _('Go to') }} <strong>{{ _('Dashboard') }}</strong> → {{ _('Click') }} <strong>{{ _('Redeem Points (Prizes)') }}</strong>.</div>
-            <div class="step">2. <strong>{{ _('Search') }}</strong> {{ _('for the student.') }}</div>
-            <div class="step">3. {{ _('Check their') }} <strong>{{ _('Balance') }}</strong>.</div>
-            <div class="step">4. {{ _('Find the prize and click') }} <strong>{{ _('Redeem') }}</strong>.</div>
+            <h2>2️⃣ {{ _('Redeem a Prize') }}</h2>
+            <div class="step">● {{ _('Go to') }}: <strong>{{ _('Dashboard') }}</strong> → {{ _('Click') }} "<strong>{{ _('Redeem Points (Prizes)') }}</strong>".</div>
+            <div class="step">● {{ _('Step 1: Search for the student.') }}</div>
+            <div class="step">● {{ _('Step 2: Check their Balance (displayed in big blue numbers).') }}</div>
+            <div class="step">● {{ _('Step 3: Find the prize in the list below.') }}</div>
+            <div class="step" style="margin-left: 20px;">○ <strong>{{ _('Grayed out?') }}</strong> {{ _('They don\'t have enough points.') }}</div>
+            <div class="step">● {{ _('Step 4: Click the "Redeem" button next to the prize.') }}</div>
+        </div>
+
+        <div class="help-box">
+            <h2>3️⃣ {{ _('Add a New Student') }}</h2>
+            <div class="step">● {{ _('Go to') }}: <strong>{{ _('Dashboard') }}</strong> → "<strong>{{ _('Add New Student') }}</strong>".</div>
+            <div class="step">● <strong>{{ _('Required') }}:</strong> {{ _('Full Name, Classroom, Grade.') }}</div>
+            <div class="tip">⚠️ <strong>{{ _('Note:') }}</strong> {{ _('Always search the directory first to make sure they don\'t already exist!') }}</div>
+        </div>
+
+        <div class="help-box" style="border-left: 5px solid #ef4444;">
+            <h2 style="color: #ef4444;">🛑 {{ _('Troubleshooting Quick Tips') }}</h2>
+            
+            <p><strong>{{ _('I made a mistake giving points!') }}</strong><br>
+            {{ _('Go to Reward Points. Select the student. Choose "Manual Adjustment" (or similar) and enter a') }} <strong>{{ _('negative number') }}</strong> (e.g., -50) {{ _('to remove the points.') }}</p>
+            
+            <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 15px 0;">
+
+            <p><strong>{{ _('I can\'t find a student.') }}</strong><br>
+            {{ _('Try searching by just their First Name or ID number.') }}</p>
+
+            <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 15px 0;">
+
+            <p><strong>{{ _('The system is stuck.') }}</strong><br>
+            {{ _('Refresh the page (F5 or Ctrl+R).') }}</p>
         </div>
     </div>
 

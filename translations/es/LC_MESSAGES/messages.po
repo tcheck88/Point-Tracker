@@ -93,8 +93,11 @@ msgstr "Manual de Usuario"
 msgid "FAQ"
 msgstr "Preguntas Frecuentes"
 
-msgid "How to Reward Points"
-msgstr "Cómo Otorgar Puntos"
+msgid "Top 3 Daily Actions"
+msgstr "Top 3 Acciones Diarias"
+
+msgid "Reward Points (Record Activity)"
+msgstr "Otorgar Puntos (Registrar Actividad)"
 
 msgid "Go to"
 msgstr "Ir a"
@@ -102,41 +105,83 @@ msgstr "Ir a"
 msgid "Click"
 msgstr "Hacer clic en"
 
-msgid "for the student (Type name → Click their name)."
-msgstr "el estudiante (Escriba nombre → Seleccione de la lista)."
+msgid "Step 1: Search for the student (Type name → Select from list)."
+msgstr "Paso 1: Busque al estudiante (Escriba nombre → Seleccione de la lista)."
 
-msgid "Select the"
-msgstr "Seleccione la"
+msgid "Step 2: Select the Activity from the dropdown."
+msgstr "Paso 2: Seleccione la Actividad del menú."
 
-msgid "Activity"
-msgstr "Actividad"
+msgid "Step 3: (Optional) Add a note or adjust points."
+msgstr "Paso 3: (Opcional) Agregue una nota o ajuste puntos."
 
-msgid "from the list."
-msgstr "de la lista."
+msgid "Step 4: Click \"Post Transaction\"."
+msgstr "Paso 4: Haga clic en \"Registrar Transacción\"."
 
-msgid "Post Transaction"
-msgstr "Registrar Transacción"
+msgid "Success"
+msgstr "Éxito"
 
-msgid "The new balance appears immediately at the top."
+msgid "The student's new balance appears immediately at the top."
 msgstr "El nuevo saldo aparece inmediatamente arriba."
 
-msgid "How to Redeem a Prize"
-msgstr "Cómo Canjear un Premio"
+msgid "Redeem a Prize"
+msgstr "Canjear un Premio"
 
-msgid "for the student."
-msgstr "el estudiante."
+msgid "Step 1: Search for the student."
+msgstr "Paso 1: Busque al estudiante."
 
-msgid "Check their"
-msgstr "Verifique su"
+msgid "Step 2: Check their Balance (displayed in big blue numbers)."
+msgstr "Paso 2: Verifique su Saldo (números azules grandes)."
 
-msgid "Balance"
-msgstr "Saldo"
+msgid "Step 3: Find the prize in the list below."
+msgstr "Paso 3: Encuentre el premio en la lista de abajo."
 
-msgid "Find the prize and click"
-msgstr "Encuentre el premio y haga clic en"
+msgid "Grayed out?"
+msgstr "¿Aparece gris?"
 
-msgid "Redeem"
-msgstr "Canjear"
+msgid "They don't have enough points."
+msgstr "No tienen suficientes puntos."
+
+msgid "Step 4: Click the \"Redeem\" button next to the prize."
+msgstr "Paso 4: Haga clic en el botón \"Canjear\" junto al premio."
+
+msgid "Required"
+msgstr "Obligatorio"
+
+msgid "Full Name, Classroom, Grade."
+msgstr "Nombre Completo, Salón, Grado."
+
+msgid "Note:"
+msgstr "Nota:"
+
+msgid "Always search the directory first to make sure they don't already exist!"
+msgstr "¡Siempre busque en el directorio primero para asegurarse de que no existen!"
+
+msgid "Troubleshooting Quick Tips"
+msgstr "Tips Rápidos de Solución de Problemas"
+
+msgid "I made a mistake giving points!"
+msgstr "¡Me equivoqué dando puntos!"
+
+msgid "Go to Reward Points. Select the student. Choose \"Manual Adjustment\" (or similar) and enter a"
+msgstr "Vaya a Otorgar Puntos. Seleccione al estudiante. Elija \"Ajuste Manual\" e ingrese un"
+
+msgid "negative number"
+msgstr "número negativo"
+
+msgid "to remove the points."
+msgstr "para quitar los puntos."
+
+msgid "I can't find a student."
+msgstr "No encuentro a un estudiante."
+
+msgid "Try searching by just their First Name or ID number."
+msgstr "Intente buscar solo por su primer nombre o número de ID."
+
+msgid "The system is stuck."
+msgstr "El sistema está trabado."
+
+msgid "Refresh the page (F5 or Ctrl+R)."
+msgstr "Refresque la página (F5 o Ctrl+R)."
 
 msgid "Managing Students"
 msgstr "Gestión de Estudiantes"

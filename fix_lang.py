@@ -61,24 +61,44 @@ TRANSLATIONS = {
     "User Manual": "Manual de Usuario",
     "FAQ": "Preguntas Frecuentes",
     
-    # Cheat Sheet Steps
-    "How to Reward Points": "Cómo Otorgar Puntos",
+    # Cheat Sheet Specifics (Updated)
+    "Top 3 Daily Actions": "Top 3 Acciones Diarias",
+    "Reward Points (Record Activity)": "Otorgar Puntos (Registrar Actividad)",
     "Go to": "Ir a",
     "Click": "Hacer clic en",
-    "for the student (Type name → Click their name).": "el estudiante (Escriba nombre → Seleccione de la lista).",
-    "Select the": "Seleccione la",
-    "Activity": "Actividad",
-    "from the list.": "de la lista.",
-    "Post Transaction": "Registrar Transacción",
-    "The new balance appears immediately at the top.": "El nuevo saldo aparece inmediatamente arriba.",
+    "Step 1: Search for the student (Type name → Select from list).": "Paso 1: Busque al estudiante (Escriba nombre → Seleccione de la lista).",
+    "Step 2: Select the Activity from the dropdown.": "Paso 2: Seleccione la Actividad del menú.",
+    "Step 3: (Optional) Add a note or adjust points.": "Paso 3: (Opcional) Agregue una nota o ajuste puntos.",
+    "Step 4: Click \"Post Transaction\".": "Paso 4: Haga clic en \"Registrar Transacción\".",
+    "Success": "Éxito",
+    "The student's new balance appears immediately at the top.": "El nuevo saldo aparece inmediatamente arriba.",
     
-    "How to Redeem a Prize": "Cómo Canjear un Premio",
-    "for the student.": "el estudiante.",
-    "Check their": "Verifique su",
-    "Balance": "Saldo",
-    "Find the prize and click": "Encuentre el premio y haga clic en",
-    "Redeem": "Canjear",
+    "Redeem a Prize": "Canjear un Premio",
+    "Step 1: Search for the student.": "Paso 1: Busque al estudiante.",
+    "Step 2: Check their Balance (displayed in big blue numbers).": "Paso 2: Verifique su Saldo (números azules grandes).",
+    "Step 3: Find the prize in the list below.": "Paso 3: Encuentre el premio en la lista de abajo.",
+    "Grayed out?": "¿Aparece gris?",
+    "They don't have enough points.": "No tienen suficientes puntos.",
+    "Step 4: Click the \"Redeem\" button next to the prize.": "Paso 4: Haga clic en el botón \"Canjear\" junto al premio.",
+
+    "Required": "Obligatorio",
+    "Full Name, Classroom, Grade.": "Nombre Completo, Salón, Grado.",
+    "Note:": "Nota:",
+    "Always search the directory first to make sure they don't already exist!": "¡Siempre busque en el directorio primero para asegurarse de que no existen!",
+
+    # Troubleshooting Section (New)
+    "Troubleshooting Quick Tips": "Tips Rápidos de Solución de Problemas",
+    "I made a mistake giving points!": "¡Me equivoqué dando puntos!",
+    "Go to Reward Points. Select the student. Choose \"Manual Adjustment\" (or similar) and enter a": "Vaya a Otorgar Puntos. Seleccione al estudiante. Elija \"Ajuste Manual\" e ingrese un",
+    "negative number": "número negativo",
+    "to remove the points.": "para quitar los puntos.",
     
+    "I can't find a student.": "No encuentro a un estudiante.",
+    "Try searching by just their First Name or ID number.": "Intente buscar solo por su primer nombre o número de ID.",
+    
+    "The system is stuck.": "El sistema está trabado.",
+    "Refresh the page (F5 or Ctrl+R).": "Refresque la página (F5 o Ctrl+R).",
+
     # Manual Section
     "Managing Students": "Gestión de Estudiantes",
     "Adding a New Student": "Agregar Nuevo Estudiante",
@@ -125,7 +145,6 @@ with open(po_file, 'w', encoding='utf-8') as f:
 
 # 5. COMPILE TO MO FILE
 try:
-    # Removed unnecessary 'import pybabel' to prevent errors
     from babel.messages.pofile import read_po
     from babel.messages.mofile import write_mo
     
