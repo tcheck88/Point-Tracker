@@ -79,6 +79,21 @@ def login_required(f):
             return redirect(url_for('login', next=request.url))
         return f(*args, **kwargs)
     return decorated_function
+    
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('role') != 'admin':
+            # Check if it's an API call or a regular page load
+            if request.path.startswith('/api/') or request.is_json:
+                return jsonify({"success": False, "message": "Access Denied: Admins only."}), 403
+            else:
+                # Flash a message and redirect to dashboard (or render a 403 page)
+                # return render_template('403.html'), 403  <-- If you have a 403.html
+                return redirect(url_for('index')) 
+        return f(*args, **kwargs)
+    return decorated_function    
+    
 
 # ---- 4. Logging Setup ----
 class EmailAlertHandler(logging.Handler):
@@ -150,6 +165,7 @@ def login():
 
         if user and check_password_hash(user['password_hash'], password):
             session['username'] = user['username']
+            session['role'] = user['role']
             return redirect(url_for('index'))
         
         return render_template('login.html', error="Invalid credentials")
@@ -177,6 +193,7 @@ def record_activity_page():
 
 @app.route('/activity')
 @login_required
+@admin_required
 def activity_form():
     return render_template('add_activity.html')
 
@@ -197,11 +214,13 @@ def student_history_page(student_id):
 
 @app.route('/logs')
 @login_required
+@admin_required
 def logs_page():
     return render_template('logs.html')
 
 @app.route('/prizes')
 @login_required
+@admin_required
 def prizes_page():
     return render_template('prizes.html')
 
@@ -212,6 +231,7 @@ def redeem_page():
     
 @app.route('/audit_logs')
 @login_required
+@admin_required
 def audit_logs_page():
     return render_template('audit_logs.html')
     
@@ -445,6 +465,7 @@ def api_student_history(student_id):
 
 @app.route('/api/add_activity', methods=['POST'])
 @login_required
+@admin_required
 def api_create_activity():
     data = request.get_json() or {}
     name = data.get('name')
@@ -529,6 +550,7 @@ def api_list_all_activities():
 
 @app.route('/api/activity/delete/<int:activity_id>', methods=['DELETE'])
 @login_required
+@admin_required
 def api_delete_activity(activity_id):
     conn = get_db_connection()
     try:
@@ -560,6 +582,7 @@ def api_delete_activity(activity_id):
 
 @app.route('/api/logs/view')
 @login_required
+@admin_required
 def api_view_logs():
     if not os.path.exists(LOG_PATH):
         return jsonify({'logs': ['Log file is empty or does not exist.']})
@@ -573,6 +596,7 @@ def api_view_logs():
 
 @app.route('/api/logs/download')
 @login_required
+@admin_required
 def download_logs():
     if not os.path.exists(LOG_PATH):
         abort(404, description="Log file not found.")
@@ -584,6 +608,7 @@ def download_logs():
 
 @app.route('/api/logs/clear', methods=['POST'])
 @login_required
+@admin_required
 def clear_logs():
     backup_file = f"{LOG_PATH}.bak.{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
     try:
@@ -617,6 +642,7 @@ def clear_logs():
 
 @app.route('/api/prizes/add', methods=['POST'])
 @login_required
+@admin_required
 def api_add_prize():
     data = request.get_json() or {}
     name = data.get('name')
@@ -741,6 +767,7 @@ def api_redeem_prize():
 
 @app.route('/api/prizes/delete/<int:prize_id>', methods=['DELETE'])
 @login_required
+@admin_required
 def api_delete_prize(prize_id):
     conn = get_db_connection()
     try:
@@ -773,6 +800,7 @@ def api_delete_prize(prize_id):
 
 @app.route('/api/logs/audit')
 @login_required
+@admin_required
 def api_view_audit_logs_data():
     conn = get_db_connection()
     if not conn: return jsonify({"success": False}), 500
@@ -805,6 +833,7 @@ def api_view_audit_logs_data():
 # 1. Redemption Report
 @app.route('/reports/redemptions')
 @login_required
+@admin_required
 def view_redemptions_report():
     conn = get_db_connection()
     try:
@@ -839,6 +868,7 @@ def view_redemptions_report():
 
 @app.route('/api/reports/redemptions/csv')
 @login_required
+@admin_required
 def download_redemption_csv():
     import csv
     import io
@@ -884,6 +914,7 @@ def download_redemption_csv():
 # 2. Inventory Report
 @app.route('/reports/inventory')
 @login_required
+@admin_required
 def view_inventory_report():
     conn = get_db_connection()
     try:
@@ -907,6 +938,7 @@ def view_inventory_report():
 
 @app.route('/api/reports/inventory/csv')
 @login_required
+@admin_required
 def download_inventory_csv():
     import csv
     import io

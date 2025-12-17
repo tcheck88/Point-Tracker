@@ -1,6 +1,6 @@
 """
 alerts.py - Leer México Alert System
-Includes: IPv4 forcing for Render, Rate Limiting (Cooldown), and Full Logging.
+Fixed: Prevents 'Death Loop' by using print() for internal errors instead of logger.
 """
 
 import smtplib
@@ -32,6 +32,7 @@ def send_alert(subject, message, error_obj=None):
     time_since_last = current_time - _last_alert_time
     
     if time_since_last < COOLDOWN_SECONDS:
+        # Warnings are safe (they don't trigger the ERROR handler in app.py)
         logger.warning(f"EMAIL SUPPRESSED: Alert '{subject}' blocked by cooldown. Remaining: {int(COOLDOWN_SECONDS - time_since_last)}s")
         return False
 
@@ -43,12 +44,12 @@ def send_alert(subject, message, error_obj=None):
     recipient_email = os.getenv('ADMIN_EMAIL')
 
     if not all([sender_email, sender_password, recipient_email]):
-        logger.error("ALERT SYSTEM DISABLED: Missing MAIL_USERNAME, MAIL_PASSWORD, or ADMIN_EMAIL.")
+        # Print ensures we see this in logs without crashing the app loop
+        print(f"[{datetime.now()}] ALERT SYSTEM DISABLED: Missing MAIL_USERNAME, MAIL_PASSWORD, or ADMIN_EMAIL.")
         return False
 
     try:
         # 3. FORCE IPv4 RESOLUTION (Critical for Render)
-        # Bypasses [Errno 101] Network is unreachable
         addr_info = socket.getaddrinfo(smtp_server, smtp_port, socket.AF_INET)
         ipv4_address = addr_info[0][4][0]
         logger.info(f"Resolved {smtp_server} to {ipv4_address}")
@@ -74,7 +75,6 @@ def send_alert(subject, message, error_obj=None):
         msg.attach(MIMEText(html_body, 'html'))
 
         # 5. SEND VIA SMTP
-        # Timeout ensures the web server doesn't hang forever
         with smtplib.SMTP(ipv4_address, smtp_port, timeout=10) as server:
             server.starttls()
             server.login(sender_email, sender_password)
@@ -86,8 +86,13 @@ def send_alert(subject, message, error_obj=None):
         return True
 
     except socket.timeout:
-        logger.error("SMTP Error: Connection timed out.")
+        # --- CRITICAL FIX: USE PRINT, NOT LOGGER ---
+        # This prevents the EmailAlertHandler from catching this error 
+        # and trying to send ANOTHER email, which causes the infinite loop.
+        print(f"[{datetime.now()}] SMTP Error: Connection timed out.")
         return False
+        
     except Exception as e:
-        logger.error(f"Failed to send email alert: {e}")
+        # --- CRITICAL FIX: USE PRINT, NOT LOGGER ---
+        print(f"[{datetime.now()}] Failed to send email alert: {e}")
         return False
