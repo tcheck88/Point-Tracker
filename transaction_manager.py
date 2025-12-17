@@ -1,5 +1,6 @@
 import logging
 from db_utils import get_db_connection
+import alerts  
 
 logger = logging.getLogger(__name__)
 
@@ -131,3 +132,58 @@ def log_audit_event(action_type, details, recorded_by="system"):
         conn.close()
 
 
+def redeem_prize_logic(student_id, prize_id, recorded_by):
+    """
+    Handles the full prize redemption flow:
+    Checks stock, verifies points, and records the deduction.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return False, "Could not connect to database."
+
+    try:
+        cur = conn.cursor()
+        
+        # 1. Fetch prize info
+        cur.execute("SELECT name, point_cost, stock_count FROM prize_inventory WHERE id = %s", (prize_id,))
+        prize = cur.fetchone()
+        if not prize:
+            return False, "Prize not found."
+
+        # Handle both dict and tuple returns
+        p_name = prize['name'] if isinstance(prize, dict) else prize[0]
+        p_cost = prize['point_cost'] if isinstance(prize, dict) else prize[1]
+        p_stock = prize['stock_count'] if isinstance(prize, dict) else prize[2]
+
+        # 2. Safety Checks
+        if p_stock <= 0:
+            return False, f"'{p_name}' is out of stock."
+
+        current_balance = get_student_balance(student_id)
+        if current_balance < p_cost:
+            return False, "Insufficient points."
+
+        # 3. Process Transaction (Negative points for redemption)
+        success, msg = add_points(
+            student_id=student_id,
+            points=-abs(p_cost),
+            activity_type=f"Redemption: {p_name}",
+            description="Prize Exchange",
+            recorded_by=recorded_by
+        )
+
+        if success:
+            # 4. Decrease stock count
+            cur.execute("UPDATE prize_inventory SET stock_count = stock_count - 1 WHERE id = %s", (prize_id,))
+            conn.commit()
+            return True, f"Successfully redeemed {p_name}!"
+
+        return False, msg
+
+    except Exception as e:
+        conn.rollback()
+        # Trigger an email alert if a database error happens during a money-related transaction
+        alerts.send_alert("Redemption Crash", f"Error during prize redemption for student {student_id}: {e}")
+        return False, f"Internal Error: {e}"
+    finally:
+        conn.close()
