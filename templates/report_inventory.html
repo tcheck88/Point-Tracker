@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Inventory Report') }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+            <a href="{{ url_for('index') }}" style="color: #1f6feb; text-decoration: none; font-size: 13px;">&larr; {{ _('Back to Dashboard') }}</a>
+            <h1 style="margin: 8px 0 0; color: #0f172a; font-size: 24px;">{{ _('Current Inventory') }}</h1>
+        </div>
+        <a href="/api/reports/inventory/csv" style="background: #1f6feb; color: white; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">
+            📥 {{ _('Download CSV') }}
+        </a>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <thead>
+            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                <th style="padding: 12px;">{{ _('Prize Name') }}</th>
+                <th style="padding: 12px;">{{ _('Description') }}</th>
+                <th style="padding: 12px;">{{ _('Status') }}</th>
+                <th style="padding: 12px; text-align: right;">{{ _('Cost') }}</th>
+                <th style="padding: 12px; text-align: right;">{{ _('Stock') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 12px; font-weight: 600;">{{ row.name }}</td>
+                <td style="padding: 12px; color: #64748b;">{{ row.description }}</td>
+                <td style="padding: 12px;">
+                    {% if row.active %}
+                    <span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;">{{ _('Active') }}</span>
+                    {% else %}
+                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;">{{ _('Inactive') }}</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 12px; text-align: right;">{{ row.point_cost }}</td>
+                <td style="padding: 12px; text-align: right; font-weight: 700; {% if row.stock_count < 5 %}color: #dc2626;{% endif %}">
+                    {{ row.stock_count }}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="padding: 40px; text-align: center; color: #94a3b8;">{{ _('No prizes found.') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
