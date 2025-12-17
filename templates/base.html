@@ -44,7 +44,7 @@
         }
         .lang-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
-        /* New Help Link Style */
+        /* New Help & Dashboard Link Style */
         .help-link {
             text-decoration: none; font-size: 11px; font-weight: 600; color: var(--secondary);
             margin-right: 12px; display: flex; align-items: center; gap: 4px;
@@ -59,6 +59,10 @@
     <div class="container">
         <header class="header">
             <div class="lang-toggle">
+                <a href="{{ url_for('index') }}" class="help-link" style="margin-right: 8px;">
+                    <span>🏠</span> {{ _('Dashboard') }}
+                </a>
+
                 <a href="{{ url_for('help_page') }}" class="help-link">
                     <span>❓</span> {{ _('Help') }}
                 </a>
