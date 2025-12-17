@@ -3,6 +3,7 @@ app.py - Leer México Activity Manager backend (PostgreSQL Version)
 Restored Production Version
 """
 
+from dotenv import load_dotenv  
 import os
 import sys
 import logging
@@ -21,6 +22,8 @@ import student_search
 import transaction_manager
 import alerts 
 import threading  
+
+load_dotenv()  
 
 # ---- 1. Paths and App Setup ----
 APP_DIR = os.path.dirname(__file__)
@@ -865,8 +868,13 @@ def download_inventory_csv():
         conn.close()
 
 
-
-
 if __name__ == '__main__':
-    logger.info("Starting Point Tracker Application...")
-    app.run(debug=True, port=5000)
+    # Check the environment variable. Default to False (Production safety)
+    is_debug = os.getenv('FLASK_DEBUG', '0') == '1'
+
+    if is_debug:
+        logger.info("Starting in DEVELOPMENT mode (Debug ON)")
+    else:
+        logger.info("Starting in PRODUCTION mode")
+
+    app.run(debug=is_debug, port=5000)
