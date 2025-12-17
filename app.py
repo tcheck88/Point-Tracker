@@ -62,16 +62,18 @@ class EmailAlertHandler(logging.Handler):
 
 handler = RotatingFileHandler(LOG_PATH, maxBytes=500000, backupCount=3)
 handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
-logging.getLogger().addHandler(handler)
-logging.getLogger().addHandler(EmailAlertHandler())
-logger = logging.getLogger(__name__)
+# logging.getLogger().addHandler(handler)
+# logging.getLogger().addHandler(EmailAlertHandler())
+# logger = logging.getLogger(__name__)
 
 # ---- 5. Auth Routes ----
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    print("DEBUG: Entered /login route") # Trace 1
     if request.method == 'POST':
+        print("DEBUG: Processing POST request") 
         username, password = request.form.get('username'), request.form.get('password')
-        conn = get_db_connection()
+        conn = get_db_connection() # This will trigger your db_utils print
         cur = conn.cursor()
         cur.execute("SELECT * FROM users WHERE username = %s", (username,))
         user = cur.fetchone()
@@ -80,7 +82,14 @@ def login():
             session['username'] = user['username']
             return redirect(url_for('index'))
         return render_template('login.html', error="Invalid credentials")
-    return render_template('login.html')
+    print("DEBUG: Rendering login.html template") # Trace 2
+    try:
+        return render_template('login.html')
+    except Exception as e:
+        print(f"CRITICAL TEMPLATE ERROR: {e}") # Catch missing template
+        return "Error loading login page", 500
+
+
 
 @app.route('/logout')
 def logout():
