@@ -20,6 +20,7 @@ import add_student
 import student_search
 import transaction_manager
 import alerts 
+import threading  
 
 # ---- 1. Paths and App Setup ----
 APP_DIR = os.path.dirname(__file__)
@@ -82,12 +83,26 @@ class EmailAlertHandler(logging.Handler):
         if record.levelno >= logging.ERROR:
             try:
                 msg = self.format(record)
-                alerts.send_alert(
-                    subject=f"Application Error: {record.levelname}",
-                    message=msg
-                )
+                # Define a wrapper function to send email without blocking
+                def send_async():
+                    try:
+                        # Attempt to send the alert
+                        alerts.send_alert(
+                            subject=f"System Error: {record.levelname}", 
+                            message=msg
+                        )
+                    except Exception as e:
+                        # If email fails, just log it to console so we don't crash
+                        print(f"Background Email Failed: {e}")
+
+                # Start the email task in a separate thread
+                thread = threading.Thread(target=send_async)
+                thread.start()
+
             except Exception:
                 self.handleError(record)
+
+
 
 file_handler = RotatingFileHandler(LOG_PATH, maxBytes=500000, backupCount=3)
 file_handler.setLevel(logging.INFO)

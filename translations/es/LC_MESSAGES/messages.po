@@ -336,5 +336,8 @@ msgstr "Descargar Bitácora de Canjes"
 msgid "Download Current Inventory"
 msgstr "Descargar Inventario Actual"
 
+msgid "Help"
+msgstr "Ayuda"
+
 msgid "Are you sure you want to delete"
 msgstr "¿Estás seguro de eliminar"

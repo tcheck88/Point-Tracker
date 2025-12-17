@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Staff Help & Cheat Sheet') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-container { max-width: 850px; margin: 0 auto; }
+    .help-box { 
+        border: 1px solid #e2e8f0; 
+        padding: 20px; 
+        border-radius: 12px; 
+        background: #fff; 
+        margin-bottom: 24px; 
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .help-box h2 { color: #1f6feb; margin-top: 0; font-size: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px; }
+    .step { margin-bottom: 10px; font-size: 15px; line-height: 1.5; color: #334155; }
+    .step strong { color: #0f172a; font-weight: 700; }
+    .tip { 
+        background: #eff6ff; 
+        padding: 12px 16px; 
+        border-left: 4px solid #1f6feb; 
+        font-size: 14px; 
+        color: #1e40af;
+        border-radius: 0 6px 6px 0;
+        margin-top: 15px;
+    }
+    .print-btn {
+        float: right;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .print-btn:hover { background: #e2e8f0; }
+    @media print {
+        .nav-bar, .print-btn { display: none; }
+        body { background: white; }
+        .help-box { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-container">
+    <a href="#" onclick="window.print(); return false;" class="print-btn">🖨️ {{ _('Print Guide') }}</a>
+    <h1 style="color: #0b3b61; margin-bottom: 24px;">{{ _('Staff Help Guide') }}</h1>
+
+    <div class="help-box">
+        <h2>1️⃣ {{ _('How to Reward Points') }}</h2>
+        <div class="step">1. {{ _('Go to') }} <strong>{{ _('Dashboard') }}</strong> → {{ _('Click') }} <strong>{{ _('Reward Points (Activity)') }}</strong>.</div>
+        <div class="step">2. <strong>{{ _('Search') }}</strong> {{ _('for the student (Type name → Click their name in the list).') }}</div>
+        <div class="step">3. {{ _('Select the') }} <strong>{{ _('Activity') }}</strong> {{ _('from the dropdown menu.') }}</div>
+        <div class="step">4. {{ _('(Optional) Add a note or adjust points manually.') }}</div>
+        <div class="step">5. {{ _('Click') }} <strong>{{ _('Post Transaction') }}</strong>.</div>
+        <div class="tip">✅ <strong>{{ _('Success') }}:</strong> {{ _('The student\'s new point balance will appear at the top immediately.') }}</div>
+    </div>
+
+    <div class="help-box">
+        <h2>2️⃣ {{ _('How to Redeem a Prize') }}</h2>
+        <div class="step">1. {{ _('Go to') }} <strong>{{ _('Dashboard') }}</strong> → {{ _('Click') }} <strong>{{ _('Redeem Points (Prizes)') }}</strong>.</div>
+        <div class="step">2. <strong>{{ _('Search') }}</strong> {{ _('for the student and select them.') }}</div>
+        <div class="step">3. {{ _('Check their') }} <strong>{{ _('Balance') }}</strong> {{ _('(Large blue number).') }}</div>
+        <div class="step">4. {{ _('Find the prize in the list. (If grayed out, they need more points).') }}</div>
+        <div class="step">5. {{ _('Click the') }} <strong>{{ _('Redeem') }}</strong> {{ _('button.') }}</div>
+    </div>
+
+    <div class="help-box">
+        <h2>3️⃣ {{ _('How to Add a Student') }}</h2>
+        <div class="step">1. {{ _('Go to') }} <strong>{{ _('Dashboard') }}</strong> → {{ _('Click') }} <strong>{{ _('Add New Student') }}</strong>.</div>
+        <div class="step">2. {{ _('Enter') }} <strong>{{ _('Full Name') }}</strong> {{ _('(Must match certificates),') }} <strong>{{ _('Grade') }}</strong>, {{ _('and') }} <strong>{{ _('Classroom') }}</strong>.</div>
+        <div class="step">3. {{ _('Click') }} <strong>{{ _('Add Student') }}</strong>.</div>
+        <div class="tip">⚠️ <strong>{{ _('Stop!') }}</strong> {{ _('Always search the directory FIRST to make sure the student doesn\'t already exist.') }}</div>
+    </div>
+
+    <div class="help-box">
+        <h2>❓ {{ _('Troubleshooting') }}</h2>
+        <p><strong>{{ _('I made a mistake giving points!') }}</strong><br>
+        {{ _('Go to "Reward Points", select the student, choose "Manual Adjustment", and enter a') }} <strong>{{ _('negative number') }}</strong> (e.g., -50) {{ _('to remove them.') }}</p>
+        
+        <p><strong>{{ _('The Spanish translation isn\'t showing?') }}</strong><br>
+        {{ _('Refresh the page. If it persists, add') }} <code>?lang=es</code> {{ _('to the end of the website address once.') }}</p>
+    </div>
+</div>
+{% endblock %}
