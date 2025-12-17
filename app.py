@@ -241,5 +241,5 @@ def api_view_audit_logs():
 
 if __name__ == '__main__':
     # Initialize DB tables if they don't exist
-    init_db()
+#    init_db()
     app.run(debug=True)

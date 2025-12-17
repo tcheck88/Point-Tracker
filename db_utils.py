@@ -17,11 +17,13 @@ def get_db_connection():
     try:
         # Added connect_timeout=5 to prevent the 30-second Gunicorn 'hang'
         # This will raise a real error after 5 seconds if the network is unreachable
+        print(f"DEBUG: Attempting connection to {db_url.split('@')[1]}")
         conn = psycopg2.connect(
             db_url, 
             cursor_factory=RealDictCursor, 
             connect_timeout=5
         )
+        print("DEBUG: Connection Successful")
         return conn
     except Exception as e:
         # This will now appear in your logs after only 5 seconds!
