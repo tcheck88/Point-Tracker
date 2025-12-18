@@ -221,5 +221,28 @@
             <main>{% block content %}{% endblock %}</main>
         </div>
     </div>
+
+<script>
+        (function() {
+            // 1 Hour in seconds
+            const IDLE_LIMIT_SECONDS = 3600; 
+            const LOGOUT_URL = "{{ url_for('logout') }}";
+            let idleTimer;
+
+            function resetTimer() {
+                clearTimeout(idleTimer);
+                idleTimer = setTimeout(() => {
+                    // CHANGE THIS LINE: Add the query parameter
+                    window.location.href = LOGOUT_URL + "?timeout=1";
+                }, IDLE_LIMIT_SECONDS * 1000);
+            }
+
+            ['click', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(evt => {
+                document.addEventListener(evt, resetTimer, true);
+            });
+
+            resetTimer();
+        })();
+    </script>
 </body>
 </html>

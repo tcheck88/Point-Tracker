@@ -150,6 +150,7 @@ except Exception as e:
 
 # ---- ROUTES START BELOW ----
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -159,46 +160,77 @@ def login():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # FIX 1: Select explicit columns so we know the order (0=user, 1=pass, 2=role)
         cur.execute("SELECT username, password_hash, role FROM users WHERE username = %s", (username,))
         user = cur.fetchone()
         conn.close()
 
         if user:
-            # FIX 2: Handle both Dictionary (RealDictCursor) and Tuple (Standard Cursor)
+            # Handle both Dictionary (RealDictCursor) and Tuple (Standard Cursor)
             if isinstance(user, dict):
                 stored_hash = user['password_hash']
                 role = user['role']
                 db_user = user['username']
             else:
-                # Tuple order matches our SELECT statement above
                 db_user = user[0]
                 stored_hash = user[1]
                 role = user[2]
 
-            # FIX 3: Debug Log to see what is happening
-            print(f"DEBUG LOGIN: User={db_user}, Role='{role}'")
-
             if check_password_hash(stored_hash, password):
                 session['username'] = db_user
-                
-                # FIX 4: Strip whitespace just in case ('admin ' -> 'admin')
                 session['role'] = role.strip() if role else 'staff'
                 
-                print(f"DEBUG SESSION: Role set to '{session['role']}'")
+                # --- NEW: Track the Login ---
+                try:
+                    transaction_manager.log_audit_event(
+                        action_type="USER_LOGIN",
+                        details=f"User logged in successfully: {db_user}",
+                        recorded_by=db_user
+                    )
+                except Exception as e:
+                    # Don't block login if logging fails, just print to console
+                    print(f"Error logging login event: {e}")
+                # ----------------------------
+
                 return redirect(url_for('index'))
         
-        print("DEBUG LOGIN: Failed (User not found or Password mismatch)")
         return render_template('login.html', error="Invalid credentials")
         
     return render_template('login.html')
 
-
-
 @app.route('/logout')
 def logout():
+    user = session.get('username')
+    # Check if this logout came from the auto-script
+    is_timeout = request.args.get('timeout') == '1'
+
+    if user:
+        try:
+            # Decide what to log
+            if is_timeout:
+                action = "SESSION_TIMEOUT"
+                details = f"Session timed out (Auto-logout): {user}"
+                recorder = "system"
+            else:
+                action = "USER_LOGOUT"
+                details = f"User logged out manually: {user}"
+                recorder = user
+
+            transaction_manager.log_audit_event(
+                action_type=action,
+                details=details,
+                recorded_by=recorder
+            )
+        except Exception as e:
+            print(f"Error logging logout: {e}")
+
     session.clear()
+    
+    # If it was a timeout, show a message on the login screen
+    if is_timeout:
+        return redirect(url_for('login', error="Session timed out due to inactivity."))
+        
     return redirect(url_for('login'))
+    
 
 @app.route('/')
 @login_required
