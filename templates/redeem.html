@@ -3,83 +3,135 @@
 
 {% block extra_css %}
 <style>
-  /* Container Tightening */
-  .container { padding: 5px 20px !important; }
-  .nav-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .btn-nav { background: var(--primary); color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  /* Match spacing from Record Activity */
+  .redeem-container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+  
+  .nav-bar { margin-bottom: 10px; }
+  
+  /* Consistent Back Button */
+  .back-btn { 
+      background: white; border: 1px solid var(--border); padding: 8px 14px; 
+      border-radius: 6px; color: #64748b; font-size: 13px; cursor: pointer; 
+      display: inline-flex; align-items: center; font-weight: 600; text-decoration: none;
+  }
+  .back-btn:hover { background: #f1f5f9; color: #0f172a; }
 
-  /* Justified Two-Column Top Row */
-  .top-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-  .section-title { margin: 0 0 6px 0; font-size: 11px; text-transform: uppercase; color: var(--secondary); font-weight: 700; }
+  /* Grid Layout matching the other page */
+  .top-row { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  
+  /* Standard Card Style */
+  .card { 
+      background: white; 
+      border-radius: 12px; 
+      border: 1px solid var(--border); 
+      padding: 24px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+      display: flex; flex-direction: column;
+  }
+  
+  /* Standard Header Style */
+  h3 { 
+      margin: 0 0 16px 0; 
+      font-size: 16px; 
+      color: #0f172a; 
+      border-bottom: 1px solid #f1f5f9; 
+      padding-bottom: 10px; 
+      font-weight: 700;
+  }
 
-  /* Student Horizontal Banner */
-  #selectedDisplay { display: none; justify-content: space-between; align-items: center; background: #eff6ff; padding: 6px 10px; border-radius: 6px; border: 1px solid #dbeafe; margin-top: 6px; }
+  /* Student Banner */
+  #selectedDisplay { 
+      display: none; justify-content: space-between; align-items: center; 
+      background: #eff6ff; padding: 12px 16px; border-radius: 8px; 
+      border: 1px solid #dbeafe; margin-top: 10px; 
+  }
 
-  /* History Table with Date */
-  .history-scroll { height: 95px; overflow-y: auto; font-size: 11px; border: 1px solid #f1f5f9; border-radius: 6px; }
-  table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; padding: 4px 8px; background: #f8fafc; color: var(--secondary); font-size: 10px; position: sticky; top: 0; }
-  td { padding: 4px 8px; border-bottom: 1px solid #f1f5f9; }
+  /* Standard Input Style */
+  input[type="text"] { 
+      width: 100%; padding: 10px; border: 1px solid var(--border); 
+      border-radius: 8px; font-size: 14px; 
+  }
 
-  /* Prize Controls & Single-Line Grid */
-  .prize-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
-  .prize-search { flex: 1; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; }
-  .prize-list-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .prize-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; background: #fff; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: 0.1s; }
+  /* History Table */
+  .history-scroll { height: 140px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; background: #f8fafc; color: #64748b; font-weight: 600; position: sticky; top: 0; border-bottom: 1px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+
+  /* Prize List */
+  .prize-controls { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+  .prize-list-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  
+  .prize-row { 
+      display: flex; align-items: center; justify-content: space-between; 
+      padding: 10px 16px; background: #fff; border: 1px solid var(--border); 
+      border-radius: 8px; cursor: pointer; transition: 0.1s; 
+  }
   .prize-row:hover:not(.disabled) { border-color: var(--primary); background: #f0f7ff; }
-  .prize-details { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
-  .prize-meta { color: var(--secondary); font-size: 11px; margin-left: 8px; font-weight: normal; }
-  .prize-row.disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
+  .prize-details { font-size: 14px; font-weight: 600; color: #1e293b; }
+  .prize-meta { color: #64748b; font-size: 12px; margin-left: 8px; font-weight: normal; }
+  .prize-row.disabled { opacity: 0.6; filter: grayscale(1); cursor: not-allowed; background: #f8fafc; }
+
+  .btn-redeem { 
+      background: var(--primary); color: #fff; border: none; border-radius: 6px; 
+      padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; 
+  }
+  .btn-redeem:disabled { background: #cbd5e1; cursor: not-allowed; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="nav-bar">
-  <button class="btn-nav" onclick="window.history.back()">&larr; {{ _('Back') }}</button>
-  <button class="btn-nav" onclick="location.href='{{ url_for('index') }}'">{{ _('Home') }}</button>
-</div>
-
-<div class="top-row">
-  <div class="card">
-    <h3 class="section-title">{{ _('Identify Student') }}</h3>
-    <div style="position: relative;">
-      <input type="text" id="studentSearch" style="width:100%; padding:7px; border-radius:6px; border:1px solid var(--border); font-size:13px;" placeholder="{{ _('Search Name or ID...') }}" autocomplete="off">
-      <div id="studentResults" style="position:absolute; width:100%; background:#fff; border:1px solid var(--border); border-radius:6px; z-index:100; max-height:110px; overflow-y:auto; display:none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+<div class="redeem-container">
+    
+    <div class="nav-bar">
+        <button class="back-btn" onclick="window.history.back()">← {{ _('Back') }}</button>
     </div>
-    <div id="selectedDisplay">
-      <span id="dispName" style="font-weight:700; font-size:13px;"></span>
-      <div style="display:flex; align-items:baseline; gap:3px;">
-        <span id="dispPoints" style="font-weight:800; color:var(--primary); font-size:16px;">0</span>
-        <small style="font-size:9px; font-weight:700;">PTS</small>
-      </div>
-    </div>
-  </div>
 
-  <div class="card">
-    <h3 class="section-title">{{ _('Recent History') }}</h3>
-    <div class="history-scroll">
-      <table>
-        <thead>
-          <tr><th>{{ _('Date') }}</th><th>{{ _('Activity') }}</th><th style="text-align:right;">{{ _('Pts') }}</th></tr>
-        </thead>
-        <tbody id="historyBody">
-          <tr><td colspan="3" style="text-align:center; color:#94a3b8; padding:20px;">{{ _('Select a student') }}</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
+    <div class="top-row">
+        <div class="card">
+            <h3>{{ _('Identify Student') }}</h3>
+            <div style="position: relative;">
+                <input type="text" id="studentSearch" placeholder="{{ _('Search Name or ID...') }}" autocomplete="off">
+                <div id="studentResults" style="position:absolute; width:100%; background:#fff; border:1px solid var(--border); border-radius:8px; z-index:100; max-height:200px; overflow-y:auto; display:none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 4px;"></div>
+            </div>
+            
+            <div id="selectedDisplay">
+                <span id="dispName" style="font-weight:700; font-size:15px; color:#1e293b;"></span>
+                <div style="display:flex; align-items:baseline; gap:4px;">
+                    <span id="dispPoints" style="font-weight:800; color:var(--primary); font-size:18px;">0</span>
+                    <small style="font-size:11px; font-weight:700; color:var(--primary);">PTS</small>
+                </div>
+            </div>
+        </div>
 
-<div class="card">
-  <div class="prize-controls">
-    <h3 class="section-title" style="margin:0;">{{ _('Redeemable Prizes') }}</h3>
-    <input type="text" id="prizeSearch" class="prize-search" placeholder="{{ _('Filter by prize name...') }}" oninput="renderPrizes()">
-    <label style="font-size:11px; font-weight:600; cursor:pointer; color:var(--secondary);">
-      <input type="checkbox" id="filterPoints" checked onchange="renderPrizes()"> {{ _('Hide unaffordable') }}
-    </label>
-  </div>
-  <div id="prizeContainer" class="prize-list-grid"></div>
+        <div class="card">
+            <h3>{{ _('Recent History') }}</h3>
+            <div class="history-scroll">
+                <table>
+                    <thead>
+                        <tr><th>{{ _('Date') }}</th><th>{{ _('Activity') }}</th><th style="text-align:right;">{{ _('Pts') }}</th></tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <tr><td colspan="3" style="text-align:center; color:#94a3b8; padding:20px;">{{ _('Select a student') }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="prize-controls">
+            <h3 style="margin:0; border:none; padding:0; margin-right:auto;">{{ _('Redeemable Prizes') }}</h3>
+            
+            <input type="text" id="prizeSearch" placeholder="{{ _('Filter by prize name...') }}" oninput="renderPrizes()" style="width: 250px;">
+            
+            <label style="font-size:13px; font-weight:600; cursor:pointer; color:#64748b; display:flex; align-items:center; gap:6px;">
+                <input type="checkbox" id="filterPoints" checked onchange="renderPrizes()"> {{ _('Hide unaffordable') }}
+            </label>
+        </div>
+        
+        <div id="prizeContainer" class="prize-list-grid"></div>
+    </div>
 </div>
 
 <script>
@@ -90,11 +142,10 @@
   document.addEventListener('DOMContentLoaded', () => {
     fetchPrizes();
     
-    // NEW: Check URL for student_id
+    // Check URL for student_id
     const urlParams = new URLSearchParams(window.location.search);
     const paramId = urlParams.get('student_id');
     if (paramId) {
-        // If ID exists, select student (name will be fetched automatically)
         selectStudent(paramId);
     }
   });
@@ -103,12 +154,14 @@
     const term = e.target.value.trim();
     const results = document.getElementById('studentResults');
     if (term.length < 2) { results.style.display = 'none'; return; }
+    
     const res = await fetch(`/api/students/search?term=${encodeURIComponent(term)}`);
     const data = await res.json();
+    
     if (data.success) {
       results.innerHTML = data.students.map(s => `
-        <div onclick="selectStudent(${s.id}, '${s.full_name.replace(/'/g, "\\'")}')" style="padding:7px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:12px;">
-          <strong>${s.full_name}</strong> <small>(${s.total_points} pts)</small>
+        <div onclick="selectStudent(${s.id}, '${s.full_name.replace(/'/g, "\\'")}')" style="padding:10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:13px; color:#334155;">
+          <strong>${s.full_name}</strong> <span style="color:#64748b;">(${s.total_points} pts)</span>
         </div>`).join('');
       results.style.display = 'block';
     }
@@ -126,14 +179,13 @@
     if (data.success) {
       currentBalance = data.total_points;
       
-      // Use provided name OR name from API (fixing the profile link issue)
       const finalName = name || data.student_name || 'Student';
       
       document.getElementById('dispName').textContent = finalName;
       document.getElementById('dispPoints').textContent = currentBalance;
       document.getElementById('selectedDisplay').style.display = 'flex';
       
-      document.getElementById('historyBody').innerHTML = data.history.slice(0, 8).map(h => `
+      document.getElementById('historyBody').innerHTML = data.history.slice(0, 10).map(h => `
         <tr>
           <td>${new Date(h.timestamp).toLocaleDateString()}</td>
           <td>${h.activity_type}</td>
@@ -166,15 +218,14 @@
       
       const div = document.createElement('div');
       div.className = `prize-row ${!canAfford ? 'disabled' : ''}`;
-      // Add visual tooltip if disabled
       const titleAttr = !canAfford ? 'title="{{ _("Not enough points or out of stock") }}"' : '';
       
       div.onclick = () => { if(canAfford && selectedId) redeemPrize(p.id, p.name); };
       div.innerHTML = `
         <div class="prize-details" ${titleAttr}>
-          <strong>${p.name}</strong> <span class="prize-meta">${p.point_cost} pts | Stock: ${p.stock_count}</span>
+          ${p.name} <span class="prize-meta">${p.point_cost} pts | Stock: ${p.stock_count}</span>
         </div>
-        <button class="btn-nav" style="padding:2px 8px; font-size:10px;" ${(!canAfford || !selectedId) ? 'disabled' : ''}>{{ _('Redeem') }}</button>`;
+        <button class="btn-redeem" ${(!canAfford || !selectedId) ? 'disabled' : ''}>{{ _('Redeem') }}</button>`;
       container.appendChild(div);
     });
   }
@@ -189,7 +240,6 @@
     
     const result = await res.json();
     if (result.success) {
-      // Refresh balance and history after successful redemption
       selectStudent(selectedId, document.getElementById('dispName').textContent);
     } else {
       alert("Error: " + result.message);

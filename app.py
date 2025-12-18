@@ -83,16 +83,15 @@ def login_required(f):
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get('role') != 'admin':
-            # Check if it's an API call or a regular page load
+        # Allow BOTH 'admin' and 'sysadmin' to access general admin tools
+        if session.get('role') not in ['admin', 'sysadmin']:
             if request.path.startswith('/api/') or request.is_json:
                 return jsonify({"success": False, "message": "Access Denied: Admins only."}), 403
             else:
-                # Flash a message and redirect to dashboard (or render a 403 page)
-                # return render_template('403.html'), 403  <-- If you have a 403.html
                 return redirect(url_for('index')) 
         return f(*args, **kwargs)
     return decorated_function    
+
     
 
 # ---- 4. Logging Setup ----
@@ -266,7 +265,93 @@ def help_page():
     return render_template('help.html')
     
     
+# ---- PASSWORD MANAGEMENT ROUTES (Added) ----
 
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        current_pass = request.form.get('current_password')
+        new_pass = request.form.get('new_password')
+        confirm_pass = request.form.get('confirm_password')
+
+        if new_pass != confirm_pass:
+            return render_template('change_password.html', error="New passwords do not match")
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        # Verify old password
+        cur.execute("SELECT password_hash FROM users WHERE username = %s", (session['username'],))
+        user = cur.fetchone()
+        
+        if user:
+            # Handle Tuple/Dict difference
+            stored_hash = user['password_hash'] if isinstance(user, dict) else user[0]
+            
+            if check_password_hash(stored_hash, current_pass):
+                # Update to new password
+                new_hash = generate_password_hash(new_pass)
+                cur.execute("UPDATE users SET password_hash = %s WHERE username = %s", (new_hash, session['username']))
+                conn.commit()
+                conn.close()
+                return render_template('change_password.html', success="Password changed successfully!")
+            else:
+                conn.close()
+                return render_template('change_password.html', error="Current password is incorrect")
+        
+        conn.close()
+        return render_template('change_password.html', error="User not found")
+
+    return render_template('change_password.html')
+
+@app.route('/admin/users')
+@login_required
+def manage_users():
+    # STRICT CHECK: Only 'sysadmin' can access this
+    if session.get('role') != 'sysadmin':
+        return redirect(url_for('index'))
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, username, role FROM users ORDER BY id ASC")
+    users = cur.fetchall()
+    conn.close()
+    
+    # Convert tuples to dicts if necessary for the template
+    user_list = []
+    for u in users:
+        if isinstance(u, dict):
+            user_list.append(u)
+        else:
+            user_list.append({'id': u[0], 'username': u[1], 'role': u[2]})
+
+    return render_template('manage_users.html', users=user_list)
+
+
+
+@app.route('/admin/reset_password', methods=['POST'])
+@login_required
+def admin_reset_password():
+    # STRICT CHECK: Only 'sysadmin' can access this
+    if session.get('role') != 'sysadmin':
+        return redirect(url_for('index'))
+
+    user_id = request.form.get('user_id')
+    new_pass = request.form.get('new_pass')
+    
+    if not new_pass or len(new_pass) < 4:
+         return redirect(url_for('manage_users'))
+
+    new_hash = generate_password_hash(new_pass)
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (new_hash, user_id))
+    conn.commit()
+    conn.close()
+    
+    # Redirect back to the manager page
+    return redirect(url_for('manage_users'))
 
 # ---- Student Management API ----
 
