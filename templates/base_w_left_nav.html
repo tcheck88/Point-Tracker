@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Point Tracker{% endblock %}</title>
+    <style>
+        :root {
+            --primary: #1f6feb;
+            --bg-color: #f8fafc;
+            --text-color: #0f172a;
+            --sidebar-width: 240px;
+            --border: #e2e8f0;
+        }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-color); color: var(--text-color); display: flex; min-height: 100vh; }
+        
+        /* Sidebar Navigation */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: white;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            position: fixed;
+            height: 100%;
+        }
+        .brand { font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
+        .nav-group { margin-bottom: 24px; }
+        .nav-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
+        .nav-link { 
+            display: block; padding: 10px 12px; color: #475569; text-decoration: none; 
+            border-radius: 6px; margin-bottom: 4px; font-size: 14px; font-weight: 500; transition: all 0.2s; 
+        }
+        .nav-link:hover { background: #f1f5f9; color: var(--primary); }
+        .nav-link.active { background: #eff6ff; color: var(--primary); font-weight: 600; }
+        
+        .user-info { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); }
+        .user-badge { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; }
+        .btn-logout { font-size: 12px; color: #dc2626; text-decoration: none; font-weight: 600; }
+
+        /* Main Content */
+        .main-content { margin-left: var(--sidebar-width); flex: 1; padding: 30px; }
+        
+        /* Language Toggle */
+        .lang-toggle { font-size: 12px; margin-top: 10px; }
+        .lang-toggle a { text-decoration: none; color: #94a3b8; font-weight: 600; margin-right: 8px; }
+        .lang-toggle a.active { color: var(--primary); }
+
+        @media print {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 0; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="brand">⚡ Leer México</div>
+
+        <div class="nav-group">
+            <div class="nav-label">{{ _('Main') }}</div>
+            <a href="{{ url_for('index') }}" class="nav-link">{{ _('Dashboard') }}</a>
+            <a href="{{ url_for('students_page') }}" class="nav-link">{{ _('Student Directory') }}</a>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-label">{{ _('Actions') }}</div>
+            <a href="{{ url_for('add_student_page') }}" class="nav-link">{{ _('Add Student') }}</a>
+            <a href="{{ url_for('record_activity_page') }}" class="nav-link">{{ _('Reward Points') }}</a>
+            <a href="{{ url_for('redeem_page') }}" class="nav-link">{{ _('Redeem Prizes') }}</a>
+        </div>
+
+        {% if session.get('role') == 'admin' %}
+        <div class="nav-group" style="background: #fdf2f8; padding: 10px; border-radius: 8px; border: 1px solid #fce7f3;">
+            <div class="nav-label" style="color: #db2777;">{{ _('Admin Zone') }}</div>
+            
+            <a href="{{ url_for('prizes_page') }}" class="nav-link" style="color: #be185d;">🎁 {{ _('Inventory') }}</a>
+            
+            <a href="{{ url_for('view_redemptions_report') }}" class="nav-link" style="color: #be185d;">📊 {{ _('Redemption Report') }}</a>
+            <a href="{{ url_for('view_inventory_report') }}" class="nav-link" style="color: #be185d;">📦 {{ _('Stock Report') }}</a>
+            
+            <a href="{{ url_for('logs_page') }}" class="nav-link" style="color: #be185d;">⚠️ {{ _('System Logs') }}</a>
+            <a href="{{ url_for('audit_logs_page') }}" class="nav-link" style="color: #be185d;">🛡️ {{ _('Audit Trail') }}</a>
+        </div>
+        {% endif %}
+
+        <div class="nav-group">
+            <a href="{{ url_for('help_page') }}" class="nav-link">❓ {{ _('Help Center') }}</a>
+        </div>
+
+        <div class="user-info">
+            <div class="user-badge">
+                👤 {{ session.get('username', 'User') }} 
+                <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase;">
+                    {{ session.get('role', 'staff') }}
+                </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="lang-toggle">
+                    <a href="{{ url_for('index', lang='en') }}" class="{{ 'active' if session.get('lang') == 'en' else '' }}">EN</a>
+                    <a href="{{ url_for('index', lang='es') }}" class="{{ 'active' if session.get('lang') == 'es' else '' }}">ES</a>
+                </div>
+                <a href="{{ url_for('logout') }}" class="btn-logout">{{ _('Logout') }}</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+</body>
+</html>

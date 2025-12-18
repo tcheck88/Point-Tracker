@@ -159,17 +159,42 @@ def login():
         
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
+        
+        # FIX 1: Select explicit columns so we know the order (0=user, 1=pass, 2=role)
+        cur.execute("SELECT username, password_hash, role FROM users WHERE username = %s", (username,))
         user = cur.fetchone()
         conn.close()
 
-        if user and check_password_hash(user['password_hash'], password):
-            session['username'] = user['username']
-            session['role'] = user['role']
-            return redirect(url_for('index'))
+        if user:
+            # FIX 2: Handle both Dictionary (RealDictCursor) and Tuple (Standard Cursor)
+            if isinstance(user, dict):
+                stored_hash = user['password_hash']
+                role = user['role']
+                db_user = user['username']
+            else:
+                # Tuple order matches our SELECT statement above
+                db_user = user[0]
+                stored_hash = user[1]
+                role = user[2]
+
+            # FIX 3: Debug Log to see what is happening
+            print(f"DEBUG LOGIN: User={db_user}, Role='{role}'")
+
+            if check_password_hash(stored_hash, password):
+                session['username'] = db_user
+                
+                # FIX 4: Strip whitespace just in case ('admin ' -> 'admin')
+                session['role'] = role.strip() if role else 'staff'
+                
+                print(f"DEBUG SESSION: Role set to '{session['role']}'")
+                return redirect(url_for('index'))
         
+        print("DEBUG LOGIN: Failed (User not found or Password mismatch)")
         return render_template('login.html', error="Invalid credentials")
+        
     return render_template('login.html')
+
+
 
 @app.route('/logout')
 def logout():

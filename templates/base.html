@@ -1,115 +1,227 @@
 <!DOCTYPE html>
-<html lang="{{ session.get('lang', 'en') }}">
+<html lang="{{ get_locale() }}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Point Tracker{% endblock %}</title>
+    <meta charset="utf-8" />
+    <title>{% block title %}Leer México{% endblock %}</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='logo.jpg') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style>
         :root {
             --primary: #1f6feb;
-            --bg-color: #f8fafc;
-            --text-color: #0f172a;
-            --sidebar-width: 240px;
+            --primary-dark: #165ecb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --secondary: #64748b;
             --border: #e2e8f0;
+            --sidebar-width: 260px;
         }
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-color); color: var(--text-color); display: flex; min-height: 100vh; }
+        * { box-sizing: border-box; }
         
-        /* Sidebar Navigation */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; padding: 0; 
+            background: var(--bg); 
+            color: var(--text); 
+            line-height: 1.5; 
+            display: flex; 
+            min-height: 100vh;
+            /* Prevent the whole body from scrolling; individual sections will scroll */
+            overflow-y: hidden; 
+        }
+
+        /* --- SIDEBAR STYLES --- */
         .sidebar {
             width: var(--sidebar-width);
             background: white;
             border-right: 1px solid var(--border);
             display: flex;
-            flex-direction: column;
-            padding: 20px;
+            flex-direction: column; /* Stack items vertically */
+            height: 100vh; /* Force full height */
             position: fixed;
-            height: 100%;
+            z-index: 10;
         }
-        .brand { font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
+
+        /* 1. FIXED BRAND HEADER */
+        .brand-section {
+            flex-shrink: 0; /* Don't shrink */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            background: white;
+        }
+        .brand-logo {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border: 1px solid #f1f5f9;
+            padding: 4px;
+        }
+        .brand-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 0;
+            line-height: 1.2;
+        }
+        .brand-subtitle {
+            font-size: 11px;
+            color: var(--secondary);
+            margin-top: 6px;
+            font-weight: 500;
+            line-height: 1.4;
+            max-width: 90%;
+        }
+
+        /* 2. SCROLLABLE NAVIGATION AREA */
+        .nav-scroll-area {
+            flex-grow: 1; /* Take up all remaining space */
+            overflow-y: auto; /* Scroll only if content overflows */
+            padding: 20px;
+        }
+        /* Custom Scrollbar for Sidebar */
+        .nav-scroll-area::-webkit-scrollbar { width: 5px; }
+        .nav-scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .nav-scroll-area::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+
         .nav-group { margin-bottom: 24px; }
-        .nav-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
+        .nav-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
         .nav-link { 
-            display: block; padding: 10px 12px; color: #475569; text-decoration: none; 
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 12px; color: #475569; text-decoration: none; 
             border-radius: 6px; margin-bottom: 4px; font-size: 14px; font-weight: 500; transition: all 0.2s; 
         }
         .nav-link:hover { background: #f1f5f9; color: var(--primary); }
         .nav-link.active { background: #eff6ff; color: var(--primary); font-weight: 600; }
-        
-        .user-info { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); }
-        .user-badge { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; }
-        .btn-logout { font-size: 12px; color: #dc2626; text-decoration: none; font-weight: 600; }
 
-        /* Main Content */
-        .main-content { margin-left: var(--sidebar-width); flex: 1; padding: 30px; }
-        
-        /* Language Toggle */
-        .lang-toggle { font-size: 12px; margin-top: 10px; }
-        .lang-toggle a { text-decoration: none; color: #94a3b8; font-weight: 600; margin-right: 8px; }
-        .lang-toggle a.active { color: var(--primary); }
+        /* 3. FIXED FOOTER (USER INFO) */
+        .user-info { 
+            flex-shrink: 0; /* Don't shrink */
+            margin-top: auto; 
+            padding: 20px; 
+            border-top: 1px solid var(--border); 
+            background: white;
+        }
+        .user-badge { font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px; }
+        .role-badge { 
+            background: #e2e8f0; color: #475569; padding: 2px 6px; 
+            border-radius: 4px; font-size: 10px; text-transform: uppercase; font-weight: 700; 
+        }
+        .btn-logout { 
+            display: flex; align-items: center; gap: 6px; margin-top: 12px;
+            font-size: 13px; color: #dc2626; text-decoration: none; font-weight: 600; 
+            padding: 8px 12px; border-radius: 6px; transition: 0.2s;
+        }
+        .btn-logout:hover { background: #fef2f2; }
 
+        /* Language Buttons */
+        .lang-switch-wrapper {
+            display: flex; gap: 8px; margin-bottom: 8px; padding-left: 12px;
+        }
+        .lang-btn {
+            text-decoration: none; font-size: 11px; font-weight: 700; color: #64748b;
+            padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 4px; transition: 0.2s;
+            background: #fff;
+            text-align: center;
+            min-width: 32px;
+        }
+        .lang-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .lang-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* --- MAIN CONTENT STYLES --- */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            width: calc(100% - var(--sidebar-width));
+            height: 100vh;
+            overflow-y: auto; /* Content scrolls independently */
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 30px; }
+        
         @media print {
             .sidebar { display: none; }
-            .main-content { margin-left: 0; padding: 0; }
+            .main-wrapper { margin-left: 0; }
+            .container { max-width: 100%; padding: 0; }
         }
+
+        {% block extra_css %}{% endblock %}
     </style>
-    {% block extra_css %}{% endblock %}
 </head>
 <body>
 
     <nav class="sidebar">
-        <div class="brand">⚡ Leer México</div>
-
-        <div class="nav-group">
-            <div class="nav-label">{{ _('Main') }}</div>
-            <a href="{{ url_for('index') }}" class="nav-link">{{ _('Dashboard') }}</a>
-            <a href="{{ url_for('students_page') }}" class="nav-link">{{ _('Student Directory') }}</a>
+        <div class="brand-section">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="brand-logo">
+            <div class="brand-title">Leer México</div>
+            <div class="brand-subtitle">{{ _('Student Point & Activity Management System') }}</div>
         </div>
 
-        <div class="nav-group">
-            <div class="nav-label">{{ _('Actions') }}</div>
-            <a href="{{ url_for('add_student_page') }}" class="nav-link">{{ _('Add Student') }}</a>
-            <a href="{{ url_for('record_activity_page') }}" class="nav-link">{{ _('Reward Points') }}</a>
-            <a href="{{ url_for('redeem_page') }}" class="nav-link">{{ _('Redeem Prizes') }}</a>
-        </div>
+        <div class="nav-scroll-area">
+            <div class="nav-group">
+                <div class="nav-label">{{ _('Main') }}</div>
+                <a href="{{ url_for('index') }}" class="nav-link">🏠 {{ _('Dashboard') }}</a>
+                <a href="{{ url_for('students_page') }}" class="nav-link">👥 {{ _('Student Directory') }}</a>
+            </div>
 
-        {% if session.get('role') == 'admin' %}
-        <div class="nav-group" style="background: #fdf2f8; padding: 10px; border-radius: 8px; border: 1px solid #fce7f3;">
-            <div class="nav-label" style="color: #db2777;">{{ _('Admin Zone') }}</div>
-            
-            <a href="{{ url_for('prizes_page') }}" class="nav-link" style="color: #be185d;">🎁 {{ _('Inventory') }}</a>
-            
-            <a href="{{ url_for('view_redemptions_report') }}" class="nav-link" style="color: #be185d;">📊 {{ _('Redemption Report') }}</a>
-            <a href="{{ url_for('view_inventory_report') }}" class="nav-link" style="color: #be185d;">📦 {{ _('Stock Report') }}</a>
-            
-            <a href="{{ url_for('logs_page') }}" class="nav-link" style="color: #be185d;">⚠️ {{ _('System Logs') }}</a>
-            <a href="{{ url_for('audit_logs_page') }}" class="nav-link" style="color: #be185d;">🛡️ {{ _('Audit Trail') }}</a>
-        </div>
-        {% endif %}
+            <div class="nav-group">
+                <div class="nav-label">{{ _('Actions') }}</div>
+                <a href="{{ url_for('add_student_page') }}" class="nav-link">➕ {{ _('Add Student') }}</a>
+                <a href="{{ url_for('record_activity_page') }}" class="nav-link">⭐ {{ _('Reward Points') }}</a>
+                <a href="{{ url_for('redeem_page') }}" class="nav-link">🎁 {{ _('Redeem Points') }}</a>
+            </div>
 
-        <div class="nav-group">
-            <a href="{{ url_for('help_page') }}" class="nav-link">❓ {{ _('Help Center') }}</a>
+            {% if session.get('role') == 'admin' %}
+            <div class="nav-group" style="background: #f0fdf4; padding: 10px; border-radius: 8px; border: 1px solid #bbf7d0;">
+                <div class="nav-label" style="color: #15803d;">{{ _('Admin Zone') }}</div>
+                
+                <a href="{{ url_for('prizes_page') }}" class="nav-link" style="color: #166534;">🏷️ {{ _('Prize Catalog') }}</a>
+                <a href="{{ url_for('activity_form') }}" class="nav-link" style="color: #166534;">📝 {{ _('Activity Catalog') }}</a>
+                
+                <a href="{{ url_for('view_redemptions_report') }}" class="nav-link" style="color: #166534;">📊 {{ _('Redemption Log') }}</a>
+                <a href="{{ url_for('view_inventory_report') }}" class="nav-link" style="color: #166534;">📦 {{ _('Inventory Report') }}</a>
+                
+                <a href="{{ url_for('logs_page') }}" class="nav-link" style="color: #166534;">⚠️ {{ _('System Logs') }}</a>
+                <a href="{{ url_for('audit_logs_page') }}" class="nav-link" style="color: #166534;">🛡️ {{ _('Audit Trail') }}</a>
+            </div>
+            {% endif %}
+
+            <div class="nav-group">
+                <div class="nav-label">{{ _('Settings') }}</div>
+                
+                <div class="lang-switch-wrapper">
+                    <a href="?lang=en" class="lang-btn {% if get_locale() == 'en' %}active{% endif %}">EN</a>
+                    <a href="?lang=es" class="lang-btn {% if get_locale() == 'es' %}active{% endif %}">ES</a>
+                </div>
+
+                <a href="{{ url_for('help_page') }}" class="nav-link">❓ {{ _('Help Center') }}</a>
+            </div>
         </div>
 
         <div class="user-info">
             <div class="user-badge">
-                👤 {{ session.get('username', 'User') }} 
-                <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase;">
-                    {{ session.get('role', 'staff') }}
-                </span>
+                {{ session.get('username', 'Guest') }}
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="lang-toggle">
-                    <a href="{{ url_for('index', lang='en') }}" class="{{ 'active' if session.get('lang') == 'en' else '' }}">EN</a>
-                    <a href="{{ url_for('index', lang='es') }}" class="{{ 'active' if session.get('lang') == 'es' else '' }}">ES</a>
-                </div>
-                <a href="{{ url_for('logout') }}" class="btn-logout">{{ _('Logout') }}</a>
+            <div>
+                <span class="role-badge">{{ session.get('role', 'Staff') }}</span>
             </div>
+            
+            <a href="{{ url_for('logout') }}" class="btn-logout">
+                🚪 {{ _('Logout') }}
+            </a>
         </div>
     </nav>
 
-    <div class="main-content">
-        {% block content %}{% endblock %}
+    <div class="main-wrapper">
+        <div class="container">
+            <main>{% block content %}{% endblock %}</main>
+        </div>
     </div>
-
 </body>
 </html>

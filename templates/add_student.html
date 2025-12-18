@@ -26,7 +26,6 @@
     .btn-secondary { background: #fff; border: 1px solid #d1d5db; color: #111; text-decoration: none; font-size: 13px; }
     .btn-primary { background: #0b69a3; color: #fff; }
     
-    /* Explicit styling for the View link to ensure it looks like a button */
     .view-link {
         padding: 6px 12px;
         background: #f1f5f9;
@@ -104,7 +103,18 @@
 
 <script>
 (() => {
-  const _ = (s) => s;
+  // Pre-load translations from Server (Jinja) so JavaScript can use them
+  const messages = {
+    possibleMatches: "{{ _('Possible matches found') }}",
+    noClass: "{{ _('No Class Assigned') }}",
+    view: "{{ _('View') }}",
+    reqName: "{{ _('Full name is required.') }}",
+    studentCreated: "{{ _('Student created.') }}",
+    potentialDupes: "{{ _('Potential duplicates returned from server') }}",
+    saveAnyway: "{{ _('Save Anyway') }}",
+    networkError: "{{ _('Network or server error.') }}"
+  };
+
   const el = {
     fullName: document.getElementById('full_name'),
     nickname: document.getElementById('nickname'),
@@ -147,21 +157,21 @@
         const json = await res.json();
         if (json && json.matches && json.matches.length) {
           el.duplicatePanel.style.display = 'block';
-          el.duplicatePanel.innerHTML = `<strong>${_('Possible matches found')}</strong>`;
+          // Use Translation
+          el.duplicatePanel.innerHTML = `<strong>${messages.possibleMatches}</strong>`;
           json.matches.forEach(m => {
             const div = document.createElement('div');
             div.className = 'duplicate-item';
-            // Use full_name for PostgreSQL and update placeholder to "No Class Assigned"
             div.innerHTML = `
                 <div>
                     <strong>${m.full_name}</strong>
                     <div style="font-size:12px;color:#374151">
-                        ${m.classroom || _('No Class Assigned')} • ${m.phone || (m.email || 'no contact')}
+                        ${m.classroom || messages.noClass} • ${m.phone || (m.email || 'no contact')}
                     </div>
                 </div>
                 <div>
                     <a href="/student/${m.id}" target="_blank" class="view-link">
-                        ${_('View')}
+                        ${messages.view}
                     </a>
                 </div>`;
             el.duplicatePanel.appendChild(div);
@@ -188,7 +198,7 @@
       created_by: 'web_admin'
     };
 
-    if (!payload.full_name) { showErrors([_('Full name is required.')]); return; }
+    if (!payload.full_name) { showErrors([messages.reqName]); return; }
 
     try {
       const resp = await fetch('/api/add_student', {
@@ -198,26 +208,26 @@
       });
 
       if (resp.status === 201) {
-        showToast(_('Student created.'));
+        showToast(messages.studentCreated);
         location.reload();
       } else if (resp.status === 409) {
         const json = await resp.json();
         el.duplicatePanel.style.display = 'block';
-        el.duplicatePanel.innerHTML = `<strong>${_('Potential duplicates returned from server')}</strong>`;
+        el.duplicatePanel.innerHTML = `<strong>${messages.potentialDupes}</strong>`;
         (json.duplicates || []).forEach(m => {
           const div = document.createElement('div');
           div.className = 'duplicate-item';
           div.innerHTML = `
             <div>
               <strong>${m.full_name}</strong>
-              <div style="font-size:12px;color:#374151">${m.classroom || _('No Class Assigned')}</div>
+              <div style="font-size:12px;color:#374151">${m.classroom || messages.noClass}</div>
             </div>
-            <div><a href="/student/${m.id}" target="_blank" class="view-link">${_('View')}</a></div>`;
+            <div><a href="/student/${m.id}" target="_blank" class="view-link">${messages.view}</a></div>`;
           el.duplicatePanel.appendChild(div);
         });
 
         const overrideBtn = document.createElement('button');
-        overrideBtn.textContent = _('Save Anyway');
+        overrideBtn.textContent = messages.saveAnyway;
         overrideBtn.className = 'btn-primary';
         overrideBtn.style.marginTop = '12px';
         overrideBtn.onclick = async () => {
@@ -229,7 +239,7 @@
         };
         el.duplicatePanel.appendChild(overrideBtn);
       }
-    } catch (e) { showErrors([_('Network or server error.')]); }
+    } catch (e) { showErrors([messages.networkError]); }
   });
 })();
 </script>
