@@ -77,15 +77,12 @@ def add_new_student(data):
             data.get('sms_consent', False)
         ))
         
+        # We just need the ID to ensure it worked, though we don't return it currently
         new_id = cur.fetchone()['id']
         conn.commit()
         
-        # 4. Audit Log
-        cur.execute("""
-            INSERT INTO audit_log (event_type, target_table, target_id, details)
-            VALUES (%s, %s, %s, %s)
-        """, ('create_student', 'students', new_id, f"Created {full_name}"))
-        conn.commit()
+        # Note: We do NOT log to audit_log here anymore. 
+        # The main app.py handles logging to prevent schema mismatches.
 
         return True, "Student created successfully"
 

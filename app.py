@@ -561,13 +561,34 @@ def api_record_transaction():
         description=data.get('description', ''),
         recorded_by=staff_identity
     )
-
     if success:
+        # --- NEW: Fetch student name for the log ---
+        student_name = f"Student {student_id}" # Fallback
+        try:
+            s_obj = student_search.get_student_by_id(int(student_id))
+            if s_obj:
+                student_name = s_obj['full_name']
+        except Exception:
+            pass 
+
+        # --- UPDATED: Log to System Audit Trail ---
+        try:
+            transaction_manager.log_audit_event(
+                action_type="POINT_AWARD",
+                details=f"Awarded {points} pts to {student_name} for '{activity_name}'",
+                recorded_by=staff_identity
+            )
+        except Exception as e:
+            logger.error(f"Audit log failed: {e}")
+        # --------------------------------------
+
         logger.info(f"Points recorded for student {student_id} by {staff_identity}")
         return jsonify({"success": True, "message": msg}), 200
     else:
         logger.error(f"Transaction failed for student {student_id}: {msg}")
         return jsonify({"success": False, "message": msg}), 500
+
+
 
 @app.route('/api/student/<int:student_id>/history', methods=['GET'])
 @login_required
@@ -601,6 +622,64 @@ def api_student_history(student_id):
     except Exception as e:
         logger.error(f"History error: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/api/reports/students/csv')
+@login_required
+def download_all_students_csv():
+    import csv
+    import io
+    
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        # Fetch all students with their live point balance
+        cur.execute("""
+            SELECT s.id, s.full_name, s.nickname, s.grade, s.classroom, 
+                   s.parent_name, s.email, s.phone, s.sms_consent,
+                   COALESCE(SUM(al.points), 0) as total_points
+            FROM students s
+            LEFT JOIN activity_log al ON s.id = al.student_id
+            GROUP BY s.id
+            ORDER BY s.grade ASC, s.classroom ASC, s.full_name ASC
+        """)
+        rows = cur.fetchall()
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # CSV Headers
+        writer.writerow([
+            'Student ID', 'Full Name', 'Nickname', 'Grade', 'Classroom', 
+            'Parent Name', 'Email', 'Phone', 'SMS Consent', 'Total Points'
+        ])
+        
+        for row in rows:
+            is_dict = isinstance(row, dict)
+            writer.writerow([
+                row['id'] if is_dict else row[0],
+                row['full_name'] if is_dict else row[1],
+                row['nickname'] if is_dict else row[2],
+                row['grade'] if is_dict else row[3],
+                row['classroom'] if is_dict else row[4],
+                row['parent_name'] if is_dict else row[5],
+                row['email'] if is_dict else row[6],
+                row['phone'] if is_dict else row[7],
+                'Yes' if (row['sms_consent'] if is_dict else row[8]) else 'No',
+                row['total_points'] if is_dict else row[9]
+            ])
+            
+        output.seek(0)
+        return send_file(
+            io.BytesIO(output.getvalue().encode('utf-8-sig')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f"All_Students_{datetime.datetime.now().strftime('%Y-%m-%d')}.csv"
+        )
+    except Exception as e:
+        logger.error(f"Export error: {e}")
+        return f"Error exporting CSV: {e}", 500
+    finally:
+        conn.close()
 
 
 # ---- ACTIVITY RELATED ROUTES ----
@@ -890,12 +969,34 @@ def api_redeem_prize():
             description="Prize Exchange",
             recorded_by=staff_identity
         )
-        
         if success:
             cur.execute("UPDATE prize_inventory SET stock_count = stock_count - 1 WHERE id = %s", (prize_id,))
             conn.commit()
+            
+            # --- NEW: Fetch student name for audit log ---
+            # We reuse the existing database cursor 'cur'
+            cur.execute("SELECT full_name FROM students WHERE id = %s", (student_id,))
+            s_row = cur.fetchone()
+            
+            student_name = f"Student {student_id}" # Fallback
+            if s_row:
+                # Handle both Dictionary and Tuple cursor types
+                student_name = s_row['full_name'] if isinstance(s_row, dict) else s_row[0]
+
+            # --- UPDATED: Log to System Audit Trail ---
+            try:
+                transaction_manager.log_audit_event(
+                    action_type="PRIZE_REDEEM",
+                    details=f"{student_name} redeemed '{p_name}' (-{p_cost} pts)",
+                    recorded_by=staff_identity
+                )
+            except Exception as e:
+                logger.error(f"Audit log failed: {e}")
+            # --------------------------------------
+
             logger.info(f"Redemption successful: Student {student_id} redeemed {p_name} (recorded by {staff_identity})")
             return jsonify({"success": True, "message": f"Successfully redeemed {p_name}!"}), 200
+        
         else:
             conn.rollback()
             return jsonify({"success": False, "message": msg}), 500
@@ -906,6 +1007,8 @@ def api_redeem_prize():
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if conn: conn.close()
+
+
 
 @app.route('/api/prizes/delete/<int:prize_id>', methods=['DELETE'])
 @login_required
@@ -944,16 +1047,37 @@ def api_delete_prize(prize_id):
 @login_required
 @admin_required
 def api_view_audit_logs_data():
+    # Get parameters
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    search_term = request.args.get('search')
+
     conn = get_db_connection()
     if not conn: return jsonify({"success": False}), 500
     
     try:
         cur = conn.cursor()
-        cur.execute("""
-            SELECT id, action_type, details, recorded_by, event_time 
-            FROM audit_log 
-            ORDER BY event_time DESC LIMIT 100
-        """)
+        
+        # Build Query Dynamically
+        sql = "SELECT id, action_type, details, recorded_by, event_time FROM audit_log WHERE 1=1"
+        params = []
+
+        if start_date:
+            sql += " AND event_time::DATE >= %s"
+            params.append(start_date)
+        
+        if end_date:
+            sql += " AND event_time::DATE <= %s"
+            params.append(end_date)
+        
+        if search_term:
+            sql += " AND (details ILIKE %s OR action_type ILIKE %s OR recorded_by ILIKE %s)"
+            search_pattern = f"%{search_term}%"
+            params.extend([search_pattern, search_pattern, search_pattern])
+            
+        sql += " ORDER BY event_time DESC LIMIT 500"
+
+        cur.execute(sql, tuple(params))
         rows = cur.fetchall()
         
         audit_history = []
@@ -969,6 +1093,7 @@ def api_view_audit_logs_data():
         return jsonify({"success": True, "logs": audit_history}), 200
     finally:
         conn.close()
+
     
 # ---- 11. Reporting (View & CSV) ----
 

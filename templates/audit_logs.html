@@ -12,6 +12,22 @@
     h1 { margin: 0; font-size: 22px; color: #0b3b61; }
     .secondary-link { color: #1f6feb; text-decoration: none; font-size: 13px; display: inline-block; margin-bottom: 10px; }
     
+    /* Filter Bar Styling */
+    .filter-bar { 
+        display: flex; align-items: center; gap: 12px; background: #f8fafc; 
+        padding: 8px 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;
+        flex-wrap: wrap;
+    }
+    .filter-bar input, .filter-bar select { 
+        padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; color: #334155;
+    }
+    .filter-label { font-size: 11px; font-weight: 700; color: #64748b; }
+    
+    .search-box { flex-grow: 1; min-width: 200px; }
+    .btn-search { padding: 6px 12px; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer; border: none; background: #1f6feb; color: white; }
+    .btn-search:hover { background: #165ecb; }
+    .btn-clear { padding: 6px 12px; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; background: white; color: #334155; }
+
     .table-container { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
     th { background: #f9fafb; padding: 12px; font-weight: 600; color: #4b5563; border-bottom: 1px solid #e5e7eb; }
@@ -21,6 +37,11 @@
     .badge-create { background: #dcfce7; color: #166534; }
     .badge-update { background: #eff6ff; color: #1e40af; }
     .badge-delete { background: #fee2e2; color: #991b1b; }
+    .badge-blue { background: #e0f2fe; color: #0369a1; } /* For Login/Logout */
+    .badge-purple { background: #f3e8ff; color: #7e22ce; } /* For Transactions */
+    .badge-gray { background: #f3f4f6; color: #374151; }
+    
+    .empty-state { padding: 20px; text-align: center; color: #64748b; font-style: italic; }
   </style>
 </head>
 <body>
@@ -30,14 +51,26 @@
     <h1>{{ _('System Audit Logs') }}</h1>
   </div>
 
+  <div class="filter-bar">
+    <span class="filter-label">{{ _('DATE RANGE:') }}</span>
+    
+    <input type="date" id="startDate" placeholder="{{ _('Start Date') }}">
+    <span style="color: #94a3b8;">to</span>
+    <input type="date" id="endDate" placeholder="{{ _('End Date') }}">
+    
+    <input type="text" id="searchInput" class="search-box" placeholder="{{ _('Search details...') }}">
+    <button id="btnSearch" class="btn-search">{{ _('Search') }}</button>
+    <button id="btnClear" class="btn-clear">{{ _('Reset') }}</button>
+  </div>
+
   <div class="table-container">
     <table>
       <thead>
         <tr>
-          <th>{{ _('Timestamp') }}</th>
-          <th>{{ _('Action') }}</th>
+          <th width="180">{{ _('Timestamp') }}</th>
+          <th width="140">{{ _('Action') }}</th>
           <th>{{ _('Details') }}</th>
-          <th>{{ _('Staff User') }}</th>
+          <th width="150">{{ _('Staff User') }}</th>
         </tr>
       </thead>
       <tbody id="auditBody"></tbody>
@@ -46,28 +79,76 @@
 </div>
 
 <script>
-window.addEventListener('DOMContentLoaded', async () => {
-    const body = document.getElementById('auditBody');
-    try {
-        const res = await fetch('/api/logs/audit');
-        const data = await res.json();
+window.addEventListener('DOMContentLoaded', () => {
+    const el = {
+        body: document.getElementById('auditBody'),
+        start: document.getElementById('startDate'),
+        end: document.getElementById('endDate'),
+        search: document.getElementById('searchInput'),
+        btnSearch: document.getElementById('btnSearch'),
+        btnClear: document.getElementById('btnClear')
+    };
+
+    async function loadLogs() {
+        el.body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Loading...</td></tr>';
         
-        if (data.success) {
-            data.logs.forEach(log => {
-                const tr = document.createElement('tr');
-                const actionClass = log.action.includes('CREATE') ? 'badge-create' : 
-                                  log.action.includes('UPDATE') ? 'badge-update' : 'badge-delete';
-                
-                tr.innerHTML = `
-                    <td style="white-space:nowrap; color:#6b7280;">${new Date(log.timestamp).toLocaleString()}</td>
-                    <td><span class="badge ${actionClass}">${log.action}</span></td>
-                    <td style="line-height:1.4;">${log.details}</td>
-                    <td style="font-weight:600; color:#111827;">${log.user}</td>
-                `;
-                body.appendChild(tr);
-            });
+        const params = new URLSearchParams();
+        if (el.start.value) params.append('start_date', el.start.value);
+        if (el.end.value) params.append('end_date', el.end.value);
+        if (el.search.value.trim()) params.append('search', el.search.value.trim());
+
+        try {
+            const res = await fetch(`/api/logs/audit?${params.toString()}`);
+            const data = await res.json();
+            el.body.innerHTML = '';
+            
+            if (data.success && data.logs.length > 0) {
+                data.logs.forEach(log => {
+                    const tr = document.createElement('tr');
+                    
+                    // Fallback for null actions
+                    const actionStr = log.action || 'UNKNOWN';
+                    
+                    // Determine Badge Color
+                    let badgeClass = 'badge-gray';
+                    if (actionStr.includes('CREATE')) badgeClass = 'badge-create';
+                    else if (actionStr.includes('UPDATE')) badgeClass = 'badge-update';
+                    else if (actionStr.includes('DELETE')) badgeClass = 'badge-delete';
+                    else if (actionStr.includes('LOGIN') || actionStr.includes('LOGOUT')) badgeClass = 'badge-blue';
+                    else if (actionStr.includes('POINT') || actionStr.includes('REDEEM')) badgeClass = 'badge-purple';
+                    
+                    tr.innerHTML = `
+                        <td style="white-space:nowrap; color:#6b7280;">${new Date(log.timestamp).toLocaleString()}</td>
+                        <td><span class="badge ${badgeClass}">${actionStr}</span></td>
+                        <td style="line-height:1.4;">${log.details}</td>
+                        <td style="font-weight:600; color:#111827;">${log.user}</td>
+                    `;
+                    el.body.appendChild(tr);
+                });
+            } else {
+                el.body.innerHTML = `<tr><td colspan="4" class="empty-state">{{ _('No logs found matching your criteria.') }}</td></tr>`;
+            }
+        } catch (e) { 
+            console.error("Failed to load audit logs", e);
+            el.body.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Error loading logs.</td></tr>`;
         }
-    } catch (e) { console.error("Failed to load audit logs", e); }
+    }
+
+    // Event Listeners
+    el.btnSearch.addEventListener('click', loadLogs);
+    el.search.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') loadLogs();
+    });
+
+    el.btnClear.addEventListener('click', () => {
+        el.start.value = '';
+        el.end.value = '';
+        el.search.value = '';
+        loadLogs();
+    });
+
+    // Initial Load
+    loadLogs();
 });
 </script>
 </body>

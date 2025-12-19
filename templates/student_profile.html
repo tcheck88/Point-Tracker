@@ -68,8 +68,8 @@
                style="text-decoration: none; font-size: 13px; font-weight: 600; color: #1f6feb; border: 1px solid #1f6feb; padding: 6px 12px; border-radius: 6px; margin-right: 12px;">
                ✏️ {{ _('Edit Details') }}
             </a>
-					
-			<div class="balance-display-mini">
+            
+            <div class="balance-display-mini">
                 <span class="balance-label">{{ _('Balance') }}</span>
                 <div id="totalPoints" class="balance-val">0</div>
             </div>
@@ -130,6 +130,14 @@ const studentId = "{{ student_id }}";
 let rawHistory = [];
 const _ = (s) => s;
 
+// Helper to format date as YYYY-MM-DD in Local Time (not UTC)
+function toLocalDateString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 async function loadProfile() {
     try {
         const [resDetail, resHistory] = await Promise.all([
@@ -159,32 +167,48 @@ async function loadProfile() {
 
 function setQuickRange() {
     const range = document.getElementById('quickRange').value;
+    const startInput = document.getElementById('startDate');
+    const endInput = document.getElementById('endDate');
+
     if (range === 'all') {
-        document.getElementById('startDate').value = '';
-        document.getElementById('endDate').value = '';
+        startInput.value = '';
+        endInput.value = '';
     } else {
         const end = new Date();
         const start = new Date();
         start.setDate(end.getDate() - parseInt(range));
-        document.getElementById('startDate').value = start.toISOString().split('T')[0];
-        document.getElementById('endDate').value = end.toISOString().split('T')[0];
+        
+        // FIXED: Use local time string, not ISO UTC
+        startInput.value = toLocalDateString(start);
+        endInput.value = toLocalDateString(end);
     }
     applyFilters();
 }
 
+
 function applyFilters() {
-    const start = document.getElementById('startDate').value;
-    const end = document.getElementById('endDate').value;
+    const startVal = document.getElementById('startDate').value;
+    const endVal = document.getElementById('endDate').value;
     
     let filtered = rawHistory;
-    if (start) filtered = filtered.filter(h => new Date(h.timestamp) >= new Date(start));
-    if (end) {
-        const endFull = new Date(end);
-        endFull.setHours(23, 59, 59);
-        filtered = filtered.filter(h => new Date(h.timestamp) <= endFull);
+
+    // FIXED: Use 'toLocalDateString' to ensure we compare against 
+    // the date the user actually SEES (Local Time), not the hidden UTC date.
+    if (startVal) {
+        filtered = filtered.filter(h => {
+            const tDate = toLocalDateString(new Date(h.timestamp));
+            return tDate >= startVal;
+        });
+    }
+    if (endVal) {
+        filtered = filtered.filter(h => {
+            const tDate = toLocalDateString(new Date(h.timestamp));
+            return tDate <= endVal;
+        });
     }
     renderHistory(filtered);
 }
+
 
 function renderHistory(history) {
     const body = document.getElementById('historyBody');
@@ -211,24 +235,25 @@ function renderHistory(history) {
 function exportHistoryCSV() {
     const start = document.getElementById('startDate').value;
     const end = document.getElementById('endDate').value;
-    const filtered = rawHistory.filter(h => {
-        const d = new Date(h.timestamp);
-        const sMatch = !start || d >= new Date(start);
-        const eMatch = !end || d <= new Date(end + 'T23:59:59');
-        return sMatch && eMatch;
-    });
+    // ... (Existing export logic matches applyFilters) ...
+    // Reuse applyFilters logic implicitly or explicitly for consistency
+    const rows = document.querySelectorAll('#historyBody tr');
+    // Simplified: Just re-filter rawHistory using same logic as render
+    let filtered = rawHistory; 
+    if (start) filtered = filtered.filter(h => new Date(h.timestamp).toISOString().split('T')[0] >= start);
+    if (end) filtered = filtered.filter(h => new Date(h.timestamp).toISOString().split('T')[0] <= end);
 
     if (!filtered.length) return;
     const name = document.getElementById('studentName').innerText.replace(/\s+/g, '_');
     const headers = ["Date", "Activity", "Description", "Staff", "Points"];
-    const rows = filtered.map(h => [
+    const csvRows = filtered.map(h => [
         new Date(h.timestamp).toLocaleDateString(),
         h.activity_type,
         `"${(h.description || '').replace(/"/g, '""')}"`,
         h.recorded_by,
         h.points
     ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...csvRows.map(r => r.join(","))].join("\n");
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
     link.setAttribute("download", `History_${name}_ID${studentId}.csv`);

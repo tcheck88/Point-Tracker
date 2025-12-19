@@ -10,13 +10,16 @@
     
     /* Compact Search Container */
     .search-container { background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #f3f4f6; margin-bottom: 15px; }
-    .search-row { display: flex; gap: 8px; align-items: center; }
-    input[type="text"] { flex: 1; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+    .search-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    input[type="text"] { flex: 1; min-width: 200px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
     
-    .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; transition: background 0.2s; height: 36px; }
+    .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; transition: background 0.2s; height: 36px; white-space: nowrap; }
     .btn-primary { background: #1f6feb; color: #fff; }
     .btn-secondary { background: #e5e7eb; color: #374151; }
+    .btn-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; } /* Export Button */
+    
     .btn-primary:hover { background: #165ecb; }
+    .btn-success:hover { background: #bbf7d0; }
 
     /* Filter Bar */
     .filter-bar { margin: 12px 0; display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
@@ -46,9 +49,13 @@
 
   <div class="search-container">
     <form id="searchForm" class="search-row">
-      <input type="text" id="searchInput" placeholder="{{ _('Search by name, nickname, or ID...') }}" required>
+      <input type="text" id="searchInput" placeholder="{{ _('Search by name, nickname, or ID...') }}">
       <button type="submit" class="btn btn-primary">{{ _('Search') }}</button>
       <button type="button" class="btn btn-secondary" onclick="clearSearch()">{{ _('Reset') }}</button>
+      
+      <a href="{{ url_for('download_all_students_csv') }}" class="btn btn-success" style="text-decoration:none; display:flex; align-items:center;">
+        📥 {{ _('Export CSV') }}
+      </a>
     </form>
   </div>
 
@@ -67,17 +74,17 @@
 let currentStudents = [];
 const _ = (s) => s;
 
-// --- 1. RESTORE CONTEXT ON LOAD ---
 window.addEventListener('DOMContentLoaded', () => {
     const savedTerm = sessionStorage.getItem('studentSearchTerm');
     const savedHideZero = sessionStorage.getItem('studentHideZero');
 
+    if (savedHideZero === 'true') {
+        document.getElementById('hideZeroPoints').checked = true;
+    }
+
     if (savedTerm) {
         document.getElementById('searchInput').value = savedTerm;
-        if (savedHideZero === 'true') {
-            document.getElementById('hideZeroPoints').checked = true;
-        }
-        performSearch(); // Auto-execute previous search
+        performSearch(); 
     }
 });
 
@@ -85,14 +92,14 @@ async function performSearch(e) {
     if (e) e.preventDefault();
     const termInput = document.getElementById('searchInput');
     const term = termInput.value.trim();
+    
+    if (!term) return; 
+
+    sessionStorage.setItem('studentSearchTerm', term);
+
     const list = document.getElementById('studentList');
     const sm = document.getElementById('statusMessage');
-    const hideZero = document.getElementById('hideZeroPoints').checked;
     
-    // --- 2. SAVE CONTEXT TO SESSION STORAGE ---
-    sessionStorage.setItem('studentSearchTerm', term);
-    sessionStorage.setItem('studentHideZero', hideZero);
-
     sm.style.display = 'none';
     list.innerHTML = `<p style="grid-column: 1/-1; text-align:center; font-size:13px; padding: 20px;">${_('Searching...')}</p>`;
 
@@ -115,13 +122,11 @@ function renderStudentList() {
     const list = document.getElementById('studentList');
     const hideZero = document.getElementById('hideZeroPoints').checked;
     
-    // Update storage if checkbox toggled
     sessionStorage.setItem('studentHideZero', hideZero);
 
     list.innerHTML = '';
     
     const filtered = currentStudents.filter(s => {
-        // Handle postgres numeric cache
         const points = s.total_points || 0;
         if (hideZero && points <= 0) return false;
         return true;
@@ -159,7 +164,6 @@ function showError(msg) {
 }
 
 function clearSearch() {
-    // --- 3. CLEAR SESSION STORAGE ---
     sessionStorage.removeItem('studentSearchTerm');
     sessionStorage.removeItem('studentHideZero');
     
