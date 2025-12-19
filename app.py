@@ -150,6 +150,15 @@ except Exception as e:
 
 # ---- ROUTES START BELOW ----
 
+# --- Handle Language Switching ---
+@app.route('/set_language', methods=['POST'])
+def set_language():
+    lang = request.form.get('language')
+    if lang in app.config['LANGUAGES']:
+        session['lang'] = lang
+    # Redirect back to the page the user was on
+    return redirect(request.referrer or url_for('index'))
+# ---------------------------------------------
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

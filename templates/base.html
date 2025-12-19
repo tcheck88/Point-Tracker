@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <title>{% block title %}Leer México{% endblock %}</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='logo.jpg') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='Leer_Mexico_Read.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style>
         :root {
@@ -48,31 +48,26 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
-            padding: 20px;
+            padding: 24px 20px;
             border-bottom: 1px solid var(--border);
             background: white;
         }
-        /* UPDATED: Increased Logo Size */
+        
+        /* UPDATED LOGO STYLE FOR PNG */
         .brand-logo {
-            width: 120px;
-            height: 120px;
+            width: 160px;      /* Good width for sidebar */
+            max-width: 100%;
+            height: auto;
             object-fit: contain;
-            margin-bottom: 12px;
-            border-radius: 8px;
-            border: 1px solid #f1f5f9;
-            padding: 4px;
+            margin-bottom: 10px;
+            border: none;
+            padding: 0;
         }
-        .brand-title {
-            font-size: 18px;
-            font-weight: 800;
-            color: var(--primary);
-            margin: 0;
-            line-height: 1.2;
-        }
+        
         .brand-subtitle {
             font-size: 11px;
             color: var(--secondary);
-            margin-top: 6px;
+            margin-top: 4px;
             font-weight: 500;
             line-height: 1.4;
             max-width: 90%;
@@ -151,8 +146,8 @@
 
     <nav class="sidebar">
         <div class="brand-section">
-            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="brand-logo">
-            <div class="brand-title">Leer México</div>
+            <img src="{{ url_for('static', filename='Leer_Mexico_Read.png') }}" alt="Leer México" class="brand-logo">
+            
             <div class="brand-subtitle">{{ _('Student Point & Activity Management System') }}</div>
         </div>
 
@@ -222,7 +217,7 @@
         </div>
     </div>
 
-<script>
+    <script>
         (function() {
             // 1 Hour in seconds
             const IDLE_LIMIT_SECONDS = 3600; 
@@ -232,7 +227,6 @@
             function resetTimer() {
                 clearTimeout(idleTimer);
                 idleTimer = setTimeout(() => {
-                    // CHANGE THIS LINE: Add the query parameter
                     window.location.href = LOGOUT_URL + "?timeout=1";
                 }, IDLE_LIMIT_SECONDS * 1000);
             }
