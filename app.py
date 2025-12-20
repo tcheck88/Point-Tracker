@@ -8,6 +8,7 @@ import os
 import sys
 import logging
 import datetime
+import traceback
 from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
 from flask import Flask, request, jsonify, abort, send_file, redirect, url_for, render_template, send_from_directory, session
@@ -95,11 +96,14 @@ def admin_required(f):
     
 
 # ---- 4. Logging Setup ----
+
 class EmailAlertHandler(logging.Handler):
     def emit(self, record):
         if record.levelno >= logging.ERROR:
             try:
+                # self.format(record) includes the traceback if logged via logger.exception()
                 msg = self.format(record)
+                
                 # Define a wrapper function to send email without blocking
                 def send_async():
                     try:
@@ -109,7 +113,6 @@ class EmailAlertHandler(logging.Handler):
                             message=msg
                         )
                     except Exception as e:
-                        # If email fails, just log it to console so we don't crash
                         print(f"Background Email Failed: {e}")
 
                 # Start the email task in a separate thread
@@ -118,7 +121,6 @@ class EmailAlertHandler(logging.Handler):
 
             except Exception:
                 self.handleError(record)
-
 
 
 file_handler = RotatingFileHandler(LOG_PATH, maxBytes=500000, backupCount=3)
@@ -494,7 +496,7 @@ def api_update_student(student_id):
 
     except Exception as e:
         conn.rollback()
-        logger.error(f"Error updating student {student_id}: {e}")
+        logger.exception(f"Error updating student {student_id}: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()
@@ -527,7 +529,7 @@ def api_get_student_details(student_id):
             return jsonify({"success": False, "message": f"Student {student_id} not found."}), 404
         return jsonify({"success": True, "student": student}), 200
     except Exception as e:
-        logger.error(f"Error fetching student {student_id}: {e}")
+        logger.exception(f"Error fetching student {student_id}: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
 @app.route('/api/students/search', methods=['GET'])
@@ -541,7 +543,7 @@ def api_students_search():
         students = student_search.find_students(search_term)
         return jsonify({"success": True, "students": students}), 200 
     except Exception as e:
-        logger.error(f"Search error: {e}")
+        logger.exception(f"Search error: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
 
@@ -588,7 +590,7 @@ def api_record_transaction():
                 recorded_by=staff_identity
             )
         except Exception as e:
-            logger.error(f"Audit log failed: {e}")
+            logger.exception(f"Audit log failed: {e}")
         # --------------------------------------
 
         logger.info(f"Points recorded for student {student_id} by {staff_identity}")
@@ -629,7 +631,7 @@ def api_student_history(student_id):
             "history": history
         }), 200
     except Exception as e:
-        logger.error(f"History error: {e}")
+        logger.exception(f"History error: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
 @app.route('/api/reports/students/csv')
@@ -685,7 +687,7 @@ def download_all_students_csv():
             download_name=f"All_Students_{datetime.datetime.now().strftime('%Y-%m-%d')}.csv"
         )
     except Exception as e:
-        logger.error(f"Export error: {e}")
+        logger.exception(f"Export error: {e}")
         return f"Error exporting CSV: {e}", 500
     finally:
         conn.close()
@@ -720,7 +722,7 @@ def api_create_activity():
         conn.commit()
         return jsonify({"success": True, "message": "Activity saved"}), 200
     except Exception as e:
-        logger.error(f"Error saving activity: {e}")
+        logger.exception(f"Error saving activity: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()
@@ -746,7 +748,7 @@ def api_list_activities():
             })
         return jsonify(activities), 200
     except Exception as e:
-        logger.error(f"Error fetching activities for dropdown: {e}")
+        logger.exception(f"Error fetching activities for dropdown: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()
@@ -773,7 +775,7 @@ def api_list_all_activities():
             })
         return jsonify({"activities": activities}), 200
     except Exception as e:
-        logger.error(f"Error listing activities: {e}")
+        logger.exception(f"Error listing activities: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()
@@ -833,7 +835,7 @@ def download_logs():
     try:
         return send_file(LOG_PATH, as_attachment=True, download_name=f"leermexico_logs.txt")
     except Exception as e:
-        app.logger.error(f"Error downloading log: {e}")
+        app.logger.exception(f"Error downloading log: {e}")
         abort(500)
 
 @app.route('/api/logs/clear', methods=['POST'])
@@ -908,7 +910,7 @@ def api_add_prize():
         return jsonify({"success": True, "message": f"Prize '{name}' saved successfully"}), 200
     except Exception as e:
         if conn: conn.rollback()
-        logger.error(f"Error saving prize: {e}")
+        logger.exception(f"Error saving prize: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if conn: conn.close()
@@ -1000,7 +1002,7 @@ def api_redeem_prize():
                     recorded_by=staff_identity
                 )
             except Exception as e:
-                logger.error(f"Audit log failed: {e}")
+                logger.exception(f"Audit log failed: {e}")
             # --------------------------------------
 
             logger.info(f"Redemption successful: Student {student_id} redeemed {p_name} (recorded by {staff_identity})")
@@ -1012,7 +1014,7 @@ def api_redeem_prize():
             
     except Exception as e:
         if conn: conn.rollback()
-        logger.error(f"Redemption API Error: {e}")
+        logger.exception(f"Redemption API Error: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if conn: conn.close()
