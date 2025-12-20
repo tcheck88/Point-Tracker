@@ -71,7 +71,7 @@
      style="
         position: fixed; 
         top: 50%; 
-        left: 50%; 
+        left: calc(50% + 130px); /* 50% viewport + 1/2 sidebar width to center in open space */
         transform: translate(-50%, -50%); 
         width: 400px; 
         max-width: 80%;
@@ -94,6 +94,7 @@
         </div>
     </div>
 
+    {% if session.get('role') in ['admin', 'sysadmin'] %}
     <div class="bottom-row-grid">
         
         <div class="card">
@@ -112,10 +113,8 @@
                     <span>📦</span> {{ _('View Inventory Report') }}
                 </a>
             </div>
-            
         </div>
         
-
         <div class="card">
             <h3>{{ _('System Status') }}</h3>
             <div class="btn-group">
@@ -129,5 +128,5 @@
         </div>
 
     </div>
-</div>
+    {% endif %} </div>
 {% endblock %}
