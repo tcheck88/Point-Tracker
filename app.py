@@ -49,7 +49,7 @@ def get_locale():
         lang = request.args.get('lang')
         if lang in app.config['LANGUAGES']:
             session['lang'] = lang  # <--- NEW: Saves choice to session
-            print(f"DEBUG: Language set to {lang} via URL")  # <--- DEBUG
+            print(f"DEBUG message: Language set to {lang} via URL")  # <--- DEBUG
             return lang
             
     # 2. Check Session (persistence)

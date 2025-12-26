@@ -37,8 +37,6 @@ def write_audit(event_type: str, actor: str, target_table: str, target_id: Optio
         conn.close()
 
 
-
-
 def find_students(search_term: str) -> List[Dict[str, Any]]:
     """
     Searches for students matching the search term (Name or ID).
@@ -95,7 +93,7 @@ def get_student_by_id(student_id: int) -> Optional[Dict[str, Any]]:
         row = cur.fetchone()
         return row
     except Exception as e:
-        logger.error(f"Database error fetching student {student_id}: {e}")
+        logger.error(f"Database error fetching student {student_id}:  {e}")
         return None
     finally:
         conn.close()
@@ -130,7 +128,7 @@ def update_student(db_path_ignored, student_id: int, update_fields: Dict[str, An
         cur.execute(sql, tuple(values))
         
         if cur.rowcount == 0:
-            logger.warning(f"Update failed: Student {student_id} not found.")
+            logger.warning(f"Update failed:  Student {student_id} not found.")
             return False
 
         conn.commit()
