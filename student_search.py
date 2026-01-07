@@ -37,10 +37,10 @@ def write_audit(event_type: str, actor: str, target_table: str, target_id: Optio
         conn.close()
 
 
-def find_students(search_term: str) -> List[Dict[str, Any]]:
+def find_students(search_term: str, include_inactive: bool = False) -> List[Dict[str, Any]]:
     """
     Searches for students matching the search term (Name or ID).
-    Compatible with Supabase/PostgreSQL.
+    Optional: include_inactive (bool) - if True, returns both active and inactive students.
     """
     # PRESERVED LOGIC: Multi-word search handling
     safe_term = search_term.strip().lower().replace(' ', '%') 
@@ -53,23 +53,27 @@ def find_students(search_term: str) -> List[Dict[str, Any]]:
     try:
         cur = conn.cursor()
         
-        # PRESERVED LOGIC: Case-insensitive search on Name AND ID
+        # Base Query
         # PostgreSQL uses %s for placeholders
         query = """
         SELECT 
             id, full_name, nickname, classroom, grade, total_points, phone, email, active
         FROM students
         WHERE (full_name ILIKE %s OR CAST(id AS TEXT) ILIKE %s)
-            AND active = TRUE
-        ORDER BY full_name
-        LIMIT 50
         """
+        
+        # NEW LOGIC: Only filter out inactive if the flag is False
+        if not include_inactive:
+            query += " AND active = TRUE"
+            
+        query += " ORDER BY full_name LIMIT 50"
+
         cur.execute(query, (search_pattern, search_pattern))
         
         # RealDictCursor returns dictionary-like objects automatically
         results = cur.fetchall()
         
-        logger.info(f"Search for '{search_term}' returned {len(results)} students.")
+        logger.info(f"Search for '{search_term}' (inc_inactive={include_inactive}) returned {len(results)} students.")
         return results
 
     except Exception as e:

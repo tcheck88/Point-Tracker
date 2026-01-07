@@ -534,6 +534,7 @@ def api_add_student():
 def edit_student_page(student_id):
     return render_template('edit_student.html', student_id=student_id)
 
+
 @app.route('/api/student/<int:student_id>/update', methods=['POST'])
 @login_required
 def api_update_student(student_id):
@@ -554,7 +555,7 @@ def api_update_student(student_id):
         if not existing:
             return jsonify({"success": False, "message": "Student not found."}), 404
 
-        # Update the record
+        # --- UPDATED QUERY with 'active' ---
         cur.execute("""
             UPDATE students 
             SET full_name = %s,
@@ -564,7 +565,8 @@ def api_update_student(student_id):
                 parent_name = %s,
                 phone = %s,
                 email = %s,
-                sms_consent = %s
+                sms_consent = %s,
+                active = %s
             WHERE id = %s
         """, (
             data['full_name'],
@@ -575,6 +577,7 @@ def api_update_student(student_id):
             data.get('phone'),
             data.get('email'),
             bool(data.get('sms_consent')),
+            bool(data.get('active', True)), # Defaults to True if missing
             student_id
         ))
 
@@ -626,19 +629,26 @@ def api_get_student_details(student_id):
         logger.exception(f"Error fetching student {student_id}: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
+
 @app.route('/api/students/search', methods=['GET'])
 @login_required
 def api_students_search():
     search_term = request.args.get('term', '').strip()
+    
+    # NEW: Check if we should include inactive students
+    include_inactive = request.args.get('include_inactive') == 'true'
+
     if len(search_term) < 2:
         return jsonify({"success": True, "students": []}), 200 
 
     try:
-        students = student_search.find_students(search_term)
+        # Pass the new flag to the search logic
+        students = student_search.find_students(search_term, include_inactive=include_inactive)
         return jsonify({"success": True, "students": students}), 200 
     except Exception as e:
         logger.exception(f"Search error: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
+
 
 
 # ---- Transaction API  ----

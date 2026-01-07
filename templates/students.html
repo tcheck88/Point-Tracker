@@ -61,9 +61,14 @@
 
   <div class="filter-bar">
       <h2 style="margin:0; font-size: 16px; color: #0b3b61;">{{ _('Search Results') }}</h2>
-      <label style="font-size: 12px; font-weight: normal; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-          <input type="checkbox" id="hideZeroPoints" onchange="renderStudentList()"> {{ _('Hide zero points') }}
-      </label>
+      <div style="display: flex; gap: 15px;">
+          <label style="font-size: 12px; font-weight: normal; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="hideInactive" checked onchange="performSearch()"> {{ _('Hide Inactive') }}
+          </label>
+          <label style="font-size: 12px; font-weight: normal; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="hideZeroPoints" onchange="renderStudentList()"> {{ _('Hide zero points') }}
+          </label>
+      </div>
   </div>
 
   <div id="statusMessage" class="status-message"></div>
@@ -77,9 +82,15 @@ const _ = (s) => s;
 window.addEventListener('DOMContentLoaded', () => {
     const savedTerm = sessionStorage.getItem('studentSearchTerm');
     const savedHideZero = sessionStorage.getItem('studentHideZero');
+    const savedHideInactive = sessionStorage.getItem('studentHideInactive');
 
     if (savedHideZero === 'true') {
         document.getElementById('hideZeroPoints').checked = true;
+    }
+    
+    // Default to Checked (Hide) if not set
+    if (savedHideInactive !== null) {
+        document.getElementById('hideInactive').checked = (savedHideInactive === 'true');
     }
 
     if (savedTerm) {
@@ -93,6 +104,10 @@ async function performSearch(e) {
     const termInput = document.getElementById('searchInput');
     const term = termInput.value.trim();
     
+    // NEW: Capture Hide Inactive State
+    const hideInactive = document.getElementById('hideInactive').checked;
+    sessionStorage.setItem('studentHideInactive', hideInactive);
+    
     if (!term) return; 
 
     sessionStorage.setItem('studentSearchTerm', term);
@@ -104,7 +119,9 @@ async function performSearch(e) {
     list.innerHTML = `<p style="grid-column: 1/-1; text-align:center; font-size:13px; padding: 20px;">${_('Searching...')}</p>`;
 
     try {
-        const res = await fetch(`/api/students/search?term=${encodeURIComponent(term)}`);
+        // Pass the include_inactive flag (inverse of hideInactive)
+        const includeInactive = !hideInactive;
+        const res = await fetch(`/api/students/search?term=${encodeURIComponent(term)}&include_inactive=${includeInactive}`);
         const data = await res.json();
         
         if (data.success) {
@@ -142,9 +159,15 @@ function renderStudentList() {
         card.className = 'student-card';
         card.href = `/student/${s.id}`;
         
+        // Add visual cue for inactive students
+        const inactiveStyle = (s.active === false) ? 'opacity: 0.6; background: #fdf2f2;' : '';
+        const nameSuffix = (s.active === false) ? ' <span style="font-size:10px; color:#c53030; font-weight:bold;">(INACTIVE)</span>' : '';
+        
+        card.style = inactiveStyle;
+        
         card.innerHTML = `
             <div class="student-info">
-                <h4>${s.full_name} <small style="color:#666; font-weight:normal;">(#${s.id})</small></h4>
+                <h4>${s.full_name}${nameSuffix} <small style="color:#666; font-weight:normal;">(#${s.id})</small></h4>
                 <p>${s.classroom || 'N/A'} | ${s.grade || ''}</p>
             </div>
             <div class="points-badge">
@@ -166,9 +189,11 @@ function showError(msg) {
 function clearSearch() {
     sessionStorage.removeItem('studentSearchTerm');
     sessionStorage.removeItem('studentHideZero');
+    sessionStorage.removeItem('studentHideInactive');
     
     document.getElementById('searchInput').value = '';
     document.getElementById('hideZeroPoints').checked = false;
+    document.getElementById('hideInactive').checked = true; // Reset to default
     document.getElementById('studentList').innerHTML = '';
     document.getElementById('statusMessage').style.display = 'none';
     currentStudents = [];
