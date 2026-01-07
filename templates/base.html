@@ -178,9 +178,10 @@
                 <a href="{{ url_for('logs_page') }}" class="nav-link" style="color: #166534;">⚠️ {{ _('System Logs') }}</a>
                 <a href="{{ url_for('audit_logs_page') }}" class="nav-link" style="color: #166534;">🛡️ {{ _('Audit Trail') }}</a>
                 
-                {% if session.get('role') == 'sysadmin' %}
-                <a href="{{ url_for('manage_users') }}" class="nav-link" style="color: #166534;">👥 {{ _('User Management') }}</a>
-                {% endif %}
+				{% if session.get('role') in ['admin', 'sysadmin'] %}
+				<a href="{{ url_for('manage_users') }}" class="nav-link" style="color: #166534;">👥 {{ _('User Management') }}</a>
+				{% endif %}
+                
             </div>
             {% endif %}
 

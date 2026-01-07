@@ -347,16 +347,32 @@ def change_password():
 
     return render_template('change_password.html')
 
+
 @app.route('/admin/users')
 @login_required
 def manage_users():
-    # STRICT CHECK: Only 'sysadmin' can access this
-    if session.get('role') != 'sysadmin':
+    current_role = session.get('role')
+    
+    # ALLOW both sysadmin and admin
+    if current_role not in ['sysadmin', 'admin']:
         return redirect(url_for('index'))
+
+    # Check for feedback messages passed via query string
+    msg = request.args.get('msg')
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id, username, role FROM users ORDER BY id ASC")
+    
+    # LOGIC: 
+    # - If sysadmin: Show all users.
+    # - If admin: Show all users EXCEPT those with role='sysadmin'.
+    
+    if current_role == 'sysadmin':
+        cur.execute("SELECT id, username, role FROM users ORDER BY id ASC")
+    else:
+        # Filter out sysadmins from the view
+        cur.execute("SELECT id, username, role FROM users WHERE role != 'sysadmin' ORDER BY id ASC")
+        
     users = cur.fetchall()
     conn.close()
     
@@ -368,34 +384,112 @@ def manage_users():
         else:
             user_list.append({'id': u[0], 'username': u[1], 'role': u[2]})
 
-    return render_template('manage_users.html', users=user_list)
-
-
+    return render_template('manage_users.html', users=user_list, msg=msg)
 
 @app.route('/admin/reset_password', methods=['POST'])
 @login_required
 def admin_reset_password():
-    # STRICT CHECK: Only 'sysadmin' can access this
-    if session.get('role') != 'sysadmin':
+    current_role = session.get('role')
+    
+    # ALLOW both sysadmin and admin
+    if current_role not in ['sysadmin', 'admin']:
         return redirect(url_for('index'))
 
     user_id = request.form.get('user_id')
     new_pass = request.form.get('new_pass')
     
     if not new_pass or len(new_pass) < 4:
-         return redirect(url_for('manage_users'))
+         return redirect(url_for('manage_users', msg="Error: Password must be at least 4 characters."))
 
-    new_hash = generate_password_hash(new_pass)
-    
     conn = get_db_connection()
     cur = conn.cursor()
+
+    # --- SECURITY CHECK ---
+    # Fetch the target user's role before updating
+    cur.execute("SELECT role, username FROM users WHERE id = %s", (user_id,))
+    target = cur.fetchone()
+    
+    if not target:
+        conn.close()
+        return redirect(url_for('manage_users', msg="Error: User not found."))
+        
+    target_role = target['role'] if isinstance(target, dict) else target[0]
+    target_username = target['username'] if isinstance(target, dict) else target[1]
+
+    # Rule: Standard 'admin' cannot reset a 'sysadmin' password
+    if current_role != 'sysadmin' and target_role == 'sysadmin':
+        conn.close()
+        return redirect(url_for('manage_users', msg="Access Denied: You cannot modify SysAdmin accounts."))
+
+    # Proceed with update
+    new_hash = generate_password_hash(new_pass)
     cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (new_hash, user_id))
     conn.commit()
     conn.close()
     
-    # Redirect back to the manager page
-    return redirect(url_for('manage_users'))
+    # Redirect back to the manager page with success message
+    return redirect(url_for('manage_users', msg=f"Success: Password reset for {target_username}."))
 
+@app.route('/admin/users/create', methods=['POST'])
+@login_required
+def create_user():
+    current_role = session.get('role')
+    staff_identity = session.get('username', 'system')
+    
+    # 1. Access Control
+    if current_role not in ['sysadmin', 'admin']:
+        return redirect(url_for('index'))
+
+    # 2. Get Form Data
+    username = request.form.get('username')
+    password = request.form.get('password')
+    role = request.form.get('role')
+
+    # 3. Validation
+    if not username or not password or not role:
+        return redirect(url_for('manage_users', msg="Error: All fields are required."))
+    
+    if len(password) < 4:
+        return redirect(url_for('manage_users', msg="Error: Password must be at least 4 characters."))
+
+    # 4. Role Hierarchy Check
+    # An 'admin' cannot create a 'sysadmin'
+    if current_role != 'sysadmin' and role == 'sysadmin':
+        return redirect(url_for('manage_users', msg="Access Denied: You cannot create SysAdmin accounts."))
+    
+    # 5. DB Operation
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        
+        # Check for duplicates
+        cur.execute("SELECT id FROM users WHERE username = %s", (username,))
+        if cur.fetchone():
+            return redirect(url_for('manage_users', msg=f"Error: User '{username}' already exists."))
+
+        # Create User
+        hashed_pw = generate_password_hash(password)
+        cur.execute("""
+            INSERT INTO users (username, password_hash, role)
+            VALUES (%s, %s, %s)
+        """, (username, hashed_pw, role))
+        
+        # 6. Audit Log
+        transaction_manager.log_audit_event(
+            action_type="CREATE_USER",
+            details=f"Created new user '{username}' with role '{role}'",
+            recorded_by=staff_identity
+        )
+
+        conn.commit()
+        return redirect(url_for('manage_users', msg=f"Success: User '{username}' created."))
+
+    except Exception as e:
+        conn.rollback()
+        logger.exception(f"Create user failed: {e}")
+        return redirect(url_for('manage_users', msg=f"System Error: {str(e)}"))
+    finally:
+        conn.close()
 # ---- Student Management API ----
 
 @app.route('/api/add_student', methods=['POST'])
