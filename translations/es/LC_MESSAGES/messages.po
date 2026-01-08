@@ -1,22 +1,20 @@
-
 msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-01 00:00+0000\n"
-"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"POT-Creation-Date: 2026-01-07 21:00-0800\n"
+"PO-Revision-Date: 2026-01-07 21:00-0800\n"
 "Last-Translator: \n"
-"Language-Team: \n"
 "Language: es\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+# --- NAVIGATION & COMMON ---
 msgid "Main"
 msgstr "Principal"
-
-msgid "Actions"
-msgstr "Acciones"
 
 msgid "Dashboard"
 msgstr "Panel de Control"
@@ -42,9 +40,6 @@ msgstr "Cancelar"
 msgid "View"
 msgstr "Ver"
 
-msgid "Save"
-msgstr "Guardar"
-
 msgid "Login"
 msgstr "Iniciar Sesión"
 
@@ -60,26 +55,20 @@ msgstr "Configuración"
 msgid "Admin Zone"
 msgstr "Zona de Admin"
 
-msgid "Student Actions"
-msgstr "Acciones de Estudiantes"
-
-msgid "Reward Points (Activity)"
-msgstr "Otorgar Puntos (Actividad)"
-
-msgid "Redeem Points (Prizes)"
-msgstr "Canjear Puntos (Premios)"
-
-msgid "Student Directory"
-msgstr "Directorio de Estudiantes"
-
-msgid "Add New Student"
-msgstr "Agregar Nuevo Estudiante"
-
 msgid "Management"
 msgstr "Administración"
 
-msgid "Prize Inventory"
-msgstr "Inventario de Premios"
+msgid "Actions"
+msgstr "Acciones"
+
+msgid "Quick Actions"
+msgstr "Acciones Rápidas"
+
+msgid "Inventory"
+msgstr "Inventario"
+
+msgid "Prize Catalog"
+msgstr "Catálogo de Premios"
 
 msgid "Activity Catalog"
 msgstr "Catálogo de Actividades"
@@ -87,56 +76,48 @@ msgstr "Catálogo de Actividades"
 msgid "Reports"
 msgstr "Reportes"
 
-msgid "View Redemption Log"
-msgstr "Ver Bitácora de Canjes"
-
-msgid "View Inventory Report"
-msgstr "Ver Reporte de Inventario"
-
 msgid "System Status"
 msgstr "Estado del Sistema"
 
 msgid "App Logs"
 msgstr "Registros de la App"
 
+msgid "System Logs"
+msgstr "Registros del Sistema"
+
 msgid "System Audit Logs"
 msgstr "Auditoría del Sistema"
 
-msgid "Back to Students"
-msgstr "Volver a Estudiantes"
+msgid "Audit Trail"
+msgstr "Rastro de Auditoría"
 
-msgid "Search by name, nickname, or ID..."
-msgstr "Buscar por nombre, apodo o ID..."
+msgid "Help"
+msgstr "Ayuda"
 
-msgid "Search Results"
-msgstr "Resultados de Búsqueda"
+msgid "Welcome Back"
+msgstr "Bienvenido"
 
-msgid "Hide zero points"
-msgstr "Ocultar cero puntos"
+msgid "Student Point & Activity Management System"
+msgstr "Sistema de Gestión de Puntos y Actividades"
 
-msgid "Searching..."
-msgstr "Buscando..."
+msgid "Profile"
+msgstr "Perfil"
 
-msgid "No matching students found."
-msgstr "No se encontraron estudiantes."
+msgid "Loading...."
+msgstr "Cargando..."
 
-msgid "Error connecting to server."
-msgstr "Error al conectar con el servidor."
+msgid "Refresh"
+msgstr "Actualizar"
 
-msgid "Activity History"
-msgstr "Historial de Actividad"
+# --- STUDENT MANAGEMENT ---
+msgid "Student Directory"
+msgstr "Directorio de Estudiantes"
 
-msgid "Date/Time"
-msgstr "Fecha/Hora"
+msgid "Student Actions"
+msgstr "Acciones de Estudiantes"
 
-msgid "Recorded By"
-msgstr "Registrado Por"
-
-msgid "Trans. ID"
-msgstr "ID Trans."
-
-msgid "Download CSV"
-msgstr "Descargar CSV"
+msgid "Add New Student"
+msgstr "Agregar Nuevo Estudiante"
 
 msgid "Add Student"
 msgstr "Agregar Alumno"
@@ -156,14 +137,29 @@ msgstr "Editar Datos del Estudiante"
 msgid "Update the information below."
 msgstr "Actualice la información a continuación."
 
-msgid "Save Changes"
-msgstr "Guardar Cambios"
+msgid "Back to Students"
+msgstr "Volver a Estudiantes"
 
-msgid "Failed to update student."
-msgstr "Error al actualizar estudiante."
+msgid "Search by name, nickname, or ID..."
+msgstr "Buscar por nombre, apodo o ID..."
+
+msgid "Search Results"
+msgstr "Resultados de Búsqueda"
+
+msgid "Hide zero points"
+msgstr "Ocultar cero puntos"
+
+msgid "Searching..."
+msgstr "Buscando..."
+
+msgid "No matching students found."
+msgstr "No se encontraron estudiantes."
 
 msgid "Full Name"
 msgstr "Nombre Completo"
+
+msgid "Full Name."
+msgstr "Nombre Completo."
 
 msgid "Full name as it appears on certificates"
 msgstr "Nombre completo como aparece en certificados"
@@ -180,14 +176,14 @@ msgstr "Nombre del Padre / Tutor (opcional)"
 msgid "Parent or guardian name"
 msgstr "Nombre del padre o tutor"
 
-msgid "Email (optional)"
-msgstr "Correo electrónico (opcional)"
-
 msgid "Phone (optional)"
 msgstr "Teléfono (opcional)"
 
 msgid "Phone number in Mexico format (10-digits)."
 msgstr "Número a 10 dígitos."
+
+msgid "Email (optional)"
+msgstr "Correo Electrónico (opcional)"
 
 msgid "I agree to receive SMS messages"
 msgstr "Acepto recibir mensajes SMS"
@@ -219,6 +215,9 @@ msgstr "Sin Salón Asignado"
 msgid "Full name is required."
 msgstr "El nombre completo es obligatorio."
 
+msgid "Required"
+msgstr "Requerido"
+
 msgid "Student created."
 msgstr "Estudiante creado."
 
@@ -227,9 +226,6 @@ msgstr "Posibles duplicados detectados"
 
 msgid "Save Anyway"
 msgstr "Guardar de todos modos"
-
-msgid "Network or server error."
-msgstr "Error de red o servidor."
 
 msgid "Parent / Contact Info"
 msgstr "Info de Padre / Contacto"
@@ -243,38 +239,72 @@ msgstr "Número de Teléfono"
 msgid "Email Address"
 msgstr "Correo Electrónico"
 
-msgid "Profile"
-msgstr "Perfil"
-
 msgid "Edit Details"
 msgstr "Editar Datos"
-
-msgid "Balance"
-msgstr "Saldo"
 
 msgid "Contact & Student Info"
 msgstr "Información de Contacto"
 
-msgid "Quick Actions"
-msgstr "Acciones Rápidas"
-
 msgid "Export CSV"
 msgstr "Exportar CSV"
 
-msgid "FILTER:"
-msgstr "FILTRO:"
+msgid "Export CSV "
+msgstr "Exportar CSV"
 
-msgid "All Time"
-msgstr "Todos los Tiempos"
+msgid "Student Search"
+msgstr "Buscar Estudiante"
 
-msgid "Last 7 Days"
-msgstr "Últimos 7 Días"
+msgid "Identify Student"
+msgstr "Identificar Estudiante"
 
-msgid "Last 30 Days"
-msgstr "Últimos 30 Días"
+msgid "Search Name or ID..."
+msgstr "Buscar Nombre o ID..."
 
-msgid "Last 90 Days"
-msgstr "Últimos 90 Días"
+msgid "Select a student"
+msgstr "Seleccione un estudiante"
+
+msgid "Can I delete a student?"
+msgstr "¿Puedo eliminar a un estudiante?"
+
+msgid "Hide this student from the directory without deleting their history."
+msgstr "Ocultar este estudiante del directorio sin borrar su historial."
+
+msgid "Hide Inactive"
+msgstr "Ocultar Inactivos"
+
+msgid "Inactive (Soft Delete)"
+msgstr "Inactivo (Borrado Lógico)"
+
+# --- POINTS & REWARDS ---
+msgid "Reward Points"
+msgstr "Otorgar Puntos"
+
+msgid "Reward Points (Activity)"
+msgstr "Otorgar Puntos (Actividad)"
+
+msgid "Redeem Points (Prizes)"
+msgstr "Canjear Puntos (Premios)"
+
+msgid "Redeem Points"
+msgstr "Canjear Puntos"
+
+msgid "Redeem Prizes"
+msgstr "Canjear Premios"
+
+msgid "Prize Inventory"
+msgstr "Inventario de Premios"
+
+msgid "Activity History"
+msgstr "Historial de Actividad"
+
+msgid "Recent History"
+msgstr "Historial Reciente"
+
+msgid "Balance"
+msgstr "Saldo"
+
+msgid "Pts"
+msgstr "Pts"
 
 msgid "Date"
 msgstr "Fecha"
@@ -291,17 +321,8 @@ msgstr "Cargando historial..."
 msgid "Loading..."
 msgstr "Cargando..."
 
-msgid "Class"
-msgstr "Clase"
-
 msgid "No transactions found for the selected range."
 msgstr "No se encontraron transacciones para el rango seleccionado."
-
-msgid "Reward Points"
-msgstr "Otorgar Puntos"
-
-msgid "Student Search"
-msgstr "Buscar Estudiante"
 
 msgid "Search by name or ID..."
 msgstr "Buscar por nombre o ID..."
@@ -333,24 +354,6 @@ msgstr "Seleccione un estudiante para ver su historial"
 msgid "No transactions found."
 msgstr "No se encontraron transacciones."
 
-msgid "Redeem Prizes"
-msgstr "Canjear Premios"
-
-msgid "Identify Student"
-msgstr "Identificar Estudiante"
-
-msgid "Search Name or ID..."
-msgstr "Buscar Nombre o ID..."
-
-msgid "Recent History"
-msgstr "Historial Reciente"
-
-msgid "Pts"
-msgstr "Pts"
-
-msgid "Select a student"
-msgstr "Seleccione un estudiante"
-
 msgid "Redeemable Prizes"
 msgstr "Premios Canjeables"
 
@@ -369,6 +372,13 @@ msgstr "Puntos insuficientes o agotado"
 msgid "Confirm redemption of"
 msgstr "Confirmar canje de"
 
+msgid "Success"
+msgstr "Éxito"
+
+msgid "The student's new balance appears immediately at the top."
+msgstr "El nuevo saldo aparece inmediatamente arriba."
+
+# --- MANAGEMENT & CONFIGURATION ---
 msgid "Prize Manager"
 msgstr "Gestor de Premios"
 
@@ -444,17 +454,30 @@ msgstr "Actividades Configuradas"
 msgid "No matching activities found."
 msgstr "No se encontraron actividades."
 
+# --- REPORTS ---
+msgid "View Redemption Log"
+msgstr "Ver Bitácora de Canjes"
+
+msgid "View Inventory Report"
+msgstr "Ver Reporte de Inventario"
+
 msgid "Redemption Report"
 msgstr "Reporte de Canjes"
 
 msgid "Redemption Log"
 msgstr "Bitácora de Canjes"
 
+msgid "Redemption Log:"
+msgstr "Bitácora de Canjes:"
+
 msgid "Stock Report"
 msgstr "Reporte de Existencias"
 
 msgid "Inventory Report"
 msgstr "Reporte de Inventario"
+
+msgid "Inventory Report:"
+msgstr "Reporte de Inventario:"
 
 msgid "Prize"
 msgstr "Premio"
@@ -477,11 +500,27 @@ msgstr "No se encontraron canjes para este periodo."
 msgid "No prizes found."
 msgstr "No se encontraron premios."
 
+msgid "Download CSV"
+msgstr "Descargar CSV"
+
+msgid "FILTER:"
+msgstr "FILTRO:"
+
+msgid "All Time"
+msgstr "Todos los Tiempos"
+
+msgid "Last 7 Days"
+msgstr "Últimos 7 Días"
+
+msgid "Last 30 Days"
+msgstr "Últimos 30 Días"
+
+msgid "Last 90 Days"
+msgstr "Últimos 90 Días"
+
+# --- SYSTEM & LOGS ---
 msgid "System Logs - Leer México"
 msgstr "Registros del Sistema - Leer México"
-
-msgid "Refresh"
-msgstr "Actualizar"
 
 msgid "Download Full Log"
 msgstr "Descargar Log Completo"
@@ -497,9 +536,6 @@ msgstr "No se encontraron registros."
 
 msgid "Error loading logs: "
 msgstr "Error cargando logs: "
-
-msgid "Are you sure? This will archive the current log file and start a fresh one."
-msgstr "¿Seguro? Esto archivará el log actual y creará uno nuevo."
 
 msgid "Logs cleared!"
 msgstr "¡Logs limpiados!"
@@ -522,95 +558,91 @@ msgstr "Detalles"
 msgid "Staff User"
 msgstr "Usuario del Personal"
 
-msgid "Help & Documentation"
-msgstr "Ayuda y Documentación"
+msgid "DATE RANGE:"
+msgstr "RANGO DE FECHAS:"
 
-msgid "Staff Support Center"
-msgstr "Centro de Soporte al Personal"
+msgid "Start Date"
+msgstr "Fecha de Inicio"
 
-msgid "Print Guide"
-msgstr "Imprimir Guía"
+msgid "End Date"
+msgstr "Fecha de Fin"
 
-msgid "Cheat Sheet"
-msgstr "Hoja de Referencia"
+msgid "Search details..."
+msgstr "Buscar detalles..."
 
-msgid "User Manual"
-msgstr "Manual de Usuario"
+msgid "No logs found matching your criteria."
+msgstr "No se encontraron registros coincidentes."
 
-msgid "FAQ"
-msgstr "Preguntas Frecuentes"
+# --- USERS & AUTH ---
+msgid "User Management"
+msgstr "Gestión de Usuarios"
 
-msgid "Top 3 Daily Actions"
-msgstr "Top 3 Acciones Diarias"
+msgid "Create New User"
+msgstr "Crear Nuevo Usuario"
 
-msgid "Reward Points (Record Activity)"
-msgstr "Otorgar Puntos (Registrar Actividad)"
+msgid "Create User"
+msgstr "Crear Usuario"
 
-msgid "Go to"
-msgstr "Ir a"
+msgid "Role"
+msgstr "Rol"
 
-msgid "Click"
-msgstr "Hacer clic en"
+msgid "Username"
+msgstr "Usuario"
 
-msgid "Step 1: Search for the student (Type name → Select from list)."
-msgstr "Paso 1: Busque al estudiante (Escriba nombre → Seleccione de la lista)."
+msgid "Password"
+msgstr "Contraseña"
 
-msgid "Step 2: Select the Activity from the dropdown."
-msgstr "Paso 2: Seleccione la Actividad del menú."
+msgid "ID"
+msgstr "ID"
 
-msgid "Step 3: (Optional) Add a note or adjust points."
-msgstr "Paso 3: (Opcional) Agregue una nota o ajuste puntos."
+msgid "Account is inactive. Please contact a System Administrator."
+msgstr "Cuenta inactiva. Por favor contacte al Administrador del Sistema."
 
-msgid "Step 4: Click \"Post Transaction\"."
-msgstr "Paso 4: Haga clic en \"Registrar Transacción\"."
+msgid "Activate"
+msgstr "Activar"
 
-msgid "Success"
-msgstr "Éxito"
+msgid "Deactivate"
+msgstr "Desactivar"
 
-msgid "The student's new balance appears immediately at the top."
-msgstr "El nuevo saldo aparece inmediatamente arriba."
+msgid "Activate User"
+msgstr "Activar Usuario"
 
-msgid "Redeem a Prize"
-msgstr "Canjear un Premio"
+msgid "Deactivate User"
+msgstr "Desactivar Usuario"
 
-msgid "Step 1: Search for the student."
-msgstr "Paso 1: Busque al estudiante."
+msgid "Change Password"
+msgstr "Cambiar Contraseña"
 
-msgid "Step 2: Check their Balance (displayed in big blue numbers)."
-msgstr "Paso 2: Verifique su Saldo (números azules grandes)."
+msgid "Please enter your current password and choose a new one."
+msgstr "Ingrese su contraseña actual y elija una nueva."
 
-msgid "Step 3: Find the prize in the list below."
-msgstr "Paso 3: Encuentre el premio en la lista de abajo."
+msgid "Current Password"
+msgstr "Contraseña Actual"
 
-msgid "Grayed out?"
-msgstr "¿Aparece gris?"
+msgid "New Password"
+msgstr "Nueva Contraseña"
 
-msgid "They don't have enough points."
-msgstr "No tienen suficientes puntos."
+msgid "Confirm New Password"
+msgstr "Confirmar Nueva Contraseña"
 
-msgid "Step 4: Click the \"Redeem\" button next to the prize."
-msgstr "Paso 4: Haga clic en el botón \"Canjear\" junto al premio."
+msgid "Update Password"
+msgstr "Actualizar Contraseña"
 
-msgid "Add a New Student"
-msgstr "Agregar un Nuevo Estudiante"
+msgid "Are you sure you want to reset this password?"
+msgstr "¿Está seguro de que desea restablecer esta contraseña?"
 
-msgid "Required"
-msgstr "Obligatorio"
+msgid "New Pass"
+msgstr "Nueva Contraseña"
 
-msgid "Full Name."
-msgstr "Nombre Completo."
+# --- ERRORS & MISC ---
+msgid "Error connecting to server."
+msgstr "Error al conectar con el servidor."
 
-msgid "The Full Name will be used to search for the student so it needs to accurate and unique."
-msgstr "El Nombre Completo se usará para buscar al estudiante, por lo que debe ser exacto y único."
+msgid "Failed to update student."
+msgstr "Error al actualizar estudiante."
 
-msgid "Note:"
-msgstr "Nota:"
-
-msgid "Always search the directory first to make sure they don't already exist!"
-msgstr "¡Siempre busque en el directorio primero para asegurarse de que no existen!"
-
-msgid "Troubleshooting Quick Tips"
-msgstr "Tips Rápidos de Solución de Problemas"
+msgid "Network or server error."
+msgstr "Error de red o servidor."
 
 msgid "I made a mistake giving points!"
 msgstr "¡Me equivoqué dando puntos!"
@@ -624,41 +656,14 @@ msgstr "para quitar los puntos."
 msgid "I can't find a student."
 msgstr "No encuentro a un estudiante."
 
-msgid "Use the Student Directory to see a list of students with similar names in case there is a spelling mistake."
-msgstr "Use el Directorio de Estudiantes para ver una lista de nombres similares en caso de errores de ortografía."
-
 msgid "I made a mistake on student name."
 msgstr "Me equivoqué en el nombre del estudiante."
-
-msgid "Use the Student Directory to find the student. Click on the student and then use the Edit Details button to update their name."
-msgstr "Busque al estudiante en el Directorio. Haga clic en él y use el botón Editar Datos para corregir su nombre."
 
 msgid "The system is stuck."
 msgstr "El sistema está trabado."
 
 msgid "Refresh the page (F5 or Ctrl+R)."
 msgstr "Refresque la página (F5 o Ctrl+R)."
-
-msgid "Managing Students"
-msgstr "Gestión de Estudiantes"
-
-msgid "Adding a New Student"
-msgstr "Agregar Nuevo Estudiante"
-
-msgid "Viewing History"
-msgstr "Ver Historial"
-
-msgid "Managing Inventory"
-msgstr "Gestión de Inventario"
-
-msgid "Adding/Updating Prizes"
-msgstr "Agregar/Actualizar Premios"
-
-msgid "Redemption Log:"
-msgstr "Bitácora de Canjes:"
-
-msgid "Inventory Report:"
-msgstr "Reporte de Inventario:"
 
 msgid "Frequently Asked Questions"
 msgstr "Preguntas Frecuentes"
@@ -669,17 +674,8 @@ msgstr "¡Ingresé los puntos incorrectos! ¿Cómo lo deshago?"
 msgid "Why is the Redeem button grayed out?"
 msgstr "¿Por qué el botón Canjear está gris?"
 
-msgid "Either the student does not have enough points, OR the item is out of stock."
-msgstr "El estudiante no tiene suficientes puntos O el artículo está agotado."
-
-msgid "Can I delete a student?"
-msgstr "¿Puedo eliminar a un estudiante?"
-
-msgid "No. We do not delete students to preserve historical data. Please ask an administrator to mark them as inactive."
-msgstr "No. No eliminamos estudiantes para preservar los datos históricos. Pida a un administrador que los marque como inactivos."
-
 msgid "The Spanish translation is missing?"
 msgstr "¿Falta la traducción al español?"
 
-msgid "Refresh the page. If it persists, click \"ES\" in the top right corner."
-msgstr "Refresque la página. Si persiste, haga clic en \"ES\" en la esquina superior derecha."
+msgid "Note:"
+msgstr "Nota:"

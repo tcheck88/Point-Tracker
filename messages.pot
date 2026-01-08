@@ -1,14 +1,14 @@
 # Translations template for PROJECT.
-# Copyright (C) 2025 ORGANIZATION
+# Copyright (C) 2026 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-16 21:06-0800\n"
+"POT-Creation-Date: 2026-01-07 21:12-0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,309 +17,1055 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: venv/Lib/site-packages/click/_termui_impl.py:608
-#, python-brace-format
-msgid "{editor}: Editing failed"
+#: templates/add_activity.html:3 templates/add_activity.html:59
+msgid "Activity Manager"
 msgstr ""
 
-#: venv/Lib/site-packages/click/_termui_impl.py:612
-#, python-brace-format
-msgid "{editor}: Editing failed: {e}"
+#: templates/add_activity.html:56 templates/audit_logs.html:49
+#: templates/logs.html:30 templates/manage_users.html:8
+#: templates/prizes.html:41 templates/report_inventory.html:8
+#: templates/report_redemptions.html:40 templates/students.html:47
+msgid "Back to Dashboard"
 msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:1104
-#: venv/Lib/site-packages/click/core.py:1141
-#, python-brace-format
-msgid "{text} {deprecated_message}"
+#: templates/add_activity.html:64
+msgid "Activity Name"
 msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:1160
-msgid "Options"
+#: templates/add_activity.html:68
+msgid "Default Points"
 msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:1222
-#, python-brace-format
-msgid "Got unexpected extra argument ({args})"
-msgid_plural "Got unexpected extra arguments ({args})"
-msgstr[0] ""
-msgstr[1] ""
-
-#: venv/Lib/site-packages/click/core.py:1241
-#, python-brace-format
-msgid "DeprecationWarning: The command {name!r} is deprecated.{extra_message}"
+#: templates/add_activity.html:72 templates/manage_users.html:56
+#: templates/prizes.html:59 templates/report_inventory.html:21
+msgid "Status"
 msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:1425
-msgid "Aborted!"
+#: templates/add_activity.html:74 templates/prizes.html:61
+#: templates/report_inventory.html:33
+msgid "Active"
 msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:1799
-msgid "Commands"
+#: templates/add_activity.html:75 templates/prizes.html:62
+#: templates/report_inventory.html:35
+msgid "Inactive"
 msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:1830
-msgid "Missing command."
+#: templates/add_activity.html:81 templates/prizes.html:68
+msgid "Description (Optional)"
 msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:1908
-#, python-brace-format
-msgid "No such command {name!r}."
+#: templates/add_activity.html:82
+msgid "Briefly explain the criteria..."
 msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:2332
-msgid "Value must be an iterable."
+#: templates/add_activity.html:85
+msgid "Save Activity"
 msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:2355
-#, python-brace-format
-msgid "Takes {nargs} values but 1 was given."
-msgid_plural "Takes {nargs} values but {len} were given."
-msgstr[0] ""
-msgstr[1] ""
+#: templates/add_activity.html:86 templates/prizes.html:73
+msgid "Clear"
+msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:2505
-#, python-brace-format
+#: templates/add_activity.html:91
+msgid "Configured Activities"
+msgstr ""
+
+#: templates/add_activity.html:94 templates/prizes.html:81
+msgid "Search by name..."
+msgstr ""
+
+#: templates/add_activity.html:97 templates/prizes.html:83
+msgid "Hide inactive items"
+msgstr ""
+
+#: templates/add_activity.html:149
+msgid "No matching activities found."
+msgstr ""
+
+#: templates/add_activity.html:164 templates/prizes.html:146
+msgid "Edit"
+msgstr ""
+
+#: templates/add_activity.html:165 templates/prizes.html:147
+msgid "Delete"
+msgstr ""
+
+#: templates/add_activity.html:173
+msgid "Are you sure you want to delete"
+msgstr ""
+
+#: templates/add_student.html:2
+msgid "Add Student — Leer México"
+msgstr ""
+
+#: templates/add_student.html:54 templates/add_student.html:99
+#: templates/base.html:163 templates/base_w_left_nav.html:70
+msgid "Add Student"
+msgstr ""
+
+#: templates/add_student.html:56 templates/edit_student.html:17
+msgid "Full Name"
+msgstr ""
+
+#: templates/add_student.html:57
+msgid "Full name as it appears on certificates"
+msgstr ""
+
+#: templates/add_student.html:59
+msgid "Nickname"
+msgstr ""
+
+#: templates/add_student.html:60
+msgid "Optional display name"
+msgstr ""
+
+#: templates/add_student.html:62
+msgid "Parent / Guardian name (optional)"
+msgstr ""
+
+#: templates/add_student.html:63
+msgid "Parent or guardian name"
+msgstr ""
+
+#: templates/add_student.html:65
+msgid "Email (optional)"
+msgstr ""
+
+#: templates/add_student.html:68
+msgid "Phone (optional)"
+msgstr ""
+
+#: templates/add_student.html:70
+msgid "Phone number in Mexico format (10-digits)."
+msgstr ""
+
+#: templates/add_student.html:74
+msgid "I agree to receive SMS messages"
+msgstr ""
+
+#: templates/add_student.html:79 templates/report_redemptions.html:67
+msgid "Classroom"
+msgstr ""
+
+#: templates/add_student.html:81 templates/add_student.html:88
+msgid "-- select --"
+msgstr ""
+
+#: templates/add_student.html:86
+msgid "Grade"
+msgstr ""
+
+#: templates/add_student.html:100 templates/change_password.html:43
+msgid "Cancel"
+msgstr ""
+
+#: templates/add_student.html:108
+msgid "Possible matches found"
+msgstr ""
+
+#: templates/add_student.html:109
+msgid "No Class Assigned"
+msgstr ""
+
+#: templates/add_student.html:110
+msgid "View"
+msgstr ""
+
+#: templates/add_student.html:111
+msgid "Full name is required."
+msgstr ""
+
+#: templates/add_student.html:112
+msgid "Student created."
+msgstr ""
+
+#: templates/add_student.html:113
+msgid "Potential duplicates returned from server"
+msgstr ""
+
+#: templates/add_student.html:114
+msgid "Save Anyway"
+msgstr ""
+
+#: templates/add_student.html:115
+msgid "Network or server error."
+msgstr ""
+
+#: templates/audit_logs.html:5 templates/audit_logs.html:51
+#: templates/index.html:125
+msgid "System Audit Logs"
+msgstr ""
+
+#: templates/audit_logs.html:55
+msgid "DATE RANGE:"
+msgstr ""
+
+#: templates/audit_logs.html:57
+msgid "Start Date"
+msgstr ""
+
+#: templates/audit_logs.html:59
+msgid "End Date"
+msgstr ""
+
+#: templates/audit_logs.html:61
+msgid "Search details..."
+msgstr ""
+
+#: templates/audit_logs.html:62 templates/students.html:53
+msgid "Search"
+msgstr ""
+
+#: templates/audit_logs.html:63 templates/manage_users.html:108
+#: templates/students.html:54
+msgid "Reset"
+msgstr ""
+
+#: templates/audit_logs.html:70
+msgid "Timestamp"
+msgstr ""
+
+#: templates/audit_logs.html:71
+msgid "Action"
+msgstr ""
+
+#: templates/audit_logs.html:72
+msgid "Details"
+msgstr ""
+
+#: templates/audit_logs.html:73
+msgid "Staff User"
+msgstr ""
+
+#: templates/audit_logs.html:129
+msgid "No logs found matching your criteria."
+msgstr ""
+
+#: templates/base.html:151 templates/base_original.html:78
+msgid "Student Point & Activity Management System"
+msgstr ""
+
+#: templates/base.html:156 templates/base_w_left_nav.html:63
+msgid "Main"
+msgstr ""
+
+#: templates/base.html:157 templates/base_original.html:63
+#: templates/base_w_left_nav.html:64 templates/help.html:101
+#: templates/help.html:111 templates/help.html:121
+msgid "Dashboard"
+msgstr ""
+
+#: templates/base.html:158 templates/base_w_left_nav.html:65
+#: templates/index.html:91 templates/students.html:2 templates/students.html:48
+msgid "Student Directory"
+msgstr ""
+
+#: templates/base.html:162 templates/base_w_left_nav.html:69
+#: templates/manage_users.html:57
+msgid "Actions"
+msgstr ""
+
+#: templates/base.html:164 templates/base_w_left_nav.html:71
+#: templates/record_activity.html:2 templates/record_activity.html:161
+#: templates/student_profile.html:88
+msgid "Reward Points"
+msgstr ""
+
+#: templates/base.html:165 templates/student_profile.html:89
+msgid "Redeem Points"
+msgstr ""
+
+#: templates/base.html:170 templates/base_w_left_nav.html:77
+msgid "Admin Zone"
+msgstr ""
+
+#: templates/base.html:172 templates/index.html:103
+msgid "Prize Catalog"
+msgstr ""
+
+#: templates/base.html:173 templates/index.html:104
+msgid "Activity Catalog"
+msgstr ""
+
+#: templates/base.html:175 templates/report_redemptions.html:41
+msgid "Redemption Log"
+msgstr ""
+
+#: templates/base.html:176 templates/report_inventory.html:2
+msgid "Inventory Report"
+msgstr ""
+
+#: templates/base.html:178 templates/base_w_left_nav.html:84
+#: templates/logs.html:29
+msgid "System Logs"
+msgstr ""
+
+#: templates/base.html:179 templates/base_w_left_nav.html:85
+msgid "Audit Trail"
+msgstr ""
+
+#: templates/base.html:182 templates/manage_users.html:2
+#: templates/manage_users.html:9
+msgid "User Management"
+msgstr ""
+
+#: templates/base.html:189
+msgid "Settings"
+msgstr ""
+
+#: templates/base.html:196 templates/change_password.html:2
+#: templates/change_password.html:6
+msgid "Change Password"
+msgstr ""
+
+#: templates/base.html:197 templates/base_w_left_nav.html:90
+msgid "Help Center"
+msgstr ""
+
+#: templates/base.html:210 templates/base_w_left_nav.html:105
+msgid "Logout"
+msgstr ""
+
+#: templates/base_original.html:67
+msgid "Help"
+msgstr ""
+
+#: templates/base_w_left_nav.html:72 templates/redeem.html:2
+msgid "Redeem Prizes"
+msgstr ""
+
+#: templates/base_w_left_nav.html:79
+msgid "Inventory"
+msgstr ""
+
+#: templates/base_w_left_nav.html:81 templates/report_redemptions.html:2
+msgid "Redemption Report"
+msgstr ""
+
+#: templates/base_w_left_nav.html:82
+msgid "Stock Report"
+msgstr ""
+
+#: templates/change_password.html:8
+msgid "Please enter your current password and choose a new one."
+msgstr ""
+
+#: templates/change_password.html:24
+msgid "Current Password"
+msgstr ""
+
+#: templates/change_password.html:29
+msgid "New Password"
+msgstr ""
+
+#: templates/change_password.html:34
+msgid "Confirm New Password"
+msgstr ""
+
+#: templates/change_password.html:40
+msgid "Update Password"
+msgstr ""
+
+#: templates/edit_student.html:2
+msgid "Edit Student"
+msgstr ""
+
+#: templates/edit_student.html:7
+msgid "Back to Profile"
+msgstr ""
+
+#: templates/edit_student.html:11
+msgid "Edit Student Details"
+msgstr ""
+
+#: templates/edit_student.html:12
+msgid "Update the information below."
+msgstr ""
+
+#: templates/edit_student.html:23
+msgid "Classroom / Homeroom"
+msgstr ""
+
+#: templates/edit_student.html:27
+msgid "Grade Level"
+msgstr ""
+
+#: templates/edit_student.html:29
+msgid "Select Grade"
+msgstr ""
+
+#: templates/edit_student.html:44
+msgid "Parent / Contact Info"
+msgstr ""
+
+#: templates/edit_student.html:47
+msgid "Parent Name"
+msgstr ""
+
+#: templates/edit_student.html:53
+msgid "Phone Number"
+msgstr ""
+
+#: templates/edit_student.html:57
+msgid "Email Address"
+msgstr ""
+
+#: templates/edit_student.html:66
+msgid "Inactive (Soft Delete)"
+msgstr ""
+
+#: templates/edit_student.html:67
+msgid "Hide this student from the directory without deleting their history."
+msgstr ""
+
+#: templates/edit_student.html:73
+msgid "Save Changes"
+msgstr ""
+
+#: templates/help.html:2
+msgid "Help & Documentation"
+msgstr ""
+
+#: templates/help.html:86
+msgid "Staff Support Center"
+msgstr ""
+
+#: templates/help.html:87
+msgid "Print Guide"
+msgstr ""
+
+#: templates/help.html:91
+msgid "Cheat Sheet"
+msgstr ""
+
+#: templates/help.html:92
+msgid "User Manual"
+msgstr ""
+
+#: templates/help.html:93
+msgid "FAQ"
+msgstr ""
+
+#: templates/help.html:97
+msgid "Top 3 Daily Actions"
+msgstr ""
+
+#: templates/help.html:100
+msgid "Reward Points (Record Activity)"
+msgstr ""
+
+#: templates/help.html:101 templates/help.html:111 templates/help.html:121
+msgid "Go to"
+msgstr ""
+
+#: templates/help.html:101 templates/help.html:111
+msgid "Click"
+msgstr ""
+
+#: templates/help.html:101 templates/index.html:88
+msgid "Reward Points (Activity)"
+msgstr ""
+
+#: templates/help.html:102
+msgid "Step 1: Search for the student (Type name → Select from list)."
+msgstr ""
+
+#: templates/help.html:103
+msgid "Step 2: Select the Activity from the dropdown."
+msgstr ""
+
+#: templates/help.html:104
+msgid "Step 3: (Optional) Add a note or adjust points."
+msgstr ""
+
+#: templates/help.html:105
+msgid "Step 4: Click \"Post Transaction\"."
+msgstr ""
+
+#: templates/help.html:106
+msgid "Success"
+msgstr ""
+
+#: templates/help.html:106
+msgid "The student's new balance appears immediately at the top."
+msgstr ""
+
+#: templates/help.html:110
+msgid "Redeem a Prize"
+msgstr ""
+
+#: templates/help.html:111 templates/index.html:89
+msgid "Redeem Points (Prizes)"
+msgstr ""
+
+#: templates/help.html:112
+msgid "Step 1: Search for the student."
+msgstr ""
+
+#: templates/help.html:113
+msgid "Step 2: Check their Balance (displayed in big blue numbers)."
+msgstr ""
+
+#: templates/help.html:114
+msgid "Step 3: Find the prize in the list below."
+msgstr ""
+
+#: templates/help.html:115
+msgid "Grayed out?"
+msgstr ""
+
+#: templates/help.html:115
+msgid "They don't have enough points."
+msgstr ""
+
+#: templates/help.html:116
+msgid "Step 4: Click the \"Redeem\" button next to the prize."
+msgstr ""
+
+#: templates/help.html:120
+msgid "Add a New Student"
+msgstr ""
+
+#: templates/help.html:121 templates/index.html:92
+msgid "Add New Student"
+msgstr ""
+
+#: templates/help.html:122
+msgid "Required"
+msgstr ""
+
+#: templates/help.html:122
+msgid "Full Name."
+msgstr ""
+
+#: templates/help.html:123
 msgid ""
-"DeprecationWarning: The {param_type} {name!r} is "
-"deprecated.{extra_message}"
+"The Full Name will be used to search for the student so it needs to "
+"accurate and unique."
 msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:2956
-#, python-brace-format
-msgid "env var: {var}"
+#: templates/help.html:124
+msgid "Note:"
 msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:2959
-#, python-brace-format
-msgid "default: {default}"
+#: templates/help.html:124
+msgid "Always search the directory first to make sure they don't already exist!"
 msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:2963
-msgid "required"
+#: templates/help.html:128
+msgid "Troubleshooting Quick Tips"
 msgstr ""
 
-#: venv/Lib/site-packages/click/core.py:3023
-msgid "(dynamic)"
+#: templates/help.html:129
+msgid "I made a mistake giving points!"
 msgstr ""
 
-#: venv/Lib/site-packages/click/decorators.py:465
-#, python-format
-msgid "%(prog)s, version %(version)s"
-msgstr ""
-
-#: venv/Lib/site-packages/click/decorators.py:522
-msgid "Show the version and exit."
-msgstr ""
-
-#: venv/Lib/site-packages/click/decorators.py:548
-msgid "Show this message and exit."
-msgstr ""
-
-#: venv/Lib/site-packages/click/exceptions.py:50
-#: venv/Lib/site-packages/click/exceptions.py:89
-#, python-brace-format
-msgid "Error: {message}"
-msgstr ""
-
-#: venv/Lib/site-packages/click/exceptions.py:81
-#, python-brace-format
-msgid "Try '{command} {option}' for help."
-msgstr ""
-
-#: venv/Lib/site-packages/click/exceptions.py:130
-#, python-brace-format
-msgid "Invalid value: {message}"
-msgstr ""
-
-#: venv/Lib/site-packages/click/exceptions.py:132
-#, python-brace-format
-msgid "Invalid value for {param_hint}: {message}"
-msgstr ""
-
-#: venv/Lib/site-packages/click/exceptions.py:190
-msgid "Missing argument"
-msgstr ""
-
-#: venv/Lib/site-packages/click/exceptions.py:192
-msgid "Missing option"
-msgstr ""
-
-#: venv/Lib/site-packages/click/exceptions.py:194
-msgid "Missing parameter"
-msgstr ""
-
-#: venv/Lib/site-packages/click/exceptions.py:196
-#, python-brace-format
-msgid "Missing {param_type}"
-msgstr ""
-
-#: venv/Lib/site-packages/click/exceptions.py:203
-#, python-brace-format
-msgid "Missing parameter: {param_name}"
-msgstr ""
-
-#: venv/Lib/site-packages/click/exceptions.py:223
-#, python-brace-format
-msgid "No such option: {name}"
-msgstr ""
-
-#: venv/Lib/site-packages/click/exceptions.py:235
-#, python-brace-format
-msgid "Did you mean {possibility}?"
-msgid_plural "(Possible options: {possibilities})"
-msgstr[0] ""
-msgstr[1] ""
-
-#: venv/Lib/site-packages/click/exceptions.py:282
-msgid "unknown error"
-msgstr ""
-
-#: venv/Lib/site-packages/click/exceptions.py:289
-#, python-brace-format
-msgid "Could not open file {filename!r}: {message}"
-msgstr ""
-
-#: venv/Lib/site-packages/click/formatting.py:156
-msgid "Usage:"
-msgstr ""
-
-#: venv/Lib/site-packages/click/parser.py:199
-#, python-brace-format
-msgid "Argument {name!r} takes {nargs} values."
-msgstr ""
-
-#: venv/Lib/site-packages/click/parser.py:381
-#, python-brace-format
-msgid "Option {name!r} does not take a value."
-msgstr ""
-
-#: venv/Lib/site-packages/click/parser.py:444
-#, python-brace-format
-msgid "Option {name!r} requires an argument."
-msgid_plural "Option {name!r} requires {nargs} arguments."
-msgstr[0] ""
-msgstr[1] ""
-
-#: venv/Lib/site-packages/click/shell_completion.py:332
-msgid "Shell completion is not supported for Bash versions older than 4.4."
-msgstr ""
-
-#: venv/Lib/site-packages/click/shell_completion.py:339
-msgid "Couldn't detect Bash version, shell completion is not supported."
-msgstr ""
-
-#: venv/Lib/site-packages/click/termui.py:162
-msgid "Repeat for confirmation"
-msgstr ""
-
-#: venv/Lib/site-packages/click/termui.py:178
-msgid "Error: The value you entered was invalid."
-msgstr ""
-
-#: venv/Lib/site-packages/click/termui.py:180
-#, python-brace-format
-msgid "Error: {e.message}"
-msgstr ""
-
-#: venv/Lib/site-packages/click/termui.py:191
-msgid "Error: The two entered values do not match."
-msgstr ""
-
-#: venv/Lib/site-packages/click/termui.py:247
-msgid "Error: invalid input"
-msgstr ""
-
-#: venv/Lib/site-packages/click/termui.py:866
-msgid "Press any key to continue..."
-msgstr ""
-
-#: venv/Lib/site-packages/click/types.py:332
-#, python-brace-format
+#: templates/help.html:130
 msgid ""
-"Choose from:\n"
-"\t{choices}"
+"Go to Reward Points. Select the student. Choose \"Manual Adjustment\" (or"
+" similar) and enter a"
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:369
-#, python-brace-format
-msgid "{value!r} is not {choice}."
-msgid_plural "{value!r} is not one of {choices}."
-msgstr[0] ""
-msgstr[1] ""
-
-#: venv/Lib/site-packages/click/types.py:460
-#, python-brace-format
-msgid "{value!r} does not match the format {format}."
-msgid_plural "{value!r} does not match the formats {formats}."
-msgstr[0] ""
-msgstr[1] ""
-
-#: venv/Lib/site-packages/click/types.py:482
-#, python-brace-format
-msgid "{value!r} is not a valid {number_type}."
+#: templates/help.html:130
+msgid "negative number"
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:538
-#, python-brace-format
-msgid "{value} is not in the range {range}."
+#: templates/help.html:130
+msgid "to remove the points."
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:719
-#, python-brace-format
-msgid "{value!r} is not a valid boolean. Recognized values: {states}"
+#: templates/help.html:132
+msgid "I can't find a student."
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:747
-#, python-brace-format
-msgid "{value!r} is not a valid UUID."
+#: templates/help.html:133
+msgid ""
+"Use the Student Directory to see a list of students with similar names in"
+" case there is a spelling mistake."
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:937
-msgid "file"
+#: templates/help.html:135
+msgid "I made a mistake on student name."
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:939
-msgid "directory"
+#: templates/help.html:136
+msgid ""
+"Use the Student Directory to find the student. Click on the student and "
+"then use the Edit Details button to update their name."
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:941
-msgid "path"
+#: templates/help.html:137
+msgid "The system is stuck."
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:988
-#, python-brace-format
-msgid "{name} {filename!r} does not exist."
+#: templates/help.html:138
+msgid "Refresh the page (F5 or Ctrl+R)."
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:997
-#, python-brace-format
-msgid "{name} {filename!r} is a file."
+#: templates/help.html:144
+msgid "Managing Students"
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:1005
-#, python-brace-format
-msgid "{name} {filename!r} is a directory."
+#: templates/help.html:145
+msgid "Adding a New Student"
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:1014
-#, python-brace-format
-msgid "{name} {filename!r} is not readable."
+#: templates/help.html:146
+msgid ""
+"Navigate to \"Add New Student\". Enter their Full Name. Always check the "
+"directory first to ensure they do not already exist. Make sure you enter "
+"the name correctly otherwise it may not be possible to find them in the "
+"system later."
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:1023
-#, python-brace-format
-msgid "{name} {filename!r} is not writable."
+#: templates/help.html:148
+msgid "Viewing History"
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:1032
-#, python-brace-format
-msgid "{name} {filename!r} is not executable."
+#: templates/help.html:149
+msgid ""
+"Go to the Student Directory, search for a student, and click \"View "
+"Profile\". You can see their last 10 transactions and download their full"
+" history."
 msgstr ""
 
-#: venv/Lib/site-packages/click/types.py:1099
-#, python-brace-format
-msgid "{len_type} values are required, but {len_value} was given."
-msgid_plural "{len_type} values are required, but {len_value} were given."
-msgstr[0] ""
-msgstr[1] ""
+#: templates/help.html:153
+msgid "Managing Inventory"
+msgstr ""
+
+#: templates/help.html:154
+msgid "Adding/Updating Prizes"
+msgstr ""
+
+#: templates/help.html:155
+msgid ""
+"Go to \"Prize Inventory\". To add a new prize, use the form at the top. "
+"To update stock for an existing prize, find it in the list below and "
+"click \"Edit\"."
+msgstr ""
+
+#: templates/help.html:159 templates/index.html:107
+msgid "Reports"
+msgstr ""
+
+#: templates/help.html:160
+msgid ""
+"Access reports from the Dashboard. You can view them on-screen or "
+"download CSV files for Excel."
+msgstr ""
+
+#: templates/help.html:162
+msgid "Redemption Log:"
+msgstr ""
+
+#: templates/help.html:162
+msgid "See who bought what and when."
+msgstr ""
+
+#: templates/help.html:163
+msgid "Inventory Report:"
+msgstr ""
+
+#: templates/help.html:163
+msgid "See current stock levels for stocktaking."
+msgstr ""
+
+#: templates/help.html:170
+msgid "Frequently Asked Questions"
+msgstr ""
+
+#: templates/help.html:173
+msgid "I entered the wrong points! How do I undo it?"
+msgstr ""
+
+#: templates/help.html:174
+msgid ""
+"Go to \"Reward Points\", select the student, and post a transaction with "
+"a **negative** point value (e.g., -50) to reverse the error."
+msgstr ""
+
+#: templates/help.html:178
+msgid "Why is the Redeem button grayed out?"
+msgstr ""
+
+#: templates/help.html:179
+msgid ""
+"Either the student does not have enough points, OR the item is out of "
+"stock."
+msgstr ""
+
+#: templates/help.html:183
+msgid "Can I delete a student?"
+msgstr ""
+
+#: templates/help.html:184
+msgid ""
+"No. We do not delete students to preserve historical data. Please ask an "
+"administrator to mark them as inactive."
+msgstr ""
+
+#: templates/help.html:188
+msgid "The Spanish translation is missing?"
+msgstr ""
+
+#: templates/help.html:189
+msgid "Refresh the page. If it persists, click \"ES\" in the top right corner."
+msgstr ""
+
+#: templates/index.html:86
+msgid "Student Actions"
+msgstr ""
+
+#: templates/index.html:101
+msgid "Management"
+msgstr ""
+
+#: templates/index.html:110
+msgid "View Redemption Log"
+msgstr ""
+
+#: templates/index.html:113
+msgid "View Inventory Report"
+msgstr ""
+
+#: templates/index.html:119
+msgid "System Status"
+msgstr ""
+
+#: templates/index.html:122
+msgid "App Logs"
+msgstr ""
+
+#: templates/login.html:121
+msgid "Welcome Back"
+msgstr ""
+
+#: templates/login.html:129 templates/manage_users.html:24
+#: templates/manage_users.html:54
+msgid "Username"
+msgstr ""
+
+#: templates/login.html:133 templates/manage_users.html:29
+msgid "Password"
+msgstr ""
+
+#: templates/login.html:136
+msgid "Login"
+msgstr ""
+
+#: templates/logs.html:5
+msgid "System Logs - Leer México"
+msgstr ""
+
+#: templates/logs.html:33
+msgid "Refresh"
+msgstr ""
+
+#: templates/logs.html:34
+msgid "Download Full Log"
+msgstr ""
+
+#: templates/logs.html:35
+msgid "Clear Logs"
+msgstr ""
+
+#: templates/logs.html:38
+msgid "Loading system logs..."
+msgstr ""
+
+#: templates/manage_users.html:20
+msgid "Create New User"
+msgstr ""
+
+#: templates/manage_users.html:34 templates/manage_users.html:55
+msgid "Role"
+msgstr ""
+
+#: templates/manage_users.html:45
+msgid "Create User"
+msgstr ""
+
+#: templates/manage_users.html:53
+msgid "ID"
+msgstr ""
+
+#: templates/manage_users.html:94
+msgid "Deactivate User"
+msgstr ""
+
+#: templates/manage_users.html:95
+msgid "Deactivate"
+msgstr ""
+
+#: templates/manage_users.html:98
+msgid "Activate User"
+msgstr ""
+
+#: templates/manage_users.html:99
+msgid "Activate"
+msgstr ""
+
+#: templates/manage_users.html:104
+msgid "Are you sure you want to reset this password?"
+msgstr ""
+
+#: templates/manage_users.html:106
+msgid "New Pass"
+msgstr ""
+
+#: templates/prizes.html:2 templates/prizes.html:42
+msgid "Prize Manager"
+msgstr ""
+
+#: templates/prizes.html:47 templates/report_inventory.html:19
+msgid "Prize Name"
+msgstr ""
+
+#: templates/prizes.html:51
+msgid "Point Cost"
+msgstr ""
+
+#: templates/prizes.html:55 templates/report_inventory.html:23
+msgid "Stock"
+msgstr ""
+
+#: templates/prizes.html:72
+msgid "Save Prize"
+msgstr ""
+
+#: templates/prizes.html:79 templates/report_inventory.html:9
+msgid "Current Inventory"
+msgstr ""
+
+#: templates/prizes.html:143
+msgid "Stock:"
+msgstr ""
+
+#: templates/record_activity.html:148 templates/redeem.html:87
+#: templates/student_profile.html:63
+msgid "Back"
+msgstr ""
+
+#: templates/record_activity.html:153
+msgid "Student Search"
+msgstr ""
+
+#: templates/record_activity.html:154
+msgid "Search by name or ID..."
+msgstr ""
+
+#: templates/record_activity.html:156
+msgid "Search results will appear here"
+msgstr ""
+
+#: templates/record_activity.html:165 templates/student_profile.html:73
+msgid "Balance"
+msgstr ""
+
+#: templates/record_activity.html:172 templates/record_activity.html:199
+#: templates/redeem.html:112 templates/student_history.html:40
+#: templates/student_profile.html:117
+msgid "Activity"
+msgstr ""
+
+#: templates/record_activity.html:174
+msgid "-- Select Activity --"
+msgstr ""
+
+#: templates/record_activity.html:178
+msgid "Points Override"
+msgstr ""
+
+#: templates/record_activity.html:184 templates/report_inventory.html:20
+msgid "Description"
+msgstr ""
+
+#: templates/record_activity.html:185
+msgid "Optional notes..."
+msgstr ""
+
+#: templates/record_activity.html:188
+msgid "Post Transaction"
+msgstr ""
+
+#: templates/record_activity.html:194
+msgid "Recent Transactions"
+msgstr ""
+
+#: templates/record_activity.html:198 templates/redeem.html:112
+#: templates/report_redemptions.html:65 templates/student_profile.html:116
+msgid "Date"
+msgstr ""
+
+#: templates/record_activity.html:200 templates/report_redemptions.html:69
+#: templates/student_history.html:41 templates/student_profile.html:118
+msgid "Points"
+msgstr ""
+
+#: templates/record_activity.html:204
+msgid "Select a student to view their history"
+msgstr ""
+
+#: templates/redeem.html:92
+msgid "Identify Student"
+msgstr ""
+
+#: templates/redeem.html:94
+msgid "Search Name or ID..."
+msgstr ""
+
+#: templates/redeem.html:108
+msgid "Recent History"
+msgstr ""
+
+#: templates/redeem.html:112
+msgid "Pts"
+msgstr ""
+
+#: templates/redeem.html:115
+msgid "Select a student"
+msgstr ""
+
+#: templates/redeem.html:124
+msgid "Redeemable Prizes"
+msgstr ""
+
+#: templates/redeem.html:126
+msgid "Filter by prize name..."
+msgstr ""
+
+#: templates/redeem.html:129
+msgid "Hide unaffordable"
+msgstr ""
+
+#: templates/redeem.html:221
+msgid "Not enough points or out of stock"
+msgstr ""
+
+#: templates/redeem.html:228
+msgid "Redeem"
+msgstr ""
+
+#: templates/redeem.html:234
+msgid "Confirm redemption of"
+msgstr ""
+
+#: templates/report_inventory.html:12 templates/report_redemptions.html:44
+#: templates/student_history.html:27
+msgid "Download CSV"
+msgstr ""
+
+#: templates/report_inventory.html:22
+msgid "Cost"
+msgstr ""
+
+#: templates/report_inventory.html:44
+msgid "No prizes found."
+msgstr ""
+
+#: templates/report_redemptions.html:49 templates/student_profile.html:101
+msgid "FILTER:"
+msgstr ""
+
+#: templates/report_redemptions.html:51 templates/student_profile.html:103
+msgid "All Time"
+msgstr ""
+
+#: templates/report_redemptions.html:52
+msgid "Today"
+msgstr ""
+
+#: templates/report_redemptions.html:53 templates/student_profile.html:104
+msgid "Last 7 Days"
+msgstr ""
+
+#: templates/report_redemptions.html:54 templates/student_profile.html:105
+msgid "Last 30 Days"
+msgstr ""
+
+#: templates/report_redemptions.html:55 templates/student_profile.html:106
+msgid "Last 90 Days"
+msgstr ""
+
+#: templates/report_redemptions.html:66
+msgid "Student"
+msgstr ""
+
+#: templates/report_redemptions.html:68
+msgid "Prize"
+msgstr ""
+
+#: templates/report_redemptions.html:70
+msgid "Staff"
+msgstr ""
+
+#: templates/student_history.html:5 templates/student_history.html:31
+#: templates/student_profile.html:96
+msgid "Activity History"
+msgstr ""
+
+#: templates/student_history.html:26
+msgid "Back to Students"
+msgstr ""
+
+#: templates/student_history.html:39
+msgid "Date/Time"
+msgstr ""
+
+#: templates/student_history.html:42
+msgid "Recorded By"
+msgstr ""
+
+#: templates/student_history.html:43
+msgid "Trans. ID"
+msgstr ""
+
+#: templates/student_profile.html:2
+msgid "Profile"
+msgstr ""
+
+#: templates/student_profile.html:64
+msgid "Loading...."
+msgstr ""
+
+#: templates/student_profile.html:69
+msgid "Edit Details"
+msgstr ""
+
+#: templates/student_profile.html:82
+msgid "Contact & Student Info"
+msgstr ""
+
+#: templates/student_profile.html:86
+msgid "Quick Actions"
+msgstr ""
+
+#: templates/student_profile.html:97
+msgid "Export CSV"
+msgstr ""
+
+#: templates/student_profile.html:122
+msgid "Loading history..."
+msgstr ""
+
+#: templates/students.html:52
+msgid "Search by name, nickname, or ID..."
+msgstr ""
+
+#: templates/students.html:57
+msgid "Export CSV "
+msgstr ""
+
+#: templates/students.html:63
+msgid "Search Results"
+msgstr ""
+
+#: templates/students.html:66
+msgid "Hide Inactive"
+msgstr ""
+
+#: templates/students.html:69
+msgid "Hide zero points"
+msgstr ""
 
