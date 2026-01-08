@@ -162,6 +162,7 @@ def set_language():
     return redirect(request.referrer or url_for('index'))
 # ---------------------------------------------
 
+# 1. UPDATE THIS FUNCTION (Block inactive logins)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -169,28 +170,36 @@ def login():
         password = request.form.get('password')
         
         conn = get_db_connection()
+        if not conn:
+            return render_template('login.html', error="System Error: Database connection failed.")
+            
         cur = conn.cursor()
-        
-        cur.execute("SELECT username, password_hash, role FROM users WHERE username = %s", (username,))
+        # Fetch 'active' status in addition to other fields
+        cur.execute("SELECT username, password_hash, role, active FROM users WHERE username = %s", (username,))
         user = cur.fetchone()
         conn.close()
 
         if user:
-            # Handle both Dictionary (RealDictCursor) and Tuple (Standard Cursor)
+            # Handle Dictionary vs Tuple cursor
             if isinstance(user, dict):
                 stored_hash = user['password_hash']
                 role = user['role']
                 db_user = user['username']
+                is_active = user['active']
             else:
                 db_user = user[0]
                 stored_hash = user[1]
                 role = user[2]
+                is_active = user[3] # Index 3 matches the SQL query order above
+
+            # SECURITY CHECK: Block inactive users immediately
+            if not is_active:
+                 return render_template('login.html', error="Account is inactive. Please contact a System Administrator.")
 
             if check_password_hash(stored_hash, password):
                 session['username'] = db_user
                 session['role'] = role.strip() if role else 'staff'
                 
-                # --- NEW: Track the Login ---
                 try:
                     transaction_manager.log_audit_event(
                         action_type="USER_LOGIN",
@@ -198,15 +207,107 @@ def login():
                         recorded_by=db_user
                     )
                 except Exception as e:
-                    # Don't block login if logging fails, just print to console
                     print(f"Error logging login event: {e}")
-                # ----------------------------
 
                 return redirect(url_for('index'))
         
         return render_template('login.html', error="Invalid credentials")
         
     return render_template('login.html')
+
+
+# 2. UPDATE THIS FUNCTION (Fetch 'active' status for the list)
+@app.route('/admin/users')
+@login_required
+def manage_users():
+    current_role = session.get('role')
+    
+    if current_role not in ['sysadmin', 'admin']:
+        return redirect(url_for('index'))
+
+    msg = request.args.get('msg')
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Updated SQL to select 'active' column
+    if current_role == 'sysadmin':
+        cur.execute("SELECT id, username, role, active FROM users ORDER BY id ASC")
+    else:
+        cur.execute("SELECT id, username, role, active FROM users WHERE role != 'sysadmin' ORDER BY id ASC")
+        
+    users = cur.fetchall()
+    conn.close()
+    
+    user_list = []
+    for u in users:
+        if isinstance(u, dict):
+            user_list.append(u)
+        else:
+            # Update tuple mapping to include active at index 3
+            user_list.append({'id': u[0], 'username': u[1], 'role': u[2], 'active': u[3]})
+
+    return render_template('manage_users.html', users=user_list, msg=msg)
+
+
+# 3. ADD THIS NEW FUNCTION (Handle the toggle)
+@app.route('/admin/users/toggle_status', methods=['POST'])
+@login_required
+def toggle_user_status():
+    current_role = session.get('role')
+    staff_identity = session.get('username', 'system')
+    
+    if current_role not in ['sysadmin', 'admin']:
+        return redirect(url_for('index'))
+
+    user_id = request.form.get('user_id')
+    
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        
+        # 1. Fetch Target to check permissions
+        cur.execute("SELECT username, role, active FROM users WHERE id = %s", (user_id,))
+        target = cur.fetchone()
+        
+        if not target:
+            return redirect(url_for('manage_users', msg="Error: User not found."))
+
+        target_name = target['username'] if isinstance(target, dict) else target[0]
+        target_role = target['role'] if isinstance(target, dict) else target[1]
+        current_status = target['active'] if isinstance(target, dict) else target[2]
+
+        # 2. Prevent Admin from disabling SysAdmin
+        if current_role != 'sysadmin' and target_role == 'sysadmin':
+             return redirect(url_for('manage_users', msg="Access Denied: You cannot modify SysAdmin accounts."))
+
+        # 3. Prevent Self-Lockout (Optional but smart)
+        if target_name == staff_identity:
+             return redirect(url_for('manage_users', msg="Error: You cannot deactivate your own account."))
+
+        # 4. Toggle Status
+        new_status = not current_status
+        cur.execute("UPDATE users SET active = %s WHERE id = %s", (new_status, user_id))
+        
+        # 5. Log it
+        status_str = "ACTIVATED" if new_status else "DEACTIVATED"
+        transaction_manager.log_audit_event(
+            action_type="USER_STATUS_CHANGE",
+            details=f"{status_str} user account: {target_name}",
+            recorded_by=staff_identity
+        )
+        
+        conn.commit()
+        return redirect(url_for('manage_users', msg=f"Success: User {target_name} is now {status_str}."))
+        
+    except Exception as e:
+        conn.rollback()
+        logger.exception(f"Toggle status failed: {e}")
+        return redirect(url_for('manage_users', msg=f"Error: {str(e)}"))
+    finally:
+        conn.close()
+
+
+
 
 @app.route('/logout')
 def logout():
@@ -347,44 +448,6 @@ def change_password():
 
     return render_template('change_password.html')
 
-
-@app.route('/admin/users')
-@login_required
-def manage_users():
-    current_role = session.get('role')
-    
-    # ALLOW both sysadmin and admin
-    if current_role not in ['sysadmin', 'admin']:
-        return redirect(url_for('index'))
-
-    # Check for feedback messages passed via query string
-    msg = request.args.get('msg')
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
-    # LOGIC: 
-    # - If sysadmin: Show all users.
-    # - If admin: Show all users EXCEPT those with role='sysadmin'.
-    
-    if current_role == 'sysadmin':
-        cur.execute("SELECT id, username, role FROM users ORDER BY id ASC")
-    else:
-        # Filter out sysadmins from the view
-        cur.execute("SELECT id, username, role FROM users WHERE role != 'sysadmin' ORDER BY id ASC")
-        
-    users = cur.fetchall()
-    conn.close()
-    
-    # Convert tuples to dicts if necessary for the template
-    user_list = []
-    for u in users:
-        if isinstance(u, dict):
-            user_list.append(u)
-        else:
-            user_list.append({'id': u[0], 'username': u[1], 'role': u[2]})
-
-    return render_template('manage_users.html', users=user_list, msg=msg)
 
 @app.route('/admin/reset_password', methods=['POST'])
 @login_required
