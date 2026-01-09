@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-Login - Point Tracker
+Login - Kudos
 {% endblock %}
 
 {% block extra_css %}
@@ -118,7 +118,18 @@ Login - Point Tracker
 {% block content %}
 <div class="login-page">
     <div class="login-box">
-        <h1>{{ _('Welcome Back') }}</h1>
+        
+        <div style="text-align: center; margin-bottom: 25px;">
+            <h2 style="font-family: 'Fredoka One', cursive; margin: 0; color: #1f6feb; font-size: 42px; letter-spacing: 1px; text-shadow: 2px 2px 0px rgba(31, 111, 235, 0.1);">
+                KUDOS
+            </h2>
+            <p style="margin: 6px 0 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                {{ _('Student Recognition System') }}
+            </p>
+        </div>
+        <h1 style="font-size: 16px; color: #94a3b8; font-weight: 500; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.5px;">
+            {{ _('Welcome Back') }}
+        </h1>
         
         {% if error %}
             <div class="error">{{ error }}</div>

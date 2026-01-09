@@ -2,10 +2,13 @@
 <html lang="{{ get_locale() }}">
 <head>
     <meta charset="utf-8" />
-    <title>{% block title %}Leer México{% endblock %}</title>
+    <title>{% block title %}Kudos | Leer México{% endblock %}</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='Leer_Mexico_Read.png') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fredoka+One&display=swap" rel="stylesheet" />
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         :root {
             --primary: #1f6feb;
@@ -53,24 +56,37 @@
             background: white;
         }
         
-        /* UPDATED LOGO STYLE FOR PNG */
         .brand-logo {
-            width: 160px;      /* Good width for sidebar */
+            width: 160px;
             max-width: 100%;
             height: auto;
             object-fit: contain;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             border: none;
             padding: 0;
+        }
+        
+        /* NEW ROUNDED LOGO STYLE */
+        .kudos-logo-text {
+            font-family: 'Fredoka One', cursive; /* The new font */
+            font-size: 32px; /* Slightly larger for impact */
+            color: #1f6feb;  /* Use primary blue instead of black/grey */
+            letter-spacing: 1px;
+            line-height: 1;
+            margin-top: 8px;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 0px rgba(31, 111, 235, 0.1); /* Subtle depth */
         }
         
         .brand-subtitle {
             font-size: 11px;
             color: var(--secondary);
-            margin-top: 4px;
-            font-weight: 500;
+            margin-top: 6px;
+            font-weight: 600;
             line-height: 1.4;
             max-width: 90%;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .nav-scroll-area {
@@ -148,8 +164,11 @@
         <div class="brand-section">
             <img src="{{ url_for('static', filename='Leer_Mexico_Read.png') }}" alt="Leer México" class="brand-logo">
             
-            <div class="brand-subtitle">{{ _('Student Point & Activity Management System') }}</div>
-        </div>
+            <div class="kudos-logo-text">
+                <i class="fas fa-star" style="color: #FFD700; font-size: 0.8em; vertical-align: 2px; -webkit-text-stroke: 1px #eab308;"></i> KUDOS
+            </div>
+            <div class="brand-subtitle">{{ _('Student Recognition System') }}</div>
+            </div>
 
         <div class="nav-scroll-area">
             <div class="nav-group">
@@ -178,9 +197,9 @@
                 <a href="{{ url_for('logs_page') }}" class="nav-link" style="color: #166534;">⚠️ {{ _('System Logs') }}</a>
                 <a href="{{ url_for('audit_logs_page') }}" class="nav-link" style="color: #166534;">🛡️ {{ _('Audit Trail') }}</a>
                 
-				{% if session.get('role') in ['admin', 'sysadmin'] %}
-				<a href="{{ url_for('manage_users') }}" class="nav-link" style="color: #166534;">👥 {{ _('User Management') }}</a>
-				{% endif %}
+                {% if session.get('role') in ['admin', 'sysadmin'] %}
+                <a href="{{ url_for('manage_users') }}" class="nav-link" style="color: #166534;">👥 {{ _('User Management') }}</a>
+                {% endif %}
                 
             </div>
             {% endif %}
