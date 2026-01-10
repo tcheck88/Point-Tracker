@@ -693,25 +693,41 @@ def api_get_student_details(student_id):
         return jsonify({"success": False, "message": str(e)}), 500
 
 
+
 @app.route('/api/students/search', methods=['GET'])
 @login_required
 def api_students_search():
     search_term = request.args.get('term', '').strip()
     
-    # NEW: Check if we should include inactive students
+    # Existing flag
     include_inactive = request.args.get('include_inactive') == 'true'
+    
+    # NEW: Check for show_all flag
+    show_all = request.args.get('show_all') == 'true'
 
-    if len(search_term) < 2:
+    # LOGIC UPDATE: Only enforce minimum length if we are NOT showing all
+    if not show_all and len(search_term) < 2:
         return jsonify({"success": True, "students": []}), 200 
 
     try:
-        # Pass the new flag to the search logic
-        students = student_search.find_students(search_term, include_inactive=include_inactive)
+        # Pass the new show_all flag to the search logic
+        students = student_search.find_students(
+            search_term, 
+            include_inactive=include_inactive,
+            show_all=show_all
+        )
         return jsonify({"success": True, "students": students}), 200 
     except Exception as e:
-        logger.exception(f"Search error: {e}")
+        # Using app.logger if logger isn't globally defined in this scope, 
+        # or keep logger.exception if that's how your imports are set up.
+        try:
+            logger.exception(f"Search error: {e}")
+        except:
+            current_app.logger.error(f"Search error: {e}")
+            
         return jsonify({"success": False, "message": str(e)}), 500
-
+        
+        
 
 
 # ---- Transaction API  ----

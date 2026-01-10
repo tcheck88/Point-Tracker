@@ -2,182 +2,279 @@ import csv
 import sys
 import os
 from datetime import datetime
+from sqlalchemy import create_engine, MetaData, Table, select, insert
 
-# Setup Flask Context
-from app import app
-from db_session import db
-from models import Student, Activity, Transaction, User, Prize
+# ==========================================
+# CONFIGURATION - PASTE YOUR CLOUD STRINGS HERE
+# ==========================================
 
-def get_or_create_migration_activity():
-    """Ensures the specific activity for initial balances exists."""
-    migration_name = "Migration / Initial Balance"
-    
-    activity = Activity.query.filter_by(name=migration_name).first()
-    
-    if not activity:
-        print(f"Creating system activity: '{migration_name}'...")
-        activity = Activity(
-            name=migration_name,
-            description="System generated activity for initial data import.",
-            default_points=0,
-            active=True 
-        )
-        db.session.add(activity)
-        db.session.commit()
-    
-    return activity
+# 1. DEVELOPMENT (Cloud)
+DEV_DB_URL = "postgresql://postgres.ntpxnlcycykxfadzlgth:GTJ52AxK4Gc1ESHl@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require" 
 
-def import_students(filename="students.csv"):
-    if not os.path.exists(filename):
-        print(f"Error: File {filename} not found.")
-        return
+# 2. PRODUCTION (Cloud)
+PROD_DB_URL = "postgresql://postgres.fecqimycokwmpfmfljbn:GTJ52AxK4Gc1ESHl@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require" 
 
-    print(f"--- Starting Student Import from {filename} ---")
-    
-    # 1. Get the Activity ID for the audit trail
-    migration_activity = get_or_create_migration_activity()
-    
-    # 2. Get an Admin user for the 'recorded_by' field (Audit Trail)
-    admin_user = User.query.filter_by(role='admin').first()
-    if not admin_user:
-        admin_user = User.query.first()
-        if not admin_user:
-            print("Error: No users found in system. Please create an admin user first.")
-            return
+# ==========================================
 
-    count_new = 0
-    count_skipped = 0
+def get_engine():
+    print("\n" + "="*50)
+    print(" KUDOS STANDALONE IMPORT UTILITY")
+    print("="*50)
+    print("1. DEVELOPMENT (Cloud)")
+    print("2. PRODUCTION  (Cloud)")
+    print("-" * 50)
     
-    with open(filename, 'r', encoding='utf-8-sig') as f: 
-        reader = csv.DictReader(f)
+    choice = input("Select Target Database (1 or 2): ").strip()
+    
+    if choice == '1':
+        url = DEV_DB_URL
+        env = "DEVELOPMENT"
+    elif choice == '2':
+        url = PROD_DB_URL
+        env = "PRODUCTION"
+    else:
+        print("Invalid selection.")
+        sys.exit(1)
         
-        required_headers = ['Full Name', 'Initial Points']
-        if not all(h in reader.fieldnames for h in required_headers):
-            print(f"Error: CSV missing required columns.")
-            print(f"Expected: {required_headers}")
-            return
+    print(f"\nWARNING: You are about to write to: [{env}]")
+    print(f"URL: {url}")
+    confirm = input("Type 'YES' to confirm connection string is correct: ").strip()
+    
+    if confirm != 'YES':
+        print("Aborted.")
+        sys.exit(0)
+        
+    try:
+        engine = create_engine(url, echo=False)
+        connection = engine.connect()
+        print("Connection Successful!")
+        return engine, connection
+    except Exception as e:
+        print(f"\nConnection Failed: {e}")
+        sys.exit(1)
 
-        for row in reader:
-            name = row['Full Name'].strip()
-            
-            try:
-                points_str = row['Initial Points'].strip()
-                points = int(points_str) if points_str else 0
-            except ValueError:
-                print(f"Warning: Invalid points for '{name}'. Defaulting to 0.")
-                points = 0
-            
-            existing = Student.query.filter_by(full_name=name).first()
-            if existing:
-                print(f"Skipping '{name}' (Already exists)")
-                count_skipped += 1
-                continue
+def get_or_create_migration_activity(conn, activities_table):
+    migration_name = "Migration / Initial Balance"
+    sel = select(activities_table).where(activities_table.c.name == migration_name)
+    result = conn.execute(sel).first()
+    
+    if result:
+        return result.id
+    
+    print(f"Creating system activity: '{migration_name}'...")
+    ins = insert(activities_table).values(
+        name=migration_name,
+        description="System generated activity for initial data import.",
+        default_points=0,
+        active=True
+    )
+    result = conn.execute(ins)
+    conn.commit()
+    return result.inserted_primary_key[0]
 
-            new_student = Student(
-                full_name=name,
-                balance=0,
-                active=True
-            )
-            db.session.add(new_student)
-            db.session.flush()
+def get_admin_user(conn, users_table):
+    """Returns a tuple: (user_id, username)"""
+    # Try to find a user with role 'admin'
+    sel = select(users_table).where(users_table.c.role == 'admin')
+    result = conn.execute(sel).first()
+    
+    if result:
+        # Assuming column 'username' exists
+        return result.id, result.username
+    
+    # Fallback
+    sel = select(users_table)
+    result = conn.execute(sel).first()
+    
+    if result:
+        return result.id, result.username
+        
+    print("Warning: No users found. Audits will be recorded as 'system'.")
+    return None, "system"
 
-            if points > 0:
-                trans = Transaction(
-                    student_id=new_student.id,
-                    activity_id=migration_activity.id,
-                    points=points,
-                    description="Initial Balance Import",
-                    user_id=admin_user.id,
-                    timestamp=datetime.utcnow()
-                )
-                db.session.add(trans)
-                new_student.balance = points
-            
-            count_new += 1
-            print(f"Imported: {name} (Points: {points})")
+def log_audit_event(conn, metadata, actor, target_table, target_id, details):
+    """
+    Inserts a row-level audit record matching the specific schema provided.
+    """
+    audit_table = metadata.tables.get('audit_log')
+    if audit_table is None:
+        return # Skip if table doesn't exist
 
-    db.session.commit()
-    print(f"\n--- Student Import Complete ---")
-    print(f"New Students: {count_new}")
-    print(f"Skipped:      {count_skipped}")
+    try:
+        ins = insert(audit_table).values(
+            event_time=datetime.utcnow(),
+            event_type='IMPORT',      # Broad category
+            action_type='CREATE',     # Specific action (like UI)
+            actor=actor,              # The username
+            target_table=target_table,
+            target_id=target_id,
+            details=details,
+            recorded_by=actor         # Same as actor for imports
+        )
+        conn.execute(ins)
+    except Exception as e:
+        print(f"Audit Error: {e}")
 
-def import_prizes(filename="prizes.csv"):
+def import_students(conn, metadata):
+    filename = "students.csv"
     if not os.path.exists(filename):
-        print(f"Error: File {filename} not found.")
+        print(f"Error: {filename} not found.")
         return
 
-    print(f"--- Starting Prize Import from {filename} ---")
+    # Load Tables
+    students = metadata.tables.get('student') or metadata.tables.get('students')
+    transactions = metadata.tables.get('transaction') or metadata.tables.get('transactions')
+    activities = metadata.tables.get('activity') or metadata.tables.get('activities')
+    users = metadata.tables.get('user') or metadata.tables.get('users')
 
-    count_new = 0
-    count_skipped = 0
+    if not students:
+        print("Error: 'student' table not found.")
+        return
+
+    migration_activity_id = get_or_create_migration_activity(conn, activities)
+    admin_id, admin_name = get_admin_user(conn, users)
+
+    print(f"--- Importing Students from {filename} ---")
     
+    count_new = 0
     with open(filename, 'r', encoding='utf-8-sig') as f:
         reader = csv.DictReader(f)
-        
-        required_headers = ['Prize Name', 'Cost', 'Stock']
-        if not all(h in reader.fieldnames for h in required_headers):
-            print(f"Error: CSV missing required columns.")
-            print(f"Expected: {required_headers}")
-            return
-
         for row in reader:
-            name = row['Prize Name'].strip()
-            
-            # Parse Cost
+            name = row['Full Name'].strip()
             try:
-                cost_str = row['Cost'].strip()
-                cost = int(cost_str) if cost_str else 0
+                points = int(row['Initial Points']) if row['Initial Points'] else 0
             except ValueError:
-                print(f"Warning: Invalid cost for '{name}'. Defaulting to 0.")
-                cost = 0
-
-            # Parse Stock
-            try:
-                stock_str = row['Stock'].strip()
-                stock = int(stock_str) if stock_str else 0
-            except ValueError:
-                print(f"Warning: Invalid stock for '{name}'. Defaulting to 0.")
-                stock = 0
+                points = 0
             
-            # Check for existing prize
-            existing = Prize.query.filter_by(name=name).first()
-            if existing:
+            # Check exist
+            sel = select(students).where(students.c.full_name == name)
+            if conn.execute(sel).first():
                 print(f"Skipping '{name}' (Already exists)")
-                count_skipped += 1
                 continue
 
-            # Create Prize
-            new_prize = Prize(
-                name=name,
-                cost=cost,
-                stock=stock,
-                image_file='default_prize.png', # Default image for imported items
-                active=True
+            # 1. Insert Student
+            ins = insert(students).values(
+                full_name=name,
+                balance=points, 
+                active=True,
+                classroom="",
+                grade_level=""
             )
-            db.session.add(new_prize)
+            result = conn.execute(ins)
             
+            # Capture the new ID for the Audit Log
+            new_student_id = result.inserted_primary_key[0]
+            
+            # 2. Insert Transaction (Financial History)
+            if points > 0 and transactions is not None:
+                ins_trans = insert(transactions).values(
+                    student_id=new_student_id,
+                    activity_id=migration_activity_id,
+                    points=points,
+                    description="Initial Balance Import",
+                    user_id=admin_id,
+                    timestamp=datetime.utcnow()
+                )
+                conn.execute(ins_trans)
+            
+            # 3. Log to Audit Trail (Row Level)
+            log_audit_event(
+                conn, metadata,
+                actor=admin_name,
+                target_table='student',
+                target_id=new_student_id,
+                details=f"Imported student: {name} (Initial Points: {points})"
+            )
+            
+            print(f"Imported: {name}")
             count_new += 1
-            print(f"Imported: {name} (Cost: {cost}, Stock: {stock})")
+            
+    conn.commit()
+    print(f"Done. Imported {count_new} students.\n")
 
-    db.session.commit()
-    print(f"\n--- Prize Import Complete ---")
-    print(f"New Prizes:   {count_new}")
-    print(f"Skipped:      {count_skipped}")
+def import_prizes(conn, metadata):
+    filename = "prizes.csv"
+    if not os.path.exists(filename):
+        print(f"Error: {filename} not found.")
+        return
+
+    # Look for 'prize_inventory'
+    if 'prize_inventory' in metadata.tables:
+        prizes = metadata.tables['prize_inventory']
+        table_name_str = 'prize_inventory'
+    elif 'prize' in metadata.tables:
+        prizes = metadata.tables['prize']
+        table_name_str = 'prize'
+    else:
+        print("Error: Could not find 'prize_inventory' table.")
+        return
+
+    users = metadata.tables.get('user') or metadata.tables.get('users')
+    admin_id, admin_name = get_admin_user(conn, users)
+
+    print(f"--- Importing Prizes from {filename} ---")
+
+    count_new = 0
+    with open(filename, 'r', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            name = row['Prize Name'].strip()
+            try:
+                cost = int(row['Cost']) if row['Cost'] else 0
+                stock = int(row['Stock']) if row['Stock'] else 0
+            except ValueError:
+                cost, stock = 0, 0
+            
+            sel = select(prizes).where(prizes.c.name == name)
+            if conn.execute(sel).first():
+                print(f"Skipping '{name}' (Already exists)")
+                continue
+
+            # 1. Insert Prize
+            ins = insert(prizes).values(
+                name=name,
+                point_cost=cost,  
+                stock_count=stock, 
+                active=True,
+                last_modified_by='Import Utility'
+            )
+            result = conn.execute(ins)
+            
+            # Capture ID
+            new_prize_id = result.inserted_primary_key[0]
+            
+            # 2. Log to Audit Trail (Row Level)
+            log_audit_event(
+                conn, metadata,
+                actor=admin_name,
+                target_table=table_name_str,
+                target_id=new_prize_id,
+                details=f"Imported prize: {name} (Cost: {cost}, Stock: {stock})"
+            )
+
+            print(f"Imported: {name}")
+            count_new += 1
+
+    conn.commit()
+    print(f"Done. Imported {count_new} prizes.\n")
 
 if __name__ == "__main__":
-    with app.app_context():
-        print("\n=== SYSTEM IMPORT UTILITY ===")
-        print("1. Import Students (students.csv)")
-        print("2. Import Prizes (prizes.csv)")
-        print("3. Exit")
-        
-        choice = input("\nSelect option: ")
-        
-        if choice == "1":
-            import_students()
-        elif choice == "2":
-            import_prizes()
-        elif choice == "3":
-            print("Exiting.")
-        else:
-            print("Invalid selection")
+    # 1. Connect
+    engine, conn = get_engine()
+    
+    # 2. Reflect Tables
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+    
+    # 3. Menu
+    print("1. Import Students")
+    print("2. Import Prizes")
+    print("3. Exit")
+    choice = input("Select: ")
+
+    if choice == '1':
+        import_students(conn, metadata)
+    elif choice == '2':
+        import_prizes(conn, metadata)
+    
+    conn.close()

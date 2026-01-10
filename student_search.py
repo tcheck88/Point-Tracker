@@ -37,15 +37,14 @@ def write_audit(event_type: str, actor: str, target_table: str, target_id: Optio
         conn.close()
 
 
-def find_students(search_term: str, include_inactive: bool = False) -> List[Dict[str, Any]]:
-    """
-    Searches for students matching the search term (Name or ID).
-    Optional: include_inactive (bool) - if True, returns both active and inactive students.
-    """
-    # PRESERVED LOGIC: Multi-word search handling
-    safe_term = search_term.strip().lower().replace(' ', '%') 
-    search_pattern = f"%{safe_term}%" 
 
+def find_students(search_term: str = "", include_inactive: bool = False, show_all: bool = False) -> List[Dict[str, Any]]:
+    """
+    Searches for students.
+    - search_term: Name or ID to filter by.
+    - include_inactive: If True, includes inactive students.
+    - show_all: If True, returns ALL students (bypassing LIMIT 50).
+    """
     conn = get_db_connection()
     if not conn:
         return []
@@ -53,34 +52,46 @@ def find_students(search_term: str, include_inactive: bool = False) -> List[Dict
     try:
         cur = conn.cursor()
         
-        # Base Query
-        # PostgreSQL uses %s for placeholders
+        # Start building the query dynamically
         query = """
         SELECT 
             id, full_name, nickname, classroom, grade, total_points, phone, email, active
         FROM students
-        WHERE (full_name ILIKE %s OR CAST(id AS TEXT) ILIKE %s)
+        WHERE 1=1
         """
-        
-        # NEW LOGIC: Only filter out inactive if the flag is False
+        params = []
+
+        # 1. Handle Search Term (Only apply if provided and NOT showing all)
+        # If showing all, we ignore the search term to prevent conflicting logic
+        if search_term and not show_all:
+            safe_term = search_term.strip().lower().replace(' ', '%') 
+            search_pattern = f"%{safe_term}%"
+            query += " AND (full_name ILIKE %s OR CAST(id AS TEXT) ILIKE %s)"
+            params.extend([search_pattern, search_pattern])
+
+        # 2. Handle Inactive
         if not include_inactive:
             query += " AND active = TRUE"
             
-        query += " ORDER BY full_name LIMIT 50"
+        # 3. Order
+        query += " ORDER BY full_name"
 
-        cur.execute(query, (search_pattern, search_pattern))
-        
-        # RealDictCursor returns dictionary-like objects automatically
+        # 4. Limit (Only apply if NOT showing all)
+        if not show_all:
+            query += " LIMIT 50"
+
+        cur.execute(query, tuple(params))
         results = cur.fetchall()
         
-        logger.info(f"Search for '{search_term}' (inc_inactive={include_inactive}) returned {len(results)} students.")
+        logger.info(f"Search (term='{search_term}', all={show_all}) returned {len(results)} students.")
         return results
 
     except Exception as e:
-        logger.error(f"Database error during student search for term '{search_term}': {e}")
+        logger.error(f"Database error during student search: {e}")
         return []
     finally:
         conn.close()
+
 
 def get_student_by_id(student_id: int) -> Optional[Dict[str, Any]]:
     """Fetches a single student by ID."""
