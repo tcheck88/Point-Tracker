@@ -13,7 +13,7 @@ def add_points(student_id, points, activity_type, description="", recorded_by="s
     try:
         cur = conn.cursor()
         
-        # Record the transaction with the new strongly typed column
+        # Record the transaction
         cur.execute("""
             INSERT INTO activity_log (student_id, activity_type, points, description, recorded_by)
             VALUES (%s, %s, %s, %s, %s)
@@ -27,6 +27,10 @@ def add_points(student_id, points, activity_type, description="", recorded_by="s
         """, (points, student_id))
 
         conn.commit()
+        
+        # --- NEW SYSTEM LOGGING ---
+        logger.info(f"Transaction Success: {points} pts for Student {student_id} ({activity_type})")
+        
         return True, "Points added successfully."
     except Exception as e:
         conn.rollback()
@@ -34,8 +38,8 @@ def add_points(student_id, points, activity_type, description="", recorded_by="s
         return False, f"Error: {e}"
     finally:
         conn.close()
-        
-        
+
+       
 
 # --- 2. The Legacy Adapter (Crucial for compatibility) ---
 def record_activity_transaction(student_id, activity_name, points, performed_by="system"):
@@ -176,6 +180,10 @@ def redeem_prize_logic(student_id, prize_id, recorded_by):
             # 4. Decrease stock count
             cur.execute("UPDATE prize_inventory SET stock_count = stock_count - 1 WHERE id = %s", (prize_id,))
             conn.commit()
+            
+            # --- NEW SYSTEM LOGGING ---
+            logger.info(f"Redemption Success: Student {student_id} redeemed '{p_name}'")
+            
             return True, f"Successfully redeemed {p_name}!"
 
         return False, msg

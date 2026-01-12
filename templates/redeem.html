@@ -77,6 +77,9 @@
       padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; 
   }
   .btn-redeem:disabled { background: #cbd5e1; cursor: not-allowed; }
+  
+  /* Loading Spinner Helper */
+  .loading-box { text-align: center; padding: 15px; color: #64748b; font-size: 13px; }
 </style>
 {% endblock %}
 
@@ -155,15 +158,22 @@
     const results = document.getElementById('studentResults');
     if (term.length < 2) { results.style.display = 'none'; return; }
     
+    // 1. Show Searching Spinner
+    results.style.display = 'block';
+    results.innerHTML = `<div class="loading-box"><i class="fas fa-circle-notch fa-spin"></i> {{ _('Searching...') }}</div>`;
+    
     const res = await fetch(`/api/students/search?term=${encodeURIComponent(term)}`);
     const data = await res.json();
     
     if (data.success) {
-      results.innerHTML = data.students.map(s => `
-        <div onclick="selectStudent(${s.id}, '${s.full_name.replace(/'/g, "\\'")}')" style="padding:10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:13px; color:#334155;">
-          <strong>${s.full_name}</strong> <span style="color:#64748b;">(${s.total_points} pts)</span>
-        </div>`).join('');
-      results.style.display = 'block';
+      if (data.students.length === 0) {
+          results.innerHTML = `<div class="loading-box">{{ _('No students found.') }}</div>`;
+      } else {
+          results.innerHTML = data.students.map(s => `
+            <div onclick="selectStudent(${s.id}, '${s.full_name.replace(/'/g, "\\'")}')" style="padding:10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:13px; color:#334155;">
+              <strong>${s.full_name}</strong> <span style="color:#64748b;">(${s.total_points} pts)</span>
+            </div>`).join('');
+      }
     }
   };
 
@@ -171,6 +181,9 @@
     selectedId = id;
     document.getElementById('studentResults').style.display = 'none';
     document.getElementById('studentSearch').value = '';
+    
+    // 2. Show Loading in History
+    document.getElementById('historyBody').innerHTML = `<tr><td colspan="3" class="loading-box"><i class="fas fa-circle-notch fa-spin"></i> {{ _('Loading history...') }}</td></tr>`;
     
     // Fetch History & Balance
     const res = await fetch(`/api/student/${id}/history`);
@@ -185,18 +198,25 @@
       document.getElementById('dispPoints').textContent = currentBalance;
       document.getElementById('selectedDisplay').style.display = 'flex';
       
-      document.getElementById('historyBody').innerHTML = data.history.slice(0, 10).map(h => `
-        <tr>
-          <td>${new Date(h.timestamp).toLocaleDateString()}</td>
-          <td>${h.activity_type}</td>
-          <td style="text-align:right; font-weight:700; color:${h.points < 0 ? '#dc2626' : '#059669'}">${h.points}</td>
-        </tr>`).join('');
-        
+      if (data.history.length === 0) {
+          document.getElementById('historyBody').innerHTML = `<tr><td colspan="3" style="text-align:center; padding:15px; color:#94a3b8;">{{ _('No recent history.') }}</td></tr>`;
+      } else {
+          document.getElementById('historyBody').innerHTML = data.history.slice(0, 10).map(h => `
+            <tr>
+              <td>${new Date(h.timestamp).toLocaleDateString()}</td>
+              <td>${h.activity_type}</td>
+              <td style="text-align:right; font-weight:700; color:${h.points < 0 ? '#dc2626' : '#059669'}">${h.points}</td>
+            </tr>`).join('');
+      }
       renderPrizes();
     }
   }
 
   async function fetchPrizes() {
+    // Optional: Add loading state to prize container if it's slow
+    const container = document.getElementById('prizeContainer');
+    container.innerHTML = `<div style="grid-column:1/-1;" class="loading-box"><i class="fas fa-circle-notch fa-spin"></i> {{ _('Loading prizes...') }}</div>`;
+
     const res = await fetch('/api/prizes');
     const data = await res.json();
     allPrizes = data.prizes || [];
@@ -209,6 +229,11 @@
     const searchTerm = document.getElementById('prizeSearch').value.toLowerCase();
     container.innerHTML = '';
     
+    if (allPrizes.length === 0) {
+        container.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#94a3b8;">{{ _('No prizes available.') }}</p>`;
+        return;
+    }
+
     allPrizes.forEach(p => {
       if (!p.active) return;
       const matchesSearch = p.name.toLowerCase().includes(searchTerm);
@@ -232,17 +257,34 @@
 
   async function redeemPrize(prizeId, name) {
     if (!confirm(`{{ _('Confirm redemption of') }} "${name}"?`)) return;
-    const res = await fetch('/api/prizes/redeem', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ student_id: selectedId, prize_id: prizeId })
-    });
     
-    const result = await res.json();
-    if (result.success) {
-      selectStudent(selectedId, document.getElementById('dispName').textContent);
-    } else {
-      alert("Error: " + result.message);
+    // 3. UI Feedback during transaction
+    document.body.style.cursor = 'wait';
+    
+    // DISABLE ALL BUTTONS
+    document.querySelectorAll('.btn-redeem').forEach(b => b.disabled = true);
+    
+    try {
+        const res = await fetch('/api/prizes/redeem', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ student_id: selectedId, prize_id: prizeId })
+        });
+        
+        const result = await res.json();
+        if (result.success) {
+          // Await this so the UI stays locked until the refresh completes
+          await selectStudent(selectedId, document.getElementById('dispName').textContent);
+        } else {
+          alert("Error: " + result.message);
+          // Re-enable if we didn't call selectStudent
+          renderPrizes();
+        }
+    } catch (e) {
+        alert("Network Error");
+        renderPrizes(); // Re-enable on crash
+    } finally {
+        document.body.style.cursor = 'default';
     }
   }
 </script>

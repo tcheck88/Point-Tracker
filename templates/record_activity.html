@@ -121,6 +121,7 @@
         transition: 0.2s;
     }
     .btn-post:hover { background: #165ecb; }
+    .btn-post:disabled { background: #cbd5e1; cursor: not-allowed; }
 
     /* New Back Button Style */
     .back-btn { 
@@ -138,6 +139,9 @@
         text-decoration: none;
     }
     .back-btn:hover { background: #f1f5f9; color: #0f172a; }
+    
+    /* Loading Spinner Helper */
+    .loading-box { text-align: center; padding: 30px; color: #64748b; font-size: 13px; }
 </style>
 {% endblock %}
 
@@ -223,16 +227,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadActivities() {
-    const res = await fetch('/api/activity');
-    rawActivities = await res.json();
-    const select = document.getElementById('activityId');
-    rawActivities.forEach(act => {
-        const opt = document.createElement('option');
-        opt.value = act.id;
-        opt.innerText = act.name;
-        opt.dataset.points = act.default_points;
-        select.appendChild(opt);
-    });
+    try {
+        const res = await fetch('/api/activity');
+        rawActivities = await res.json();
+        const select = document.getElementById('activityId');
+        rawActivities.forEach(act => {
+            const opt = document.createElement('option');
+            opt.value = act.id;
+            opt.innerText = act.name;
+            opt.dataset.points = act.default_points;
+            select.appendChild(opt);
+        });
+    } catch(e) {
+        console.error("Failed to load activities", e);
+    }
 }
 
 async function fetchStudentById(id) {
@@ -246,18 +254,29 @@ async function fetchStudentById(id) {
 async function searchStudents() {
     const term = document.getElementById('studentSearch').value;
     const list = document.getElementById('studentListBox');
-    if (term.length < 2) return;
+    
+    if (term.length < 2) {
+        // Optional: clear list if term is too short
+        return;
+    }
+
+    // 1. Show Searching Spinner
+    list.innerHTML = `<div class="loading-box"><i class="fas fa-circle-notch fa-spin"></i> {{ _('Searching...') }}</div>`;
 
     const res = await fetch(`/api/students/search?term=${encodeURIComponent(term)}`);
     const data = await res.json();
     
     if (data.success) {
-        list.innerHTML = data.students.map(s => `
-            <div class="list-item" id="student-item-${s.id}" onclick="selectStudent(${s.id}, '${s.full_name.replace(/'/g, "\\'")}', ${s.total_points})">
-                <span><strong>${s.full_name}</strong> <small style="color:#64748b; margin-left:8px;">${s.classroom || ''}</small></span>
-                <span style="font-weight:600;">${s.total_points} pts</span>
-            </div>
-        `).join('');
+        if (data.students.length === 0) {
+            list.innerHTML = `<div class="loading-box">{{ _('No students found.') }}</div>`;
+        } else {
+            list.innerHTML = data.students.map(s => `
+                <div class="list-item" id="student-item-${s.id}" onclick="selectStudent(${s.id}, '${s.full_name.replace(/'/g, "\\'")}', ${s.total_points})">
+                    <span><strong>${s.full_name}</strong> <small style="color:#64748b; margin-left:8px;">${s.classroom || ''}</small></span>
+                    <span style="font-weight:600;">${s.total_points} pts</span>
+                </div>
+            `).join('');
+        }
     }
 }
 
@@ -272,6 +291,10 @@ async function selectStudent(id, name, points) {
     document.getElementById('selPoints').innerText = points;
     document.getElementById('selectedBanner').style.display = 'flex'; 
     
+    // 2. Show Loading in History
+    const body = document.getElementById('studentHistoryBody');
+    body.innerHTML = `<tr><td colspan="3" class="loading-box"><i class="fas fa-circle-notch fa-spin"></i> {{ _('Loading history...') }}</td></tr>`;
+
     // Refresh History for this student
     const res = await fetch(`/api/student/${id}/history`);
     const data = await res.json();
@@ -310,25 +333,40 @@ document.getElementById('recordForm').onsubmit = async (e) => {
     const student_id = document.getElementById('selId').value;
     if (!student_id) return;
 
-    const payload = {
-        student_id: parseInt(student_id),
-        activity_name: document.getElementById('activityId').options[document.getElementById('activityId').selectedIndex].text,
-        points: parseInt(document.getElementById('points').value),
-        description: document.getElementById('description').value
-    };
+    // 3. UI Feedback during transaction
+    const btn = document.querySelector('.btn-post');
+    btn.disabled = true;
+    document.body.style.cursor = 'wait';
 
-    const res = await fetch('/api/transaction/record', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
+    try {
+        const payload = {
+            student_id: parseInt(student_id),
+            activity_name: document.getElementById('activityId').options[document.getElementById('activityId').selectedIndex].text,
+            points: parseInt(document.getElementById('points').value),
+            description: document.getElementById('description').value
+        };
 
-    const result = await res.json();
-    if (result.success) {
-        // Optimistic UI update
-        const currentVal = parseInt(document.getElementById('selPoints').innerText);
-        selectStudent(student_id, document.getElementById('selName').innerText, currentVal + payload.points);
-        document.getElementById('recordForm').reset();
+        const res = await fetch('/api/transaction/record', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+        if (result.success) {
+            // Optimistic UI update
+            const currentVal = parseInt(document.getElementById('selPoints').innerText);
+            selectStudent(student_id, document.getElementById('selName').innerText, currentVal + payload.points);
+            document.getElementById('recordForm').reset();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (err) {
+        alert("Network Error");
+    } finally {
+        // Restore UI state
+        btn.disabled = false;
+        document.body.style.cursor = 'default';
     }
 };
 </script>

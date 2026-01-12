@@ -49,16 +49,17 @@ def get_locale():
         lang = request.args.get('lang')
         if lang in app.config['LANGUAGES']:
             session['lang'] = lang  # <--- NEW: Saves choice to session
+            logger.info(f"Language set to {lang} via URL")
             print(f"DEBUG message: Language set to {lang} via URL")  # <--- DEBUG
             return lang
             
     # 2. Check Session (persistence)
     if 'lang' in session:           # <--- NEW: Remembers choice on next page load
-        print(f"DEBUG: Language loaded from SESSION: {session['lang']}") # <--- DEBUG
+        logger.info(f"Language loaded from SESSION: {session['lang']}")
         return session['lang']
         
     # 3. Fallback to Browser Headers
-    print("DEBUG: Using default browser language")
+    logger.info(f"DEBUG: Using default browser language")
     return request.accept_languages.best_match(app.config['LANGUAGES'].keys())
 
 
@@ -113,8 +114,8 @@ class EmailAlertHandler(logging.Handler):
                             message=msg
                         )
                     except Exception as e:
-                        print(f"Background Email Failed: {e}")
-
+                        logger.exception("Background Email Failed")
+                        
                 # Start the email task in a separate thread
                 thread = threading.Thread(target=send_async)
                 thread.start()
@@ -149,6 +150,48 @@ try:
     logger.info("Database initialized successfully.")
 except Exception as e:
     logger.critical(f"Database initialization failed: {e}")
+    
+    
+# ---- 6. AUTOMATIC LOGGING MIDDLEWARE ----
+
+@app.before_request
+def start_timer():
+    request.start_time = datetime.datetime.utcnow()
+
+@app.after_request
+def log_request(response):
+    # Calculate how long the request took
+    duration = datetime.datetime.utcnow() - request.start_time
+    duration_ms = int(duration.total_seconds() * 1000)
+    
+    # Don't log static file requests (too noisy)
+    if request.path.startswith('/static'):
+        return response
+
+    # Get user identity if logged in
+    user = session.get('username', 'Guest')
+    ip = request.remote_addr
+    
+    # Define log level based on status code
+    if response.status_code >= 500:
+        log_method = logger.error
+    elif response.status_code >= 400:
+        log_method = logger.warning
+    else:
+        log_method = logger.info
+
+    # Log the event: [200] GET /students (User: admin) - 45ms
+    log_method(
+        f"[{response.status_code}] {request.method} {request.path} "
+        f"(User: {user} | IP: {ip}) - {duration_ms}ms"
+    )
+    return response
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # This catches ANY crash that isn't handled elsewhere
+    logger.exception(f"UNHANDLED SYSTEM ERROR: {str(e)}")
+    return "Internal Server Error", 500
 
 # ---- ROUTES START BELOW ----
 
@@ -207,8 +250,8 @@ def login():
                         recorded_by=db_user
                     )
                 except Exception as e:
-                    print(f"Error logging login event: {e}")
-
+                    # Logs the message AND the full stack trace (File X, Line Y...)
+                    logger.exception("Error logging login event")
                 return redirect(url_for('index'))
         
         return render_template('login.html', error="Invalid credentials")
@@ -333,7 +376,8 @@ def logout():
                 recorded_by=recorder
             )
         except Exception as e:
-            print(f"Error logging logout: {e}")
+            # Logs the message AND the full stack trace (File X, Line Y...)
+            logger.exception("Error logging logout event")
 
     session.clear()
     
@@ -418,41 +462,51 @@ def change_password():
         current_pass = request.form.get('current_password')
         new_pass = request.form.get('new_password')
         confirm_pass = request.form.get('confirm_password')
+        username = session['username']
 
         if new_pass != confirm_pass:
             return render_template('change_password.html', error="New passwords do not match")
 
         conn = get_db_connection()
-        cur = conn.cursor()
-        # Verify old password
-        cur.execute("SELECT password_hash FROM users WHERE username = %s", (session['username'],))
-        user = cur.fetchone()
-        
-        if user:
-            # Handle Tuple/Dict difference
-            stored_hash = user['password_hash'] if isinstance(user, dict) else user[0]
+        try:
+            cur = conn.cursor()
+            # Verify old password
+            cur.execute("SELECT password_hash FROM users WHERE username = %s", (username,))
+            user = cur.fetchone()
             
-            if check_password_hash(stored_hash, current_pass):
-                # Update to new password
-                new_hash = generate_password_hash(new_pass)
-                cur.execute("UPDATE users SET password_hash = %s WHERE username = %s", (new_hash, session['username']))
-                conn.commit()
-                conn.close()
-                return render_template('change_password.html', success="Password changed successfully!")
-            else:
-                conn.close()
-                return render_template('change_password.html', error="Current password is incorrect")
-        
-        conn.close()
-        return render_template('change_password.html', error="User not found")
+            if user:
+                stored_hash = user['password_hash'] if isinstance(user, dict) else user[0]
+                
+                if check_password_hash(stored_hash, current_pass):
+                    # Update to new password
+                    new_hash = generate_password_hash(new_pass)
+                    cur.execute("UPDATE users SET password_hash = %s WHERE username = %s", (new_hash, username))
+                    
+                    # --- LOG AUDIT EVENT ---
+                    transaction_manager.log_audit_event(
+                        action_type="PASSWORD_CHANGE",
+                        details=f"User changed their own password",
+                        recorded_by=username
+                    )
+
+                    conn.commit()
+                    return render_template('change_password.html', success="Password changed successfully!")
+                else:
+                    return render_template('change_password.html', error="Current password is incorrect")
+            
+            return render_template('change_password.html', error="User not found")
+        finally:
+            conn.close()
 
     return render_template('change_password.html')
+
 
 
 @app.route('/admin/reset_password', methods=['POST'])
 @login_required
 def admin_reset_password():
     current_role = session.get('role')
+    staff_identity = session.get('username', 'system') # Capture the actor
     
     # ALLOW both sysadmin and admin
     if current_role not in ['sysadmin', 'admin']:
@@ -467,31 +521,43 @@ def admin_reset_password():
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # --- SECURITY CHECK ---
-    # Fetch the target user's role before updating
-    cur.execute("SELECT role, username FROM users WHERE id = %s", (user_id,))
-    target = cur.fetchone()
-    
-    if not target:
-        conn.close()
-        return redirect(url_for('manage_users', msg="Error: User not found."))
+    try:
+        # --- SECURITY CHECK ---
+        # Fetch the target user's role before updating
+        cur.execute("SELECT role, username FROM users WHERE id = %s", (user_id,))
+        target = cur.fetchone()
         
-    target_role = target['role'] if isinstance(target, dict) else target[0]
-    target_username = target['username'] if isinstance(target, dict) else target[1]
+        if not target:
+            return redirect(url_for('manage_users', msg="Error: User not found."))
+            
+        target_role = target['role'] if isinstance(target, dict) else target[0]
+        target_username = target['username'] if isinstance(target, dict) else target[1]
 
-    # Rule: Standard 'admin' cannot reset a 'sysadmin' password
-    if current_role != 'sysadmin' and target_role == 'sysadmin':
+        # Rule: Standard 'admin' cannot reset a 'sysadmin' password
+        if current_role != 'sysadmin' and target_role == 'sysadmin':
+            return redirect(url_for('manage_users', msg="Access Denied: You cannot modify SysAdmin accounts."))
+
+        # Proceed with update
+        new_hash = generate_password_hash(new_pass)
+        cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (new_hash, user_id))
+        
+        # --- LOG AUDIT EVENT ---
+        transaction_manager.log_audit_event(
+            action_type="ADMIN_PASSWORD_RESET",
+            details=f"Forced password reset for user: {target_username}",
+            recorded_by=staff_identity
+        )
+
+        conn.commit()
+        return redirect(url_for('manage_users', msg=f"Success: Password reset for {target_username}."))
+        
+    except Exception as e:
+        conn.rollback()
+        logger.exception(f"Password reset failed: {e}")
+        return redirect(url_for('manage_users', msg=f"System Error: {str(e)}"))
+    finally:
         conn.close()
-        return redirect(url_for('manage_users', msg="Access Denied: You cannot modify SysAdmin accounts."))
 
-    # Proceed with update
-    new_hash = generate_password_hash(new_pass)
-    cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (new_hash, user_id))
-    conn.commit()
-    conn.close()
-    
-    # Redirect back to the manager page with success message
-    return redirect(url_for('manage_users', msg=f"Success: Password reset for {target_username}."))
 
 @app.route('/admin/users/create', methods=['POST'])
 @login_required
@@ -887,6 +953,9 @@ def api_create_activity():
     desc = data.get('description', '')
     pts = data.get('default_points', 0)
     is_active = bool(int(data.get('active', 1)))
+    
+    # 1. Capture the user identity
+    staff_identity = session.get('username', 'system')
 
     if not name:
         return jsonify({"success": False, "message": "Name is required"}), 400
@@ -894,6 +963,15 @@ def api_create_activity():
     conn = get_db_connection()
     try:
         cur = conn.cursor()
+        
+        # 2. Check existence first to distinguish Create vs Update for the Audit Log
+        cur.execute("SELECT id FROM activities WHERE name = %s", (name,))
+        existing = cur.fetchone()
+        
+        action_type = "UPDATE_ACTIVITY" if existing else "CREATE_ACTIVITY"
+        log_details = f"{'Updated' if existing else 'Created'} activity '{name}': Pts={pts}, Active={is_active}"
+
+        # 3. Perform the Upsert (Insert or Update)
         cur.execute("""
             INSERT INTO activities (name, description, default_points, active)
             VALUES (%s, %s, %s, %s)
@@ -902,6 +980,14 @@ def api_create_activity():
                 default_points = EXCLUDED.default_points,
                 active = EXCLUDED.active
         """, (name, desc, pts, is_active))
+        
+        # 4. Log to Audit Trail
+        transaction_manager.log_audit_event(
+            action_type=action_type,
+            details=log_details,
+            recorded_by=staff_identity
+        )
+
         conn.commit()
         return jsonify({"success": True, "message": "Activity saved"}), 200
     except Exception as e:
@@ -909,6 +995,8 @@ def api_create_activity():
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()
+
+
 
 @app.route('/api/activity', methods=['GET'])
 @login_required
@@ -962,11 +1050,14 @@ def api_list_all_activities():
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()
+        
 
 @app.route('/api/activity/delete/<int:activity_id>', methods=['DELETE'])
 @login_required
 @admin_required
 def api_delete_activity(activity_id):
+    staff_identity = session.get('username', 'system')
+    
     conn = get_db_connection()
     try:
         cur = conn.cursor()
@@ -988,10 +1079,20 @@ def api_delete_activity(activity_id):
             }), 400
 
         cur.execute("DELETE FROM activities WHERE id = %s", (activity_id,))
+        
+        # 1. Log to Audit Trail
+        transaction_manager.log_audit_event(
+            action_type="DELETE_ACTIVITY",
+            details=f"Deleted activity '{act_name}' (ID: {activity_id})",
+            recorded_by=staff_identity
+        )
+        
         conn.commit()
         return jsonify({"success": True, "message": "Activity deleted successfully"}), 200
     finally:
         conn.close()
+
+
 
 # ---- Log Management ----
 
@@ -1020,13 +1121,23 @@ def download_logs():
     except Exception as e:
         app.logger.exception(f"Error downloading log: {e}")
         abort(500)
-
+        
 @app.route('/api/logs/clear', methods=['POST'])
 @login_required
 @admin_required
 def clear_logs():
+    staff_identity = session.get('username', 'system')
     backup_file = f"{LOG_PATH}.bak.{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+    
     try:
+        # --- LOG AUDIT EVENT (DB) ---
+        # We log this to the database because the file log is about to be rotated/cleared
+        transaction_manager.log_audit_event(
+            action_type="CLEAR_LOGS",
+            details=f"System logs manually cleared/rotated. Archived to {os.path.basename(backup_file)}",
+            recorded_by=staff_identity
+        )
+
         root_logger = logging.getLogger()
         file_handler_found = None
         for h in root_logger.handlers:
@@ -1051,7 +1162,8 @@ def clear_logs():
         return jsonify({'success': True, 'message': 'Logs cleared successfully.'})
 
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
+        return jsonify({'success': False, 'message': str(e)})        
+        
 
 # ---- Prize Management API ----
 
@@ -1073,6 +1185,21 @@ def api_add_prize():
     conn = get_db_connection()
     try:
         cur = conn.cursor()
+        
+        # 1. DIFFERENTIATION CHECK:
+        # Check if the prize exists BEFORE we write to the DB.
+        cur.execute("SELECT id FROM prize_inventory WHERE name = %s", (name,))
+        existing = cur.fetchone()
+        
+        # 2. Set the Log Type based on the result
+        if existing:
+            action_type = "UPDATE_PRIZE"
+            log_details = f"Updated prize '{name}': Cost={cost}, Stock={stock}, Active={active}"
+        else:
+            action_type = "CREATE_PRIZE"
+            log_details = f"Created new prize '{name}': Cost={cost}, Stock={stock}, Active={active}"
+
+        # 3. Perform the Upsert (Safe to do now)
         cur.execute("""
             INSERT INTO prize_inventory (name, description, point_cost, stock_count, active)
             VALUES (%s, %s, %s, %s, %s)
@@ -1083,9 +1210,10 @@ def api_add_prize():
                 description = EXCLUDED.description
         """, (name, data.get('description', ''), cost, stock, active))
         
+        # 4. Log the specific event
         transaction_manager.log_audit_event(
-            action_type="UPDATE_PRIZE",
-            details=f"Updated prize '{name}': Cost={cost}, Stock={stock}, Active={active}",
+            action_type=action_type,
+            details=log_details,
             recorded_by=staff_identity
         )
         
@@ -1203,11 +1331,12 @@ def api_redeem_prize():
         if conn: conn.close()
 
 
-
 @app.route('/api/prizes/delete/<int:prize_id>', methods=['DELETE'])
 @login_required
 @admin_required
 def api_delete_prize(prize_id):
+    staff_identity = session.get('username', 'system')
+    
     conn = get_db_connection()
     try:
         cur = conn.cursor()
@@ -1218,6 +1347,7 @@ def api_delete_prize(prize_id):
         
         prize_name = prz['name'] if isinstance(prz, dict) else prz[0]
 
+        # Check for dependencies (redemptions)
         redemption_str = f"Redemption: {prize_name}"
         cur.execute("SELECT COUNT(*) FROM activity_log WHERE activity_type = %s", (redemption_str,))
         count = cur.fetchone()
@@ -1229,11 +1359,21 @@ def api_delete_prize(prize_id):
                 "message": f"Cannot delete '{prize_name}' because it has {log_count} redemptions. Set it to 'Inactive' instead."
             }), 400
 
+        # Delete the prize
         cur.execute("DELETE FROM prize_inventory WHERE id = %s", (prize_id,))
+        
+        # 1. Log to Audit Trail
+        transaction_manager.log_audit_event(
+            action_type="DELETE_PRIZE",
+            details=f"Deleted prize '{prize_name}' (ID: {prize_id})",
+            recorded_by=staff_identity
+        )
+
         conn.commit()
         return jsonify({"success": True, "message": "Prize deleted successfully"}), 200
     finally:
         conn.close()
+
 
 # ---- Audit Log API ----
 

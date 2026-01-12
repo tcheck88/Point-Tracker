@@ -26,6 +26,7 @@ def validate_inputs(data):
 
     return len(errors) == 0, errors
 
+
 def add_new_student(data):
     """
     Main entry point called by app.py.
@@ -33,7 +34,10 @@ def add_new_student(data):
     # 1. Validate
     is_valid, errors = validate_inputs(data)
     if not is_valid:
-        return False, "; ".join(errors)
+        error_msg = "; ".join(errors)
+        # --- NEW LOGGING ---
+        logger.warning(f"Student creation blocked by validation: {error_msg} (Data: {data})")
+        return False, error_msg
 
     conn = get_db_connection()
     if not conn: return False, "DB Connection Failed"
