@@ -233,8 +233,8 @@ async function loadActivities() {
         const select = document.getElementById('activityId');
         rawActivities.forEach(act => {
             const opt = document.createElement('option');
-            opt.value = act.id;
-            opt.innerText = act.name;
+            opt.value = act.id; // This Value is the ID
+            opt.innerText = act.name; // This Text is the Name
             opt.dataset.points = act.default_points;
             select.appendChild(opt);
         });
@@ -256,7 +256,6 @@ async function searchStudents() {
     const list = document.getElementById('studentListBox');
     
     if (term.length < 2) {
-        // Optional: clear list if term is too short
         return;
     }
 
@@ -339,9 +338,14 @@ document.getElementById('recordForm').onsubmit = async (e) => {
     document.body.style.cursor = 'wait';
 
     try {
+        const select = document.getElementById('activityId');
+        
         const payload = {
             student_id: parseInt(student_id),
-            activity_name: document.getElementById('activityId').options[document.getElementById('activityId').selectedIndex].text,
+            // Name for readability in Log
+            activity_name: select.options[select.selectedIndex].text,
+            // ID for Foreign Key Link (The Critical Update)
+            activity_id: parseInt(select.value),
             points: parseInt(document.getElementById('points').value),
             description: document.getElementById('description').value
         };

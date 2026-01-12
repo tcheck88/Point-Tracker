@@ -14,6 +14,7 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, request, jsonify, abort, send_file, redirect, url_for, render_template, send_from_directory, session
 from flask_babel import Babel 
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.exceptions import HTTPException
 from functools import wraps
 
 # --- IMPORTS FOR POSTGRESQL ---
@@ -189,9 +190,15 @@ def log_request(response):
 
 @app.errorhandler(Exception)
 def handle_exception(e):
-    # This catches ANY crash that isn't handled elsewhere
+    # 1. Ignore standard HTTP errors (404, 405, etc.)
+    # Let Flask handle these normally (e.g. show the default 404 page)
+    if isinstance(e, HTTPException):
+        return e
+
+    # 2. Catch actual system crashes (Database fail, Code bugs)
     logger.exception(f"UNHANDLED SYSTEM ERROR: {str(e)}")
     return "Internal Server Error", 500
+
 
 # ---- ROUTES START BELOW ----
 
@@ -802,15 +809,18 @@ def api_students_search():
 @login_required
 def api_record_transaction():
     data = request.get_json(silent=True)
-    if not data:
-        return jsonify({"success": False, "message": "Invalid JSON payload."}), 400
+    if not data: 
+        return jsonify({"success": False, "message": "Invalid JSON"}), 400
 
     student_id = data.get('student_id')
     activity_name = data.get('activity_name', 'Manual Entry')
+    # --- NEW: Capture ID ---
+    activity_id = data.get('activity_id') 
+    # -----------------------
     points = data.get('points')
     
     if not student_id or points is None:
-        return jsonify({"success": False, "message": "Missing Student ID or Points value."}), 400
+        return jsonify({"success": False, "message": "Missing Data"}), 400
 
     staff_identity = session.get('username', 'system')
 
@@ -819,35 +829,16 @@ def api_record_transaction():
         points=int(points),
         activity_type=activity_name,
         description=data.get('description', ''),
-        recorded_by=staff_identity
+        recorded_by=staff_identity,
+        # --- NEW: Pass to DB ---
+        activity_id=activity_id 
+        # -----------------------
     )
+    
     if success:
-        # --- NEW: Fetch student name for the log ---
-        student_name = f"Student {student_id}" # Fallback
-        try:
-            s_obj = student_search.get_student_by_id(int(student_id))
-            if s_obj:
-                student_name = s_obj['full_name']
-        except Exception:
-            pass 
-
-        # --- UPDATED: Log to System Audit Trail ---
-        try:
-            transaction_manager.log_audit_event(
-                action_type="POINT_AWARD",
-                details=f"Awarded {points} pts to {student_name} for '{activity_name}'",
-                recorded_by=staff_identity
-            )
-        except Exception as e:
-            logger.exception(f"Audit log failed: {e}")
-        # --------------------------------------
-
-        logger.info(f"Points recorded for student {student_id} by {staff_identity}")
         return jsonify({"success": True, "message": msg}), 200
     else:
-        logger.error(f"Transaction failed for student {student_id}: {msg}")
         return jsonify({"success": False, "message": msg}), 500
-
 
 
 @app.route('/api/student/<int:student_id>/history', methods=['GET'])
@@ -1252,83 +1243,25 @@ def api_list_prizes():
 @app.route('/api/prizes/redeem', methods=['POST'])
 @login_required
 def api_redeem_prize():
-    data = request.get_json()
-    if not data:
-        return jsonify({"success": False, "message": "Invalid request."}), 400
-
+    data = request.get_json() or {}
     student_id = data.get('student_id')
     prize_id = data.get('prize_id')
-    staff_identity = session.get('username', 'system')
     
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"success": False, "message": "Database connection error."}), 500
+    staff_identity = session.get('username', 'system')
 
-    try:
-        cur = conn.cursor()
-        cur.execute("SELECT name, point_cost, stock_count FROM prize_inventory WHERE id = %s", (prize_id,))
-        prize = cur.fetchone()
-        
-        if not prize:
-            return jsonify({"success": False, "message": "Prize not found."}), 404
-        
-        is_dict = isinstance(prize, dict)
-        p_name = prize['name'] if is_dict else prize[0]
-        p_cost = prize['point_cost'] if is_dict else prize[1]
-        p_stock = prize['stock_count'] if is_dict else prize[2]
+    if not student_id or not prize_id:
+        return jsonify({"success": False, "message": "Missing student or prize ID"}), 400
 
-        if p_stock <= 0:
-            return jsonify({"success": False, "message": f"'{p_name}' is out of stock."}), 400
+    # CORRECT: Delegate to the manager.
+    # This ensures "REDEEM_POINTS" is used for the audit log.
+    success, msg = transaction_manager.redeem_prize_logic(student_id, prize_id, staff_identity)
 
-        balance = transaction_manager.get_student_balance(student_id)
-        if balance < p_cost:
-            return jsonify({"success": False, "message": "Student has insufficient points."}), 400
+    if success:
+        return jsonify({"success": True, "message": msg}), 200
+    else:
+        # Pass 400 for logic errors (funds/stock), 500 is handled by the manager's crash handler
+        return jsonify({"success": False, "message": msg}), 400
 
-        success, msg = transaction_manager.add_points(
-            student_id=student_id, 
-            points=-abs(p_cost), 
-            activity_type=f"Redemption: {p_name}",
-            description="Prize Exchange",
-            recorded_by=staff_identity
-        )
-        if success:
-            cur.execute("UPDATE prize_inventory SET stock_count = stock_count - 1 WHERE id = %s", (prize_id,))
-            conn.commit()
-            
-            # --- NEW: Fetch student name for audit log ---
-            # We reuse the existing database cursor 'cur'
-            cur.execute("SELECT full_name FROM students WHERE id = %s", (student_id,))
-            s_row = cur.fetchone()
-            
-            student_name = f"Student {student_id}" # Fallback
-            if s_row:
-                # Handle both Dictionary and Tuple cursor types
-                student_name = s_row['full_name'] if isinstance(s_row, dict) else s_row[0]
-
-            # --- UPDATED: Log to System Audit Trail ---
-            try:
-                transaction_manager.log_audit_event(
-                    action_type="PRIZE_REDEEM",
-                    details=f"{student_name} redeemed '{p_name}' (-{p_cost} pts)",
-                    recorded_by=staff_identity
-                )
-            except Exception as e:
-                logger.exception(f"Audit log failed: {e}")
-            # --------------------------------------
-
-            logger.info(f"Redemption successful: Student {student_id} redeemed {p_name} (recorded by {staff_identity})")
-            return jsonify({"success": True, "message": f"Successfully redeemed {p_name}!"}), 200
-        
-        else:
-            conn.rollback()
-            return jsonify({"success": False, "message": msg}), 500
-            
-    except Exception as e:
-        if conn: conn.rollback()
-        logger.exception(f"Redemption API Error: {e}")
-        return jsonify({"success": False, "message": str(e)}), 500
-    finally:
-        if conn: conn.close()
 
 
 @app.route('/api/prizes/delete/<int:prize_id>', methods=['DELETE'])

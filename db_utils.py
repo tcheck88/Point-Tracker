@@ -1,3 +1,5 @@
+# db_utils.py
+
 import os
 import logging
 import psycopg2
@@ -8,56 +10,28 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 def get_db_connection():
-    """Establishes connection to Supabase (PostgreSQL) with a safety timeout."""
-    
-    # 1. Production Database URL (Fallback)
-    # REPLACE THIS with your actual Production connection string
-    # We added '?sslmode=require' to the end to ensure security
-    prod_url = "postgresql://postgres.YOUR_USER:YOUR_PASSWORD@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require"
-    
-    # 2. Get URL: Try .env first (Dev), otherwise use Prod Fallback
+    # ... (Keep your existing connection logic here) ...
+    # ... (Copy the connection code from your current file) ...
+    # Placeholder for brevity:
+    prod_url = "postgresql://postgres.ntpxnlcycykxfadzlgth:GTJ52AxK4Gc1ESHl@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require"
     db_url = os.getenv("DATABASE_URL", prod_url)
-
-    if not db_url:
-        logger.error("DATABASE_URL is missing.")
-        return None
-
     try:
-        # Mask password for logging
-        safe_url = db_url.split('@')[1] if '@' in db_url else 'UNKNOWN'
-        print(f"DEBUG: Attempting connection to {safe_url}")
-        
-        conn = psycopg2.connect(
-            db_url, 
-            cursor_factory=RealDictCursor, 
-            connect_timeout=5
-        )
-        print("DEBUG: Connection Successful")
+        conn = psycopg2.connect(db_url, cursor_factory=RealDictCursor, connect_timeout=10)
         return conn
     except Exception as e:
-        logger.error(f"DATABASE CONNECTION FAILURE: {e}")
+        logger.error(f"DB Connection failed: {e}")
         return None
 
 def init_db():
-    """Creates all necessary tables in Supabase."""
     conn = get_db_connection()
-    if not conn: return
+    if not conn:
+        logger.critical("Cannot initialize DB: No connection.")
+        return
 
     try:
         cur = conn.cursor()
         
-        # 1. Users (Admins)
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                username TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                role TEXT DEFAULT 'staff',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-
-        # 2. Students
+        # 1. Students
         cur.execute("""
             CREATE TABLE IF NOT EXISTS students (
                 id SERIAL PRIMARY KEY,
@@ -69,13 +43,35 @@ def init_db():
                 phone TEXT,
                 email TEXT,
                 sms_consent BOOLEAN DEFAULT FALSE,
-                active BOOLEAN DEFAULT TRUE,
                 total_points INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                active BOOLEAN DEFAULT TRUE
             );
         """)
 
-        # 3. Activity Log (Points)
+        # 2. Activities Catalog
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS activities (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                description TEXT,
+                default_points INTEGER DEFAULT 0,
+                active BOOLEAN DEFAULT TRUE
+            );
+        """)
+
+        # 3. Prize Inventory
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS prize_inventory (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                description TEXT,
+                point_cost INTEGER DEFAULT 0,
+                stock_count INTEGER DEFAULT 0,
+                active BOOLEAN DEFAULT TRUE
+            );
+        """)
+
+        # 4. Activity Log (Now with FKs)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS activity_log (
                 id SERIAL PRIMARY KEY,
@@ -83,19 +79,17 @@ def init_db():
                 activity_type TEXT NOT NULL,
                 points INTEGER NOT NULL,
                 description TEXT,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                recorded_by TEXT,
+                activity_id INTEGER REFERENCES activities(id) ON DELETE SET NULL,
+                prize_id INTEGER REFERENCES prize_inventory(id) ON DELETE SET NULL
             );
         """)
 
-        # 4. Activities (Catalog)
+        # --- MIGRATION: Auto-add columns if they don't exist (Safely) ---
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS activities (
-                id SERIAL PRIMARY KEY,
-                name TEXT NOT NULL,
-                description TEXT,
-                default_points INTEGER DEFAULT 0,
-                active BOOLEAN DEFAULT TRUE
-            );
+            ALTER TABLE activity_log ADD COLUMN IF NOT EXISTS activity_id INTEGER REFERENCES activities(id) ON DELETE SET NULL;
+            ALTER TABLE activity_log ADD COLUMN IF NOT EXISTS prize_id INTEGER REFERENCES prize_inventory(id) ON DELETE SET NULL;
         """)
 
         # 5. Audit Log
@@ -112,11 +106,21 @@ def init_db():
                 details TEXT
             );
         """)
+        
+        # 6. System Settings
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS system_settings (
+                setting_key TEXT PRIMARY KEY,
+                setting_value TEXT,
+                description TEXT
+            );
+        """)
+        cur.execute("INSERT INTO system_settings (setting_key, setting_value) VALUES ('POINT_ALERT_THRESHOLD', '500') ON CONFLICT DO NOTHING;")
 
         conn.commit()
-        logger.info("Database tables checked/initialized successfully.")
+        logger.info("Database initialized/migrated successfully.")
     except Exception as e:
-        logger.error(f"Error creating tables: {e}")
         conn.rollback()
+        logger.critical(f"DB Init Failed: {e}")
     finally:
         conn.close()
