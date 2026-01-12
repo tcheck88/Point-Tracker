@@ -75,24 +75,15 @@ def get_or_create_migration_activity(conn, activities_table):
     result = conn.execute(ins)
     conn.commit()
     return result.inserted_primary_key[0]
-
+    
 def get_admin_user(conn, users_table):
     """
     Returns the username of an admin to record as the 'actor'.
     """
-    if users_table is None:
-        return "Import Utility"
-
-    # Try to find a user with role 'admin' or 'sysadmin'
-    try:
-        sel = select(users_table.c.username).where(users_table.c.role.in_(['admin', 'sysadmin']))
-        result = conn.execute(sel).first()
-        if result:
-            return result[0]
-    except:
-        pass
-    
+    # OLD LOGIC: Found the first admin 
+    # NEW LOGIC: Just returns a static system name
     return "Import Utility"
+
 
 
 def log_audit_event(conn, metadata, actor, target_table, target_id, details, action_type="CREATE"):
@@ -191,8 +182,19 @@ def import_students(conn, metadata):
             result = conn.execute(ins)
             new_student_id = result.inserted_primary_key[0]
             
-            # 2. Insert Transaction (into activity_log)
+            # 2. Log Audit: Student Creation
+            log_audit_event(
+                conn, metadata,
+                actor=admin_name,
+                target_table='students',
+                target_id=new_student_id,
+                details=f"Imported student profile: {name}",
+                action_type="CREATE_STUDENT"
+            )
+
+            # 3. Handle Initial Points (Transaction + Audit)
             if points > 0 and activity_log is not None:
+                # A. Insert History Record
                 ins_log = insert(activity_log).values(
                     student_id=new_student_id,
                     activity_type="Migration / Initial Balance",
@@ -202,23 +204,26 @@ def import_students(conn, metadata):
                     recorded_by=admin_name,
                     timestamp=datetime.now(timezone.utc)
                 )
-                conn.execute(ins_log)
-            
-            # 3. Log Audit (Action: CREATE_STUDENT)
-            log_audit_event(
-                conn, metadata,
-                actor=admin_name,
-                target_table='students',
-                target_id=new_student_id,
-                details=f"Imported student: {name} (Initial Points: {points})",
-                action_type="CREATE_STUDENT"
-            )
+                result_log = conn.execute(ins_log)
+                new_trans_id = result_log.inserted_primary_key[0]
+
+                # B. Log Audit: Point Award (CRITICAL for Reconciliation)
+                log_audit_event(
+                    conn, metadata,
+                    actor=admin_name,
+                    target_table='activity_log',
+                    target_id=new_trans_id,
+                    details=f"Points: {points}, Student: {name} (ID: {new_student_id}), Type: Migration",
+                    action_type="POINT_AWARD" 
+                )
             
             print(f"Imported: {name}")
             count_new += 1
             
     conn.commit()
     print(f"\nSummary: Imported {count_new}, Skipped {count_skipped}.\n")
+
+
 
 def import_prizes(conn, metadata):
     filename = "prizes.csv"
