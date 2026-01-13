@@ -1,6 +1,7 @@
 """
 alerts.py - Leer México Alert System
 Fixed: Prevents 'Death Loop' by using print() for internal errors instead of logger.
+Updated: Supports dynamic recipient lists from database.
 """
 
 import smtplib
@@ -21,9 +22,11 @@ COOLDOWN_SECONDS = 600
 # Global variable to persist state while the app is running
 _last_alert_time = 0 
 
-def send_alert(subject, message, error_obj=None):
+# Update signature to accept optional to_emails list
+def send_alert(subject, message, error_obj=None, to_emails=None):
     """
     Sends an HTML email alert via SMTP with IPv4 forcing and rate limiting.
+    accepts 'to_emails' (list of strings) to override default admin email.
     """
     global _last_alert_time
     
@@ -41,11 +44,22 @@ def send_alert(subject, message, error_obj=None):
     smtp_port = int(os.getenv('MAIL_PORT', 587))
     sender_email = os.getenv('MAIL_USERNAME')
     sender_password = os.getenv('MAIL_PASSWORD')
-    recipient_email = os.getenv('ADMIN_EMAIL')
+    
+    # Determine Recipients
+    recipients = []
+    # If list is passed from transaction_manager, use it
+    if to_emails and isinstance(to_emails, list):
+        recipients = [e.strip() for e in to_emails if e.strip()]
+    
+    # If list is empty, fall back to .env ADMIN_EMAIL
+    if not recipients:
+        default_admin = os.getenv('ADMIN_EMAIL')
+        if default_admin:
+            recipients = [default_admin]
 
-    if not all([sender_email, sender_password, recipient_email]):
+    if not sender_email or not sender_password or not recipients:
         # Print ensures we see this in logs without crashing the app loop
-        print(f"[{datetime.now()}] ALERT SYSTEM DISABLED: Missing MAIL_USERNAME, MAIL_PASSWORD, or ADMIN_EMAIL.")
+        print(f"[{datetime.now()}] ALERT SYSTEM DISABLED: Missing MAIL_USERNAME, MAIL_PASSWORD, or valid recipients.")
         return False
 
     try:
@@ -54,41 +68,56 @@ def send_alert(subject, message, error_obj=None):
         ipv4_address = addr_info[0][4][0]
         logger.info(f"Resolved {smtp_server} to {ipv4_address}")
 
-        # 4. BUILD EMAIL CONTENT
-        msg = MIMEMultipart()
-        msg['From'] = sender_email
-        msg['To'] = recipient_email
-        msg['Subject'] = f"[Leer México] {subject}"
-
-        html_body = f"""
-        <html>
-            <body style="font-family: sans-serif; color: #333;">
-                <h2 style="color: #d9534f;">⚠️ System Alert: {subject}</h2>
-                <p><strong>Time:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-                <p><strong>Message:</strong> {message}</p>
-        """
-        
-        if error_obj:
-            html_body += f"<p><strong>Technical Error:</strong> {str(error_obj)}</p>"
-            
-        html_body += "</body></html>"
-        msg.attach(MIMEText(html_body, 'html'))
-
-        # 5. SEND VIA SMTP
+        # 4. SEND VIA SMTP (Loop through recipients)
         with smtplib.SMTP(ipv4_address, smtp_port, timeout=10) as server:
             server.starttls()
             server.login(sender_email, sender_password)
-            server.send_message(msg)
+            
+            for recipient in recipients:
+                
+                # 1. Determine Environment Tag & Color
+                # Matches the logic in app.py
+                is_test = os.getenv('FLASK_DEBUG', 'False').lower() in ('true', '1', 't')
+                
+                if is_test:
+                    env_tag = "[TEST SYSTEM]"
+                    header_color = "#f0ad4e" # Orange for Test
+                else:
+                    env_tag = "[PROD]"
+                    header_color = "#d9534f" # Red for Production
+
+                # 2. Build Message
+                msg = MIMEMultipart()
+                msg['From'] = sender_email
+                msg['To'] = recipient
+                
+                # Add the tag to the Subject Line
+                msg['Subject'] = f"{env_tag} [Leer México] {subject}"
+
+                html_body = f"""
+                <html>
+                    <body style="font-family: sans-serif; color: #333;">
+                        <h2 style="color: {header_color};">⚠️ {env_tag} System Alert: {subject}</h2>
+                        <p><strong>Time:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+                        <p><strong>Message:</strong> {message}</p>
+                """
+                
+                if error_obj:
+                    html_body += f"<p><strong>Technical Error:</strong> {str(error_obj)}</p>"
+                    
+                html_body += "</body></html>"
+                msg.attach(MIMEText(html_body, 'html'))
+
+                # Send
+                server.send_message(msg)
         
         # 6. UPDATE STATE ON SUCCESS
         _last_alert_time = current_time
-        logger.info(f"Alert successfully sent to {recipient_email}")
+        logger.info(f"Alert successfully sent to {recipients}")
         return True
 
     except socket.timeout:
         # --- CRITICAL FIX: USE PRINT, NOT LOGGER ---
-        # This prevents the EmailAlertHandler from catching this error 
-        # and trying to send ANOTHER email, which causes the infinite loop.
         print(f"[{datetime.now()}] SMTP Error: Connection timed out.")
         return False
         
