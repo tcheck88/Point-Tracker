@@ -202,6 +202,12 @@ def handle_exception(e):
 
 # ---- ROUTES START BELOW ----
 
+# ---- Route used by cronjob to wake up and keep the service running.  This is a lighter weight function so it fits within the timeout limitations ------
+
+@app.route('/api/cron/wake', methods=['GET'])
+def cron_wake():
+    return jsonify({"status": "awake"}), 200
+
 # --- Handle Language Switching ---
 @app.route('/set_language', methods=['POST'])
 def set_language():
