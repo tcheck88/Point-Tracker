@@ -146,11 +146,30 @@ root_logger.addHandler(EmailAlertHandler())
 logger = logging.getLogger(__name__)
 
 # ---- 5. Database Setup ----
-try:
-    init_db()
-    logger.info("Database initialized successfully.")
-except Exception as e:
-    logger.critical(f"Database initialization failed: {e}")
+
+# ---- 5. Database Setup (Background Thread Fix) ----
+def async_db_init(app_context):
+    """Run DB init in background to prevent Cold Start 503s"""
+    with app_context:
+        try:
+            init_db()
+            logger.info("Background Thread: Database initialized successfully.")
+        except Exception as e:
+            logger.critical(f"Background Thread: Database initialization failed: {e}")
+
+# Start the thread immediately, but don't wait for it
+if not app.config.get('TESTING'):
+    # We pass the actual app object to create a context inside the thread
+    t = threading.Thread(target=async_db_init, args=(app.app_context(),))
+    t.daemon = True
+    t.start()
+
+
+#try:
+#    init_db()
+#    logger.info("Database initialized successfully.")
+#except Exception as e:
+#  logger.critical(f"Database initialization failed: {e}")
     
     
 # ---- 6. AUTOMATIC LOGGING MIDDLEWARE ----
