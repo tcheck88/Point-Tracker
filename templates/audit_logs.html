@@ -28,6 +28,10 @@
     .btn-search:hover { background: #165ecb; }
     .btn-clear { padding: 6px 12px; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; background: white; color: #334155; }
 
+    /* NEW EXPORT BUTTON STYLE */
+    .btn-export { padding: 6px 12px; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer; border: none; background: #10b981; color: white; margin-left: auto; }
+    .btn-export:hover { background: #059669; }
+
     .table-container { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
     th { background: #f9fafb; padding: 12px; font-weight: 600; color: #4b5563; border-bottom: 1px solid #e5e7eb; }
@@ -61,6 +65,8 @@
     <input type="text" id="searchInput" class="search-box" placeholder="{{ _('Search details...') }}">
     <button id="btnSearch" class="btn-search">{{ _('Search') }}</button>
     <button id="btnClear" class="btn-clear">{{ _('Reset') }}</button>
+    
+    <button id="btnExport" class="btn-export">{{ _('Export CSV') }}</button>
   </div>
 
   <div class="table-container">
@@ -86,7 +92,9 @@ window.addEventListener('DOMContentLoaded', () => {
         end: document.getElementById('endDate'),
         search: document.getElementById('searchInput'),
         btnSearch: document.getElementById('btnSearch'),
-        btnClear: document.getElementById('btnClear')
+        btnClear: document.getElementById('btnClear'),
+        // NEW ELEMENT REFERENCE
+        btnExport: document.getElementById('btnExport')
     };
 
     async function loadLogs() {
@@ -145,6 +153,17 @@ window.addEventListener('DOMContentLoaded', () => {
         el.end.value = '';
         el.search.value = '';
         loadLogs();
+    });
+
+    // NEW EXPORT LISTENER
+    el.btnExport.addEventListener('click', () => {
+        const params = new URLSearchParams();
+        if (el.start.value) params.append('start_date', el.start.value);
+        if (el.end.value) params.append('end_date', el.end.value);
+        if (el.search.value.trim()) params.append('search', el.search.value.trim());
+        
+        // Trigger the download
+        window.location.href = `/api/logs/audit/csv?${params.toString()}`;
     });
 
     // Initial Load

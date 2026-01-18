@@ -1386,6 +1386,78 @@ def api_view_audit_logs_data():
     finally:
         conn.close()
 
+@app.route('/api/logs/audit/csv')
+@login_required
+@admin_required
+def download_audit_logs_csv():
+    import csv
+    import io
+    
+    # 1. Fetch Filters (Mirrors api_view_audit_logs_data)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    search_term = request.args.get('search')
+
+    conn = get_db_connection()
+    if not conn:
+        return "Database Connection Error", 500
+    
+    try:
+        cur = conn.cursor()
+        
+        # 2. Build Query 
+        # We reorder columns slightly for a better CSV layout (Time first)
+        sql = "SELECT id, event_time, action_type, recorded_by, details FROM audit_log WHERE 1=1"
+        params = []
+
+        if start_date:
+            sql += " AND event_time::DATE >= %s"
+            params.append(start_date)
+        
+        if end_date:
+            sql += " AND event_time::DATE <= %s"
+            params.append(end_date)
+        
+        if search_term:
+            sql += " AND (details ILIKE %s OR action_type ILIKE %s OR recorded_by ILIKE %s)"
+            search_pattern = f"%{search_term}%"
+            params.extend([search_pattern, search_pattern, search_pattern])
+            
+        # We REMOVE the LIMIT 500 here so the CSV contains the full dataset matching the filters
+        sql += " ORDER BY event_time DESC"
+
+        cur.execute(sql, tuple(params))
+        rows = cur.fetchall()
+        
+        # 3. Generate CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Headers
+        writer.writerow(['ID', 'Timestamp', 'Action', 'User', 'Details'])
+        
+        for row in rows:
+            is_dict = isinstance(row, dict)
+            writer.writerow([
+                row['id'] if is_dict else row[0],
+                row['event_time'] if is_dict else row[1],
+                row['action_type'] if is_dict else row[2],
+                row['recorded_by'] if is_dict else row[3],
+                row['details'] if is_dict else row[4]
+            ])
+            
+        output.seek(0)
+        return send_file(
+            io.BytesIO(output.getvalue().encode('utf-8-sig')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f"Audit_Logs_{datetime.datetime.now().strftime('%Y-%m-%d')}.csv"
+        )
+    except Exception as e:
+        logger.exception(f"Export audit CSV error: {e}")
+        return f"Error exporting CSV: {e}", 500
+    finally:
+        conn.close()
     
 # ---- 11. Reporting (View & CSV) ----
 
