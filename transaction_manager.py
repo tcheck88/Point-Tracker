@@ -51,10 +51,11 @@ def add_points(student_id, points, activity_type, description="", recorded_by="s
         """, (audit_action, recorded_by, recorded_by, new_trans_id, audit_details))
 
         
-        # 5. ALERTS (High Point Threshold)
+        
+# 5. ALERTS (High Point Threshold)
         if points > 0:
             threshold = 100 # Default
-            alert_recipients = None # Default to None (let alerts.py handle default)
+            alert_recipients = None 
 
             try:
                 # Fetch Threshold
@@ -64,24 +65,52 @@ def add_points(student_id, points, activity_type, description="", recorded_by="s
                     val = row['setting_value'] if isinstance(row, dict) else row[0]
                     threshold = int(val)
                 
-                # --- NEW: Fetch Recipients ---
+                # Fetch Recipients
                 cur.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'ALERT_RECIPIENT_EMAILS'")
                 row = cur.fetchone()
                 if row:
                     val = row['setting_value'] if isinstance(row, dict) else row[0]
                     if val and val.strip():
                         alert_recipients = [e.strip() for e in val.split(',')]
-                # -----------------------------
 
-            except Exception:
-                pass 
+            except Exception as e:
+                # Log this internally so we know if DB access is the issue
+                logger.error(f"Alert Config Error: {e}")
 
+            # --- CHECK THRESHOLD & LOG ---
             if points >= threshold:
-                alerts.send_alert(
+                
+                # 1. Determine who we are sending to (for the log)
+                target_emails = alert_recipients if alert_recipients else "Default Admin (Env Var)"
+
+                # 2. Log the Attempt to Audit Trail
+                log_audit_event(
+                    action_type="ALERT_TRIGGERED",
+                    details=f"Points ({points}) >= Threshold ({threshold}). Target: {target_emails}",
+                    recorded_by="system"
+                )
+                
+                # 3. Attempt Send
+                sent_success = alerts.send_alert(
                     subject=f"High Point Alert: {points} pts",
                     message=f"Student <b>{s_name}</b> was awarded <b>{points} points</b>.<br>Reason: {activity_type}<br>Staff: {recorded_by}",
-                    to_emails=alert_recipients # <--- Pass the list here
+                    to_emails=alert_recipients
                 )
+                
+                # 4. Log the Result to Audit Trail
+                if sent_success:
+                     log_audit_event(
+                        action_type="ALERT_SUCCESS",
+                        details="Email sent successfully.",
+                        recorded_by="system"
+                    )
+                else:
+                    # If this appears, check Render System Logs for the specific python error
+                    log_audit_event(
+                        action_type="ALERT_FAILED",
+                        details="Email failed to send. Check System Logs for SMTP error.",
+                        recorded_by="system"
+                    )
         
         conn.commit()
         logger.info(f"Transaction Success: {points} pts for {s_name} (ID: {student_id})")

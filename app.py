@@ -6,6 +6,8 @@ Restored Production Version
 from dotenv import load_dotenv  
 import os
 import sys
+import io
+import csv
 import logging
 import datetime
 import traceback
@@ -226,6 +228,61 @@ def handle_exception(e):
 @app.route('/api/cron/wake', methods=['GET'])
 def cron_wake():
     return jsonify({"status": "awake"}), 200
+    
+
+@app.route('/api/cron/daily_report', methods=['GET'])
+def cron_daily_report():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # 1. Fetch Students
+        cur.execute("""
+            SELECT full_name, grade, classroom, total_points 
+            FROM students WHERE active = TRUE 
+            ORDER BY grade ASC, classroom ASC, full_name ASC
+        """)
+        student_rows = cur.fetchall()
+
+        # 2. Fetch Recipient List (The Fix)
+        recipients = None
+        cur.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'DAILY_POINT_LOG'")
+        setting_row = cur.fetchone()
+        if setting_row:
+            val = setting_row['setting_value'] if isinstance(setting_row, dict) else setting_row[0]
+            if val and val.strip():
+                recipients = [e.strip() for e in val.split(',')]
+        
+        conn.close()
+
+        # 3. Generate CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['Student Name', 'Grade', 'Classroom', 'Current Points'])
+        for row in student_rows:
+            r_name = row['full_name'] if isinstance(row, dict) else row[0]
+            r_gr = row['grade'] if isinstance(row, dict) else row[1]
+            r_cl = row['classroom'] if isinstance(row, dict) else row[2]
+            r_pts = row['total_points'] if isinstance(row, dict) else row[3]
+            writer.writerow([r_name, r_gr, r_cl, r_pts])
+
+        # 4. Send to the Group
+        alerts.send_alert(
+            subject="Daily Student Balance Report",
+            message="Attached is the latest point balance for all active students.",
+            to_emails=recipients,  # <--- Now sends to the list
+            attachment_name=f"Student_Balances_{datetime.datetime.now().strftime('%Y-%m-%d')}.csv",
+            attachment_data=output.getvalue().encode('utf-8')
+        )
+        
+        logger.info(f"Daily Student Point Log email sent")
+
+        return jsonify({"success": True}), 200
+
+    except Exception as e:
+        logger.exception(f"Daily Student Point Log email Failed: {e}")
+        return jsonify({"error": str(e)}), 500
+   
 
 # --- Handle Language Switching ---
 @app.route('/set_language', methods=['POST'])
