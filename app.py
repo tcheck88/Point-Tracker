@@ -147,11 +147,15 @@ root_logger.addHandler(EmailAlertHandler())
 
 logger = logging.getLogger(__name__)
 
-# ---- 5. Database Setup ----
 
 # ---- 5. Database Setup (Background Thread Fix) ----
 def async_db_init(app_context):
     """Run DB init in background to prevent Cold Start 503s"""
+    # --- THE FIX: Wait 5 seconds to let Gunicorn handle the 'Wake' request first ---
+    import time
+    time.sleep(5) 
+    # -------------------------------------------------------------------------------
+
     with app_context:
         try:
             init_db()
@@ -165,14 +169,7 @@ if not app.config.get('TESTING'):
     t = threading.Thread(target=async_db_init, args=(app.app_context(),))
     t.daemon = True
     t.start()
-
-
-#try:
-#    init_db()
-#    logger.info("Database initialized successfully.")
-#except Exception as e:
-#  logger.critical(f"Database initialization failed: {e}")
-    
+   
     
 # ---- 6. AUTOMATIC LOGGING MIDDLEWARE ----
 
