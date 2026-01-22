@@ -1,6 +1,6 @@
 """
 alerts.py - Leer México Alert System
-Updated: Added 'DEBUG_CONNECT' audit log to verify Port/IP resolution.
+Updated: Increased Timeout to 60s + Googlemail Alias to bypass routing blocks.
 """
 import smtplib
 import os
@@ -11,14 +11,12 @@ from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
-
-# Import DB Connection for direct logging
 from db_utils import get_db_connection 
 
 logger = logging.getLogger(__name__)
 
 # Config
-COOLDOWN_SECONDS = 600
+COOLDOWN_SECONDS = 5 # Keep low for testing
 _last_alert_time = 0 
 
 def _log_to_db(action_type, details):
@@ -42,9 +40,14 @@ def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name
         if (time.time() - _last_alert_time) < COOLDOWN_SECONDS:
             return False
 
-    # CONFIG
-    smtp_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-    smtp_port = int(os.getenv('MAIL_PORT', 587))
+    # CONFIG: Use googlemail.com alias if server var is default
+    env_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    if env_server == 'smtp.gmail.com':
+        smtp_server = 'smtp.googlemail.com'
+    else:
+        smtp_server = env_server
+
+    smtp_port = int(os.getenv('MAIL_PORT', 465)) # Default to 465 now
     sender_email = os.getenv('MAIL_USERNAME')
     sender_password = os.getenv('MAIL_PASSWORD')
     
@@ -55,24 +58,24 @@ def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name
         if default: recipients = [default]
 
     if not sender_email or not recipients:
-        _log_to_db("EMAIL_CONFIG_ERROR", "Missing MAIL_USERNAME, PASSWORD, or Recipients.")
+        _log_to_db("EMAIL_CONFIG_ERROR", "Missing Config")
         return False
 
     try:
-        # 3. RESOLVE & LOG (The Debug Step)
+        # 3. RESOLVE
         addr_info = socket.getaddrinfo(smtp_server, smtp_port, socket.AF_INET)
         ipv4 = addr_info[0][4][0]
 
-        # --- LOG THE CONNECTION DETAILS ---
-        # This will tell us if the Port is actually 465 or stuck on 587
         _log_to_db("DEBUG_CONNECT", f"Server: {smtp_server} | IP: {ipv4} | Port: {smtp_port}")
-        # ----------------------------------
 
+        # 4. CONNECT (Increased Timeout)
         server = None
         if smtp_port == 465:
-            server = smtplib.SMTP_SSL(ipv4, smtp_port, timeout=20)
+            # SSL Strategy
+            server = smtplib.SMTP_SSL(ipv4, smtp_port, timeout=60)
         else:
-            server = smtplib.SMTP(ipv4, smtp_port, timeout=20)
+            # TLS Strategy
+            server = smtplib.SMTP(ipv4, smtp_port, timeout=60)
             server.starttls()
 
         with server:
