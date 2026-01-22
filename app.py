@@ -244,7 +244,7 @@ def cron_daily_report():
         """)
         student_rows = cur.fetchall()
 
-        # 2. Fetch Recipient List (The Fix)
+        # 2. Fetch Recipient List
         recipients = None
         cur.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'DAILY_POINT_LOG'")
         setting_row = cur.fetchone()
@@ -270,19 +270,35 @@ def cron_daily_report():
         alerts.send_alert(
             subject="Daily Student Balance Report",
             message="Attached is the latest point balance for all active students.",
-            to_emails=recipients,  # <--- Now sends to the list
+            to_emails=recipients,
             attachment_name=f"Student_Balances_{datetime.datetime.now().strftime('%Y-%m-%d')}.csv",
             attachment_data=output.getvalue().encode('utf-8')
         )
         
-        logger.info(f"Daily Student Point Log email sent")
+        # --- 5. NEW: LOG SPECIFIC AUDIT EVENT ---
+        # This ensures the audit trail clearly says "Daily Report" instead of just "Email Sent"
+        transaction_manager.log_audit_event(
+            action_type="DAILY_REPORT_RUN",
+            details=f"Daily report generated and sent to: {recipients or 'Default Admin'}",
+            recorded_by="system_cron"
+        )
+        # ----------------------------------------
 
         return jsonify({"success": True}), 200
 
     except Exception as e:
         logger.exception(f"Daily Student Point Log email Failed: {e}")
+        # Log failure to audit trail too
+        try:
+            transaction_manager.log_audit_event(
+                action_type="DAILY_REPORT_FAILED",
+                details=f"Error: {str(e)}",
+                recorded_by="system_cron"
+            )
+        except:
+            pass
         return jsonify({"error": str(e)}), 500
-   
+
 
 # --- Handle Language Switching ---
 @app.route('/set_language', methods=['POST'])
