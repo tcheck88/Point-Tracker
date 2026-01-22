@@ -1,12 +1,14 @@
 """
 alerts.py - Leer México Alert System
-Updated: Increased Timeout to 60s + Googlemail Alias to bypass routing blocks.
+Updated: THREADED EXECUTION. 
+This version sends emails in the background so the UI never freezes/crashes.
 """
 import smtplib
 import os
 import logging
 import socket
 import time
+import threading  # <--- NEW: Required for background tasks
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -16,10 +18,13 @@ from db_utils import get_db_connection
 logger = logging.getLogger(__name__)
 
 # Config
-COOLDOWN_SECONDS = 5 # Keep low for testing
+COOLDOWN_SECONDS = 5 
 _last_alert_time = 0 
 
 def _log_to_db(action_type, details):
+    """
+    Helper to write directly to audit_log without circular imports.
+    """
     try:
         conn = get_db_connection()
         if conn:
@@ -33,21 +38,20 @@ def _log_to_db(action_type, details):
     except Exception as e:
         print(f"[{datetime.now()}] Failed to write to audit log: {e}")
 
-def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name=None, attachment_data=None):
-    global _last_alert_time
-    
-    if not attachment_name:
-        if (time.time() - _last_alert_time) < COOLDOWN_SECONDS:
-            return False
-
-    # CONFIG: Use googlemail.com alias if server var is default
+def _send_async_email(subject, message, to_emails, attachment_name, attachment_data):
+    """
+    The actual email logic, now running in a separate thread.
+    """
+    # 1. CONFIG
+    # Use googlemail.com alias if server var is default
     env_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
     if env_server == 'smtp.gmail.com':
         smtp_server = 'smtp.googlemail.com'
     else:
         smtp_server = env_server
 
-    smtp_port = int(os.getenv('MAIL_PORT', 465)) # Default to 465 now
+    # Reset timeout to something reasonable since we are in background
+    smtp_port = int(os.getenv('MAIL_PORT', 465)) 
     sender_email = os.getenv('MAIL_USERNAME')
     sender_password = os.getenv('MAIL_PASSWORD')
     
@@ -59,23 +63,22 @@ def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name
 
     if not sender_email or not recipients:
         _log_to_db("EMAIL_CONFIG_ERROR", "Missing Config")
-        return False
+        return
 
     try:
-        # 3. RESOLVE
+        # 2. RESOLVE IP
         addr_info = socket.getaddrinfo(smtp_server, smtp_port, socket.AF_INET)
         ipv4 = addr_info[0][4][0]
 
         _log_to_db("DEBUG_CONNECT", f"Server: {smtp_server} | IP: {ipv4} | Port: {smtp_port}")
 
-        # 4. CONNECT (Increased Timeout)
+        # 3. CONNECT 
+        # We can keep a long timeout here because we are in the background now.
         server = None
         if smtp_port == 465:
-            # SSL Strategy
-            server = smtplib.SMTP_SSL(ipv4, smtp_port, timeout=60)
+            server = smtplib.SMTP_SSL(ipv4, smtp_port, timeout=45)
         else:
-            # TLS Strategy
-            server = smtplib.SMTP(ipv4, smtp_port, timeout=60)
+            server = smtplib.SMTP(ipv4, smtp_port, timeout=45)
             server.starttls()
 
         with server:
@@ -98,11 +101,34 @@ def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name
 
                 server.send_message(msg)
         
-        if not attachment_name: _last_alert_time = time.time()
-        
+        # 4. LOG SUCCESS
         _log_to_db("EMAIL_SENT", f"Subject: {subject} | To: {recipients}")
-        return True
 
     except Exception as e:
+        # 5. LOG FAILURE
         _log_to_db("EMAIL_FAILED", f"SMTP Error: {str(e)}")
-        return False
+
+
+def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name=None, attachment_data=None):
+    """
+    Main entry point. Spawns thread and returns immediately.
+    """
+    global _last_alert_time
+    
+    # Cooldown Check
+    if not attachment_name:
+        if (time.time() - _last_alert_time) < COOLDOWN_SECONDS:
+            return False
+        _last_alert_time = time.time()
+
+    # --- THE FIX: THREADING ---
+    # We pass all data to a background thread so the UI never waits.
+    email_thread = threading.Thread(
+        target=_send_async_email,
+        args=(subject, message, to_emails, attachment_name, attachment_data)
+    )
+    email_thread.daemon = True # Ensures thread dies if app dies
+    email_thread.start()
+    
+    # Return True immediately so the UI says "Success"
+    return True
