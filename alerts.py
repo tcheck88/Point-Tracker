@@ -1,18 +1,16 @@
 """
 alerts.py - Leer México Alert System
-Updated: THREADED EXECUTION. 
-This version sends emails in the background so the UI never freezes/crashes.
+Updated: SENDGRID API VERSION (HTTP)
+Replaces SMTP with SendGrid Web API for 100% reliability on Cloud Hosting.
 """
-import smtplib
 import os
+import json
 import logging
-import socket
+import threading
 import time
-import threading  # <--- NEW: Required for background tasks
+import base64
+import http.client
 from datetime import datetime
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.application import MIMEApplication
 from db_utils import get_db_connection 
 
 logger = logging.getLogger(__name__)
@@ -22,9 +20,7 @@ COOLDOWN_SECONDS = 5
 _last_alert_time = 0 
 
 def _log_to_db(action_type, details):
-    """
-    Helper to write directly to audit_log without circular imports.
-    """
+    """Helper to write directly to audit_log."""
     try:
         conn = get_db_connection()
         if conn:
@@ -38,76 +34,70 @@ def _log_to_db(action_type, details):
     except Exception as e:
         print(f"[{datetime.now()}] Failed to write to audit log: {e}")
 
-def _send_async_email(subject, message, to_emails, attachment_name, attachment_data):
+def _send_via_sendgrid(subject, message, to_emails, attachment_name, attachment_data):
     """
-    The actual email logic, now running in a separate thread.
+    Sends email via SendGrid Web API (HTTP).
+    Never times out, never gets blocked by SMTP firewalls.
     """
-    # 1. CONFIG
-    # Use googlemail.com alias if server var is default
-    env_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-    if env_server == 'smtp.gmail.com':
-        smtp_server = 'smtp.googlemail.com'
-    else:
-        smtp_server = env_server
-
-    # Reset timeout to something reasonable since we are in background
-    smtp_port = int(os.getenv('MAIL_PORT', 465)) 
-    sender_email = os.getenv('MAIL_USERNAME')
-    sender_password = os.getenv('MAIL_PASSWORD')
+    api_key = os.getenv('SENDGRID_API_KEY')
+    sender_email = os.getenv('MAIL_USERNAME') # Must be the verified sender in SendGrid
     
-    recipients = []
-    if to_emails: recipients = [e.strip() for e in to_emails if e.strip()]
-    if not recipients:
-        default = os.getenv('ADMIN_EMAIL')
-        if default: recipients = [default]
-
-    if not sender_email or not recipients:
-        _log_to_db("EMAIL_CONFIG_ERROR", "Missing Config")
+    if not api_key:
+        _log_to_db("EMAIL_CONFIG_ERROR", "Missing SENDGRID_API_KEY")
         return
 
+    # 1. Prepare Recipients
+    # SendGrid API expects a list of objects: [{"email": "a@b.com"}, ...]
+    personalizations = [{"to": [{"email": email}]} for email in to_emails]
+    
+    # 2. Prepare Attachment (if any)
+    attachments_json = []
+    if attachment_name and attachment_data:
+        # SendGrid expects base64 encoded string
+        encoded_data = base64.b64encode(attachment_data).decode('utf-8')
+        attachments_json.append({
+            "content": encoded_data,
+            "filename": attachment_name,
+            "type": "text/csv", # Defaulting to CSV for reports
+            "disposition": "attachment"
+        })
+
+    # 3. Build Payload
+    payload = {
+        "personalizations": personalizations,
+        "from": {"email": sender_email},
+        "subject": subject,
+        "content": [{"type": "text/html", "value": message}]
+    }
+    
+    if attachments_json:
+        payload["attachments"] = attachments_json
+
     try:
-        # 2. RESOLVE IP
-        addr_info = socket.getaddrinfo(smtp_server, smtp_port, socket.AF_INET)
-        ipv4 = addr_info[0][4][0]
-
-        _log_to_db("DEBUG_CONNECT", f"Server: {smtp_server} | IP: {ipv4} | Port: {smtp_port}")
-
-        # 3. CONNECT 
-        # We can keep a long timeout here because we are in the background now.
-        server = None
-        if smtp_port == 465:
-            server = smtplib.SMTP_SSL(ipv4, smtp_port, timeout=45)
-        else:
-            server = smtplib.SMTP(ipv4, smtp_port, timeout=45)
-            server.starttls()
-
-        with server:
-            server.login(sender_email, sender_password)
-            
-            for recipient in recipients:
-                is_test = os.getenv('FLASK_DEBUG', '0') == '1'
-                tag = "[TEST SYSTEM]" if is_test else "[PROD]"
-                
-                msg = MIMEMultipart()
-                msg['From'] = sender_email
-                msg['To'] = recipient
-                msg['Subject'] = f"{tag} {subject}"
-                msg.attach(MIMEText(message, 'html'))
-
-                if attachment_name and attachment_data:
-                    part = MIMEApplication(attachment_data, Name=attachment_name)
-                    part['Content-Disposition'] = f'attachment; filename="{attachment_name}"'
-                    msg.attach(part)
-
-                server.send_message(msg)
+        # 4. Send Request (HTTP)
+        conn = http.client.HTTPSConnection("api.sendgrid.com")
+        headers = {
+            'Authorization': f"Bearer {api_key}",
+            'Content-Type': 'application/json'
+        }
         
-        # 4. LOG SUCCESS
-        _log_to_db("EMAIL_SENT", f"Subject: {subject} | To: {recipients}")
+        json_payload = json.dumps(payload)
+        conn.request("POST", "/v3/mail/send", json_payload, headers)
+        
+        res = conn.getresponse()
+        data = res.read()
+        
+        # 5. Check Result
+        # SendGrid returns 202 Accepted for success
+        if res.status in [200, 201, 202]:
+            _log_to_db("EMAIL_SENT", f"Via SendGrid API. To: {to_emails}")
+        else:
+            error_msg = f"Status: {res.status} | Body: {data.decode('utf-8')}"
+            _log_to_db("EMAIL_FAILED", error_msg)
+            print(f"SendGrid Error: {error_msg}")
 
     except Exception as e:
-        # 5. LOG FAILURE
-        _log_to_db("EMAIL_FAILED", f"SMTP Error: {str(e)}")
-
+        _log_to_db("EMAIL_FAILED", f"API Error: {str(e)}")
 
 def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name=None, attachment_data=None):
     """
@@ -120,15 +110,24 @@ def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name
         if (time.time() - _last_alert_time) < COOLDOWN_SECONDS:
             return False
         _last_alert_time = time.time()
+        
+    # Determine Recipients
+    recipients = []
+    if to_emails: recipients = [e.strip() for e in to_emails if e.strip()]
+    if not recipients:
+        default = os.getenv('ADMIN_EMAIL')
+        if default: recipients = [default]
+        
+    if not recipients:
+        _log_to_db("EMAIL_CONFIG_ERROR", "No recipients found.")
+        return False
 
-    # --- THE FIX: THREADING ---
-    # We pass all data to a background thread so the UI never waits.
+    # --- THREADED EXECUTION ---
     email_thread = threading.Thread(
-        target=_send_async_email,
-        args=(subject, message, to_emails, attachment_name, attachment_data)
+        target=_send_via_sendgrid,
+        args=(subject, message, recipients, attachment_name, attachment_data)
     )
-    email_thread.daemon = True # Ensures thread dies if app dies
+    email_thread.daemon = True
     email_thread.start()
     
-    # Return True immediately so the UI says "Success"
     return True
