@@ -1,6 +1,6 @@
 """
 alerts.py - Leer México Alert System
-Updated: Universal Port Support (465/587) + Internal Audit Logging
+Updated: Added 'DEBUG_CONNECT' audit log to verify Port/IP resolution.
 """
 import smtplib
 import os
@@ -12,7 +12,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 
-# --- NEW: Import DB Connection for direct logging ---
+# Import DB Connection for direct logging
 from db_utils import get_db_connection 
 
 logger = logging.getLogger(__name__)
@@ -22,9 +22,6 @@ COOLDOWN_SECONDS = 600
 _last_alert_time = 0 
 
 def _log_to_db(action_type, details):
-    """
-    Helper to write directly to audit_log without circular imports.
-    """
     try:
         conn = get_db_connection()
         if conn:
@@ -36,18 +33,16 @@ def _log_to_db(action_type, details):
             conn.commit()
             conn.close()
     except Exception as e:
-        # Fallback to console if DB fails
         print(f"[{datetime.now()}] Failed to write to audit log: {e}")
 
 def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name=None, attachment_data=None):
     global _last_alert_time
     
-    # 1. COOLDOWN CHECK (Skip if Report)
     if not attachment_name:
         if (time.time() - _last_alert_time) < COOLDOWN_SECONDS:
             return False
 
-    # 2. CONFIG
+    # CONFIG
     smtp_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
     smtp_port = int(os.getenv('MAIL_PORT', 587))
     sender_email = os.getenv('MAIL_USERNAME')
@@ -61,15 +56,18 @@ def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name
 
     if not sender_email or not recipients:
         _log_to_db("EMAIL_CONFIG_ERROR", "Missing MAIL_USERNAME, PASSWORD, or Recipients.")
-        print(f"[{datetime.now()}] ALERT ABORTED: Missing config.")
         return False
 
     try:
-        # 3. CONNECTION & SEND
+        # 3. RESOLVE & LOG (The Debug Step)
         addr_info = socket.getaddrinfo(smtp_server, smtp_port, socket.AF_INET)
         ipv4 = addr_info[0][4][0]
 
-        # Port Detection Logic
+        # --- LOG THE CONNECTION DETAILS ---
+        # This will tell us if the Port is actually 465 or stuck on 587
+        _log_to_db("DEBUG_CONNECT", f"Server: {smtp_server} | IP: {ipv4} | Port: {smtp_port}")
+        # ----------------------------------
+
         server = None
         if smtp_port == 465:
             server = smtplib.SMTP_SSL(ipv4, smtp_port, timeout=20)
@@ -88,8 +86,7 @@ def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name
                 msg['From'] = sender_email
                 msg['To'] = recipient
                 msg['Subject'] = f"{tag} {subject}"
-
-                msg.attach(MIMEText(message, 'html')) # Message is already HTML string
+                msg.attach(MIMEText(message, 'html'))
 
                 if attachment_name and attachment_data:
                     part = MIMEApplication(attachment_data, Name=attachment_name)
@@ -100,14 +97,9 @@ def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name
         
         if not attachment_name: _last_alert_time = time.time()
         
-        # --- SUCCESS LOG ---
         _log_to_db("EMAIL_SENT", f"Subject: {subject} | To: {recipients}")
-        logger.info(f"Email sent to {recipients}")
         return True
 
     except Exception as e:
-        # --- FAILURE LOG (Capture the specific error) ---
-        error_msg = str(e)
-        print(f"[{datetime.now()}] EMAIL FAILED: {error_msg}")
-        _log_to_db("EMAIL_FAILED", f"SMTP Error: {error_msg}")
+        _log_to_db("EMAIL_FAILED", f"SMTP Error: {str(e)}")
         return False
