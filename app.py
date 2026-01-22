@@ -19,13 +19,39 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.exceptions import HTTPException
 from functools import wraps
 
-# --- IMPORTS FOR POSTGRESQL ---
-from db_utils import init_db, get_db_connection
-import add_student
-import student_search
-import transaction_manager
-import alerts 
+
+# --- IMPORTS FOR POSTGRESQL (LAZY LOAD PATTERN) ---
+# We use this proxy technique to prevent "Cold Start" timeouts.
+# Heavy modules are only imported when a function actually uses them.
+
+import importlib
 import threading  
+
+class LazyModule:
+    def __init__(self, module_name):
+        self.module_name = module_name
+        self._module = None
+    
+    def __getattr__(self, item):
+        if self._module is None:
+            self._module = importlib.import_module(self.module_name)
+        return getattr(self._module, item)
+
+# Define proxies for heavy modules
+add_student = LazyModule('add_student')
+student_search = LazyModule('student_search')
+transaction_manager = LazyModule('transaction_manager')
+alerts = LazyModule('alerts')
+
+# Define wrappers for function imports
+def get_db_connection():
+    from db_utils import get_db_connection as _real
+    return _real()
+
+def init_db():
+    from db_utils import init_db as _real
+    return _real()
+    
 
 load_dotenv()  
 
