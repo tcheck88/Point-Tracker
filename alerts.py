@@ -1,9 +1,7 @@
 """
 alerts.py - Leer México Alert System
-Fixed: Prevents 'Death Loop' by using print() for internal errors instead of logger.
-Updated: Supports dynamic recipient lists from database.
+Updated: Universal Port Support (465/587) + Internal Audit Logging
 """
-
 import smtplib
 import os
 import logging
@@ -14,97 +12,102 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 
+# --- NEW: Import DB Connection for direct logging ---
+from db_utils import get_db_connection 
+
 logger = logging.getLogger(__name__)
 
-# --- CONFIGURATION ---
-# Minimum seconds between emails to prevent spamming (10 minutes)
-COOLDOWN_SECONDS = 600 
-
-# Global variable to persist state while the app is running
+# Config
+COOLDOWN_SECONDS = 600
 _last_alert_time = 0 
 
-# Update signature to accept optional to_emails list
+def _log_to_db(action_type, details):
+    """
+    Helper to write directly to audit_log without circular imports.
+    """
+    try:
+        conn = get_db_connection()
+        if conn:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO audit_log (action_type, details, recorded_by, event_time)
+                VALUES (%s, %s, %s, %s)
+            """, (action_type, details, "system_alerts", datetime.now()))
+            conn.commit()
+            conn.close()
+    except Exception as e:
+        # Fallback to console if DB fails
+        print(f"[{datetime.now()}] Failed to write to audit log: {e}")
 
 def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name=None, attachment_data=None):
-    """
-    Sends an email alert. Supports 'attachment_name' (str) and 'attachment_data' (bytes).
-    """
     global _last_alert_time
     
-    # 1. COOLDOWN CHECK
-    # We skip the cooldown check if this is a Report (indicated by having an attachment)
+    # 1. COOLDOWN CHECK (Skip if Report)
     if not attachment_name:
-        current_time = time.time()
-        time_since_last = current_time - _last_alert_time
-        if time_since_last < COOLDOWN_SECONDS:
+        if (time.time() - _last_alert_time) < COOLDOWN_SECONDS:
             return False
 
-    # 2. CONFIGURATION
+    # 2. CONFIG
     smtp_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
     smtp_port = int(os.getenv('MAIL_PORT', 587))
     sender_email = os.getenv('MAIL_USERNAME')
     sender_password = os.getenv('MAIL_PASSWORD')
     
-    # Determine Recipients
     recipients = []
-    if to_emails and isinstance(to_emails, list):
-        recipients = [e.strip() for e in to_emails if e.strip()]
-    
+    if to_emails: recipients = [e.strip() for e in to_emails if e.strip()]
     if not recipients:
-        default_admin = os.getenv('ADMIN_EMAIL')
-        if default_admin:
-            recipients = [default_admin]
+        default = os.getenv('ADMIN_EMAIL')
+        if default: recipients = [default]
 
-    if not sender_email or not sender_password or not recipients:
-        print(f"[{datetime.now()}] ALERT ABORTED: Missing config or recipients.")
+    if not sender_email or not recipients:
+        _log_to_db("EMAIL_CONFIG_ERROR", "Missing MAIL_USERNAME, PASSWORD, or Recipients.")
+        print(f"[{datetime.now()}] ALERT ABORTED: Missing config.")
         return False
 
     try:
-        # 3. FORCE IPv4 (Render Fix)
+        # 3. CONNECTION & SEND
         addr_info = socket.getaddrinfo(smtp_server, smtp_port, socket.AF_INET)
-        ipv4_address = addr_info[0][4][0]
+        ipv4 = addr_info[0][4][0]
 
-        with smtplib.SMTP(ipv4_address, smtp_port, timeout=15) as server:
+        # Port Detection Logic
+        server = None
+        if smtp_port == 465:
+            server = smtplib.SMTP_SSL(ipv4, smtp_port, timeout=20)
+        else:
+            server = smtplib.SMTP(ipv4, smtp_port, timeout=20)
             server.starttls()
+
+        with server:
             server.login(sender_email, sender_password)
             
             for recipient in recipients:
-                # Environment Tagging logic
-                is_test = os.getenv('FLASK_DEBUG', 'False').lower() in ('true', '1', 't')
-                env_tag = "[TEST SYSTEM]" if is_test else "[PROD]"
-                header_color = "#f0ad4e" if is_test else "#d9534f"
-
+                is_test = os.getenv('FLASK_DEBUG', '0') == '1'
+                tag = "[TEST SYSTEM]" if is_test else "[PROD]"
+                
                 msg = MIMEMultipart()
                 msg['From'] = sender_email
                 msg['To'] = recipient
-                msg['Subject'] = f"{env_tag} {subject}"
+                msg['Subject'] = f"{tag} {subject}"
 
-                html_body = f"""
-                <html><body style="font-family: sans-serif; color: #333;">
-                    <h2 style="color: {header_color};">{subject}</h2>
-                    <p>{message}</p>
-                    <p><small>Sent: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</small></p>
-                </body></html>
-                """
-                msg.attach(MIMEText(html_body, 'html'))
+                msg.attach(MIMEText(message, 'html')) # Message is already HTML string
 
-                # --- NEW: ATTACHMENT LOGIC ---
                 if attachment_name and attachment_data:
                     part = MIMEApplication(attachment_data, Name=attachment_name)
                     part['Content-Disposition'] = f'attachment; filename="{attachment_name}"'
                     msg.attach(part)
-                # -----------------------------
 
                 server.send_message(msg)
         
-        # Only update the cooldown timer if this wasn't a report
-        if not attachment_name:
-            _last_alert_time = time.time()
-            
+        if not attachment_name: _last_alert_time = time.time()
+        
+        # --- SUCCESS LOG ---
+        _log_to_db("EMAIL_SENT", f"Subject: {subject} | To: {recipients}")
         logger.info(f"Email sent to {recipients}")
         return True
 
     except Exception as e:
-        print(f"[{datetime.now()}] Failed to send email: {e}")
+        # --- FAILURE LOG (Capture the specific error) ---
+        error_msg = str(e)
+        print(f"[{datetime.now()}] EMAIL FAILED: {error_msg}")
+        _log_to_db("EMAIL_FAILED", f"SMTP Error: {error_msg}")
         return False
-
