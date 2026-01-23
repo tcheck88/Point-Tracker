@@ -18,6 +18,7 @@ from flask_babel import Babel
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.exceptions import HTTPException
 from functools import wraps
+import requests 
 
 
 # --- IMPORTS FOR POSTGRESQL (LAZY LOAD PATTERN) ---
@@ -195,6 +196,46 @@ logger = logging.getLogger(__name__)
 #    t = threading.Thread(target=async_db_init, args=(app.app_context(),))
 #    t.daemon = True
 #    t.start()
+
+
+
+
+
+# --- HELPER: Enable Cron Job via API ---
+def enable_wake_job():
+    """
+    Calls cron-job.org API to ENABLE the wake-up job.
+    This ensures the service stays running after a real user logs in.
+    """
+    api_key = os.getenv('CRON_JOB_API_KEY')
+    job_id = os.getenv('CRON_JOB_ID')
+    
+    if not api_key or not job_id:
+        logger.warning("Cron Job API keys missing. Skipping auto-enable.")
+        return
+
+    url = f"https://api.cron-job.org/jobs/{job_id}"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "job": {
+            "enabled": True
+        }
+    }
+
+    try:
+        # We use PATCH to update specific fields (enabled: true)
+        response = requests.patch(url, json=payload, headers=headers, timeout=5)
+        if response.status_code == 200:
+            logger.info(f"Successfully ENABLED Cron Job {job_id}")
+        else:
+            logger.error(f"Failed to enable Cron Job: {response.text}")
+    except Exception as e:
+        logger.error(f"Cron Job API Error: {e}")
+
+
    
     
 # ---- 6. AUTOMATIC LOGGING MIDDLEWARE ----
@@ -350,6 +391,8 @@ def set_language():
     return redirect(request.referrer or url_for('index'))
 # ---------------------------------------------
 
+
+
 # 1. UPDATE THIS FUNCTION (Block inactive logins)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -387,6 +430,8 @@ def login():
             if check_password_hash(stored_hash, password):
                 session['username'] = db_user
                 session['role'] = role.strip() if role else 'staff'
+                
+                threading.Thread(target=enable_wake_job).start() 
                 
                 try:
                     transaction_manager.log_audit_event(
