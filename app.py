@@ -175,26 +175,26 @@ logger = logging.getLogger(__name__)
 
 
 # ---- 5. Database Setup (Background Thread Fix) ----
-def async_db_init(app_context):
-    """Run DB init in background to prevent Cold Start 503s"""
-    # --- THE FIX: Wait 5 seconds to let Gunicorn handle the 'Wake' request first ---
-    import time
-    time.sleep(5) 
-    # -------------------------------------------------------------------------------
-
-    with app_context:
-        try:
-            init_db()
-            logger.info("Background Thread: Database initialized successfully.")
-        except Exception as e:
-            logger.critical(f"Background Thread: Database initialization failed: {e}")
-
+#def async_db_init(app_context):
+#    """Run DB init in background to prevent Cold Start 503s"""
+#    # --- THE FIX: Wait 5 seconds to let Gunicorn handle the 'Wake' request first ---
+#    import time
+#    time.sleep(5) 
+#    # -------------------------------------------------------------------------------
+#
+#    with app_context:
+#        try:
+#            init_db()
+#            logger.info("Background Thread: Database initialized successfully.")
+#        except Exception as e:
+#            logger.critical(f"Background Thread: Database initialization failed: {e}")
+#
 # Start the thread immediately, but don't wait for it
-if not app.config.get('TESTING'):
-    # We pass the actual app object to create a context inside the thread
-    t = threading.Thread(target=async_db_init, args=(app.app_context(),))
-    t.daemon = True
-    t.start()
+#if not app.config.get('TESTING'):
+#    # We pass the actual app object to create a context inside the thread
+#    t = threading.Thread(target=async_db_init, args=(app.app_context(),))
+#    t.daemon = True
+#    t.start()
    
     
 # ---- 6. AUTOMATIC LOGGING MIDDLEWARE ----
@@ -252,18 +252,31 @@ def handle_exception(e):
 def cron_wake():
     return jsonify({"status": "awake"}), 200
     
-
+    
 @app.route('/api/cron/daily_report', methods=['GET'])
 def cron_daily_report():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # 1. Fetch Students
+        # 1. Fetch Students + Points Added in Last 24 Hours
+        # We join activity_log to sum positive points from the last day
         cur.execute("""
-            SELECT full_name, grade, classroom, total_points 
-            FROM students WHERE active = TRUE 
-            ORDER BY grade ASC, classroom ASC, full_name ASC
+            SELECT 
+                s.full_name, 
+                s.grade, 
+                s.classroom, 
+                s.total_points,
+                COALESCE(SUM(CASE 
+                    WHEN al.timestamp >= NOW() - INTERVAL '24 HOURS' AND al.points > 0 
+                    THEN al.points 
+                    ELSE 0 
+                END), 0) as points_added_24h
+            FROM students s
+            LEFT JOIN activity_log al ON s.id = al.student_id
+            WHERE s.active = TRUE 
+            GROUP BY s.id
+            ORDER BY s.grade ASC, s.classroom ASC, s.full_name ASC
         """)
         student_rows = cur.fetchall()
 
@@ -278,40 +291,42 @@ def cron_daily_report():
         
         conn.close()
 
-        # 3. Generate CSV
+        # 3. Generate CSV (Now with 5 Columns)
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(['Student Name', 'Grade', 'Classroom', 'Current Points'])
+        writer.writerow(['Student Name', 'Grade', 'Classroom', 'Total Points', 'Points Added (Last 24h)'])
+        
         for row in student_rows:
-            r_name = row['full_name'] if isinstance(row, dict) else row[0]
-            r_gr = row['grade'] if isinstance(row, dict) else row[1]
-            r_cl = row['classroom'] if isinstance(row, dict) else row[2]
-            r_pts = row['total_points'] if isinstance(row, dict) else row[3]
-            writer.writerow([r_name, r_gr, r_cl, r_pts])
+            # Handle Dict/Tuple differences
+            is_dict = isinstance(row, dict)
+            r_name = row['full_name'] if is_dict else row[0]
+            r_gr = row['grade'] if is_dict else row[1]
+            r_cl = row['classroom'] if is_dict else row[2]
+            r_pts = row['total_points'] if is_dict else row[3]
+            r_added = row['points_added_24h'] if is_dict else row[4]
+            
+            writer.writerow([r_name, r_gr, r_cl, r_pts, r_added])
 
         # 4. Send to the Group
         alerts.send_alert(
             subject="Daily Student Balance Report",
-            message="Attached is the latest point balance for all active students.",
+            message=f"Attached is the report for {datetime.datetime.now().strftime('%Y-%m-%d')}. It includes total balances and points earned in the last 24 hours.",
             to_emails=recipients,
             attachment_name=f"Student_Balances_{datetime.datetime.now().strftime('%Y-%m-%d')}.csv",
             attachment_data=output.getvalue().encode('utf-8')
         )
         
-        # --- 5. NEW: LOG SPECIFIC AUDIT EVENT ---
-        # This ensures the audit trail clearly says "Daily Report" instead of just "Email Sent"
+        # 5. Log Audit Event
         transaction_manager.log_audit_event(
             action_type="DAILY_REPORT_RUN",
-            details=f"Daily report generated and sent to: {recipients or 'Default Admin'}",
+            details=f"Daily report sent to: {recipients or 'Default Admin'}",
             recorded_by="system_cron"
         )
-        # ----------------------------------------
 
         return jsonify({"success": True}), 200
 
     except Exception as e:
         logger.exception(f"Daily Student Point Log email Failed: {e}")
-        # Log failure to audit trail too
         try:
             transaction_manager.log_audit_event(
                 action_type="DAILY_REPORT_FAILED",
@@ -321,6 +336,8 @@ def cron_daily_report():
         except:
             pass
         return jsonify({"error": str(e)}), 500
+        
+        
 
 
 # --- Handle Language Switching ---
