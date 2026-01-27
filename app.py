@@ -294,14 +294,15 @@ def cron_wake():
     return jsonify({"status": "awake"}), 200
     
     
+    
 @app.route('/api/cron/daily_report', methods=['GET'])
 def cron_daily_report():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # 1. Fetch Students + Points Added in Last 24 Hours
-        # We join activity_log to sum positive points from the last day
+        # 1. Fetch Students + Points Added AND Redeemed in Last 24 Hours
+        # We join activity_log to sum positive points (Added) and negative points (Redeemed)
         cur.execute("""
             SELECT 
                 s.full_name, 
@@ -312,7 +313,12 @@ def cron_daily_report():
                     WHEN al.timestamp >= NOW() - INTERVAL '24 HOURS' AND al.points > 0 
                     THEN al.points 
                     ELSE 0 
-                END), 0) as points_added_24h
+                END), 0) as points_added_24h,
+                COALESCE(SUM(CASE 
+                    WHEN al.timestamp >= NOW() - INTERVAL '24 HOURS' AND al.points < 0 
+                    THEN ABS(al.points) 
+                    ELSE 0 
+                END), 0) as points_redeemed_24h
             FROM students s
             LEFT JOIN activity_log al ON s.id = al.student_id
             WHERE s.active = TRUE 
@@ -332,26 +338,27 @@ def cron_daily_report():
         
         conn.close()
 
-        # 3. Generate CSV (Now with 5 Columns)
+        # 3. Generate CSV (Now with 6 Columns)
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(['Student Name', 'Grade', 'Classroom', 'Total Points', 'Points Added (Last 24h)'])
+        writer.writerow(['Student Name', 'Grade', 'Classroom', 'Total Points', 'Points Added (Last 24h)', 'Points Redeemed (Last 24h)'])
         
         for row in student_rows:
-            # Handle Dict/Tuple differences
+            # Handle Dict/Tuple differences for robustness
             is_dict = isinstance(row, dict)
             r_name = row['full_name'] if is_dict else row[0]
             r_gr = row['grade'] if is_dict else row[1]
             r_cl = row['classroom'] if is_dict else row[2]
             r_pts = row['total_points'] if is_dict else row[3]
             r_added = row['points_added_24h'] if is_dict else row[4]
+            r_redeemed = row['points_redeemed_24h'] if is_dict else row[5] # <--- NEW COLUMN
             
-            writer.writerow([r_name, r_gr, r_cl, r_pts, r_added])
+            writer.writerow([r_name, r_gr, r_cl, r_pts, r_added, r_redeemed])
 
         # 4. Send to the Group
         alerts.send_alert(
             subject="Daily Student Balance Report",
-            message=f"Attached is the report for {datetime.datetime.now().strftime('%Y-%m-%d')}. It includes total balances and points earned in the last 24 hours.",
+            message=f"Attached is the report for {datetime.datetime.now().strftime('%Y-%m-%d')}. It includes total balances, points earned, and points redeemed in the last 24 hours.",
             to_emails=recipients,
             attachment_name=f"Student_Balances_{datetime.datetime.now().strftime('%Y-%m-%d')}.csv",
             attachment_data=output.getvalue().encode('utf-8')
@@ -377,8 +384,7 @@ def cron_daily_report():
         except:
             pass
         return jsonify({"error": str(e)}), 500
-        
-        
+            
 
 
 # --- Handle Language Switching ---
