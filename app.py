@@ -175,31 +175,6 @@ root_logger.addHandler(EmailAlertHandler())
 logger = logging.getLogger(__name__)
 
 
-# ---- 5. Database Setup (Background Thread Fix) ----
-#def async_db_init(app_context):
-#    """Run DB init in background to prevent Cold Start 503s"""
-#    # --- THE FIX: Wait 5 seconds to let Gunicorn handle the 'Wake' request first ---
-#    import time
-#    time.sleep(5) 
-#    # -------------------------------------------------------------------------------
-#
-#    with app_context:
-#        try:
-#            init_db()
-#            logger.info("Background Thread: Database initialized successfully.")
-#        except Exception as e:
-#            logger.critical(f"Background Thread: Database initialization failed: {e}")
-#
-# Start the thread immediately, but don't wait for it
-#if not app.config.get('TESTING'):
-#    # We pass the actual app object to create a context inside the thread
-#    t = threading.Thread(target=async_db_init, args=(app.app_context(),))
-#    t.daemon = True
-#    t.start()
-
-
-
-
 
 # --- HELPER: Enable Cron Job via API ---
 def enable_wake_job():
@@ -236,6 +211,19 @@ def enable_wake_job():
         logger.error(f"Cron Job API Error: {e}")
 
 
+
+@app.route('/api/maintenance/db-ping', methods=['GET'])
+def maintain_db_connection():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.close()
+        conn.close()
+        return jsonify({"status": "success", "message": "Database pinged"}), 200
+    except Exception as e:
+        logger.error(f"DB Maintenance Ping Failed: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
    
     
 # ---- 6. AUTOMATIC LOGGING MIDDLEWARE ----
