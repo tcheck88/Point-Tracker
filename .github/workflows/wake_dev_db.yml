@@ -1,0 +1,18 @@
+name: Wake Dev Database
+
+on:
+  schedule:
+    # Runs at 12:00 UTC every day (adjust to your timezone if needed)
+    - cron: '0 12 * * *'
+  workflow_dispatch: # Allows you to click a button to run it manually for testing
+
+jobs:
+  wake-and-ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake Dev App and Ping DB
+        run: |
+          echo "Sending wake-up call to Dev environment..."
+          # --max-time 300: Tells curl to wait up to 300 seconds (5 mins)
+          # --retry 3: If it fails, try 3 more times
+          curl --max-time 300 --retry 3 https://point-tracker-dev.onrender.com/api/maintenance/db-ping
