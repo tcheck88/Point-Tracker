@@ -1,0 +1,40 @@
+name: Backup PROD Database
+
+on:
+  schedule:
+    # Runs every 15 minutes from 6am to 6pm PST
+    - cron: '*/15 14-23,0-2 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup-prod:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Postgres 17 Tools
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Install & Configure Rclone
+        run: |
+          sudo -v ; curl https://rclone.org/install.sh | sudo bash
+          mkdir -p ~/.config/rclone
+          echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
+
+      - name: Backup PROD to Google Drive
+        env:
+          DB_URL: ${{ secrets.SUPABASE_PROD_DB_URL }}
+        run: |
+          mkdir -p backups
+          TIMESTAMP=$(date +%Y-%m-%d_%H-%M)
+          
+          echo "Backing up Prod..."
+          pg_dump "$DB_URL" --clean --if-exists --no-owner --file=backups/prod_$TIMESTAMP.sql
+          
+          echo "Uploading to Google Drive (Prod Folder)..."
+          # Uploads to a specific subfolder 'Prod'
+          rclone copy backups/ gdrive:PointTracker_Backups/Prod
+          
+          echo "✅ Prod Backup Success!"
