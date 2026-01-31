@@ -2,9 +2,9 @@ name: Backup PROD Database
 
 on:
   schedule:
-    # Runs every 15 minutes from 6am to 6pm PST
+    # Runs every 15 minutes from 6am to 6pm PST (14:00 - 02:00 UTC)
     - cron: '*/15 14-23,0-2 * * *'
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual trigger
 
 jobs:
   backup-prod:
@@ -12,10 +12,19 @@ jobs:
     steps:
       - name: Install Postgres 17 Tools
         run: |
+          # 1. Add the official PostgreSQL repository
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          
+          # 2. Update and install Version 17
           sudo apt-get update
           sudo apt-get install -y postgresql-client-17
+          
+          # 3. CRITICAL: Force the runner to use v17 instead of v16
+          echo "/usr/lib/postgresql/17/bin" >> $GITHUB_PATH
+
+      - name: Verify Version
+        run: pg_dump --version  # Should output 17.x
 
       - name: Install & Configure Rclone
         run: |
@@ -25,6 +34,7 @@ jobs:
 
       - name: Backup PROD to Google Drive
         env:
+          # Uses the PROD secret
           DB_URL: ${{ secrets.SUPABASE_PROD_DB_URL }}
         run: |
           mkdir -p backups
@@ -34,7 +44,7 @@ jobs:
           pg_dump "$DB_URL" --clean --if-exists --no-owner --file=backups/prod_$TIMESTAMP.sql
           
           echo "Uploading to Google Drive (Prod Folder)..."
-          # Uploads to a specific subfolder 'Prod'
+          # Saves to PointTracker_Backups/Prod/
           rclone copy backups/ gdrive:PointTracker_Backups/Prod
           
           echo "✅ Prod Backup Success!"
