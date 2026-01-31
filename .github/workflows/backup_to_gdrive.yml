@@ -2,30 +2,31 @@ name: Backup to Google Drive
 
 on:
   schedule:
-    # Runs every 15 minutes from 6am to 6pm PST (14:00 - 02:00 UTC)
+    # Runs every 15 minutes from 6am to 6pm PST
     - cron: '*/15 14-23,0-2 * * *'
-  workflow_dispatch: # Manual trigger
+  workflow_dispatch:
 
 jobs:
   backup-and-upload:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Postgres Tools
+      # --- UPDATED: Install Postgres 17 Client ---
+      - name: Install Postgres 17 Tools
         run: |
+          # 1. Add the official PostgreSQL repository (PGDG)
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          
+          # 2. Add the secure signing key
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          
+          # 3. Update and install version 17 specifically
           sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          sudo apt-get install -y postgresql-client-17
 
-      # --- NEW: Install Rclone Officially ---
       - name: Install & Configure Rclone
         run: |
-          # 1. Download and install the official Rclone binary
           sudo -v ; curl https://rclone.org/install.sh | sudo bash
-          
-          # 2. Create the configuration folder
           mkdir -p ~/.config/rclone
-          
-          # 3. Create the config file using your Secret
-          # We use double quotes to preserve newlines in the secret
           echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
 
       - name: Create Backups
@@ -37,6 +38,7 @@ jobs:
           TIMESTAMP=$(date +%Y-%m-%d_%H-%M)
           
           echo "Backing up Dev..."
+          # Note: We use the installed pg_dump (v17) automatically
           pg_dump "$DEV_DB" --clean --if-exists --no-owner --file=backups/dev_$TIMESTAMP.sql
           
           echo "Backing up Prod..."
@@ -44,7 +46,5 @@ jobs:
 
       - name: Upload to Google Drive
         run: |
-          # The remote name 'gdrive' must match the [header] in your secret
           rclone copy backups/ gdrive:PointTracker_Backups
-          
           echo "✅ Backup Success!"
