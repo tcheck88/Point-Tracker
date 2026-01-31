@@ -2,9 +2,9 @@ name: Backup to Google Drive
 
 on:
   schedule:
-    # Runs every 15 minutes from 6am to 6pm PST (14:00 UTC to 02:00 UTC)
+    # Runs every 15 minutes from 6am to 6pm PST (14:00 - 02:00 UTC)
     - cron: '*/15 14-23,0-2 * * *'
-  workflow_dispatch: # Allows you to click "Run workflow" manually
+  workflow_dispatch: # Manual trigger
 
 jobs:
   backup-and-upload:
@@ -15,18 +15,25 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
-      - name: Setup Rclone
-        uses: animito/setup-rclone@v1
-        with:
-          rclone_config: ${{ secrets.RCLONE_CONFIG }}
+      # --- NEW: Install Rclone Officially ---
+      - name: Install & Configure Rclone
+        run: |
+          # 1. Download and install the official Rclone binary
+          sudo -v ; curl https://rclone.org/install.sh | sudo bash
+          
+          # 2. Create the configuration folder
+          mkdir -p ~/.config/rclone
+          
+          # 3. Create the config file using your Secret
+          # We use double quotes to preserve newlines in the secret
+          echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
 
       - name: Create Backups
         env:
           DEV_DB: ${{ secrets.SUPABASE_DEV_DB_URL }}
           PROD_DB: ${{ secrets.SUPABASE_PROD_DB_URL }}
         run: |
-          mkdir backups
-          # Create a timestamped filename (e.g., dev_2026-01-30_15-45.sql)
+          mkdir -p backups
           TIMESTAMP=$(date +%Y-%m-%d_%H-%M)
           
           echo "Backing up Dev..."
@@ -37,7 +44,7 @@ jobs:
 
       - name: Upload to Google Drive
         run: |
-          # Copy the 'backups' folder to a folder named 'PointTracker_Backups' in GDrive
+          # The remote name 'gdrive' must match the [header] in your secret
           rclone copy backups/ gdrive:PointTracker_Backups
           
           echo "✅ Backup Success!"
