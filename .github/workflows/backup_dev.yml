@@ -2,7 +2,8 @@ name: Backup DEV Database
 
 on:
   schedule:
-    - cron: '*/15 14-23,0-2 * * *'
+    # Runs at 10:00 UTC daily (2:00 AM PST / 3:00 AM PDT)
+    - cron: '0 10 * * *'
   workflow_dispatch:
 
 jobs:
