@@ -226,11 +226,48 @@ def maintain_db_connection():
         return jsonify({"status": "error", "message": str(e)}), 500
    
     
-# ---- 6. AUTOMATIC LOGGING MIDDLEWARE ----
+# ---- 6. AUTOMATIC LOGGING MIDDLEWARE & SESSION TIMEOUT ----
 
 @app.before_request
-def start_timer():
+def before_request_logic():
+    # 1. Start the timer for Request Logging (Performance)
     request.start_time = datetime.datetime.utcnow()
+    
+    # 2. Setup Session Lifetime
+    session.permanent = True
+    app.permanent_session_lifetime = datetime.timedelta(minutes=60)
+    
+    # 3. ZOMBIE CHECK: Catch expired sessions before they act
+    if 'username' in session:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        last_active = session.get('last_active')
+        
+        # If we have a timestamp, check if it's too old
+        if last_active:
+            # Ensure timezone awareness
+            if last_active.tzinfo is None:
+                last_active = last_active.replace(tzinfo=datetime.timezone.utc)
+            
+            # If > 60 minutes have passed since last click
+            if now - last_active > datetime.timedelta(minutes=60):
+                # --- LOG THE MISSING EVENT ---
+                try:
+                    transaction_manager.log_audit_event(
+                        action_type="SESSION_TIMEOUT",
+                        details=f"User session expired (Zombie/Closed Browser): {session.get('username')}",
+                        recorded_by="system"
+                    )
+                except:
+                    pass # Don't crash on logging fail
+
+                # Kill the session and force login
+                session.clear()
+                # Optional: Flash message if you want (usually lost on redirect but good practice)
+                # flash('Your session expired.', 'warning') 
+                return redirect(url_for('login'))
+        
+        # Update timestamp for this new valid request
+        session['last_active'] = now
 
 @app.after_request
 def log_request(response):
