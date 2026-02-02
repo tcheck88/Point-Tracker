@@ -358,31 +358,18 @@ def cron_wake():
     return jsonify({"status": "awake"}), 200
     
     
-    
 @app.route('/api/cron/daily_report', methods=['GET'])
 def cron_daily_report():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # 1. Fetch Students + Points Added AND Redeemed in Last 24 Hours
-        # We join activity_log to sum positive points (Added) and negative points (Redeemed)
+        # 1. Fetch Students (Same as before)
         cur.execute("""
             SELECT 
-                s.full_name, 
-                s.grade, 
-                s.classroom, 
-                s.total_points,
-                COALESCE(SUM(CASE 
-                    WHEN al.timestamp >= NOW() - INTERVAL '24 HOURS' AND al.points > 0 
-                    THEN al.points 
-                    ELSE 0 
-                END), 0) as points_added_24h,
-                COALESCE(SUM(CASE 
-                    WHEN al.timestamp >= NOW() - INTERVAL '24 HOURS' AND al.points < 0 
-                    THEN ABS(al.points) 
-                    ELSE 0 
-                END), 0) as points_redeemed_24h
+                s.full_name, s.grade, s.classroom, s.total_points,
+                COALESCE(SUM(CASE WHEN al.timestamp >= NOW() - INTERVAL '24 HOURS' AND al.points > 0 THEN al.points ELSE 0 END), 0) as points_added_24h,
+                COALESCE(SUM(CASE WHEN al.timestamp >= NOW() - INTERVAL '24 HOURS' AND al.points < 0 THEN ABS(al.points) ELSE 0 END), 0) as points_redeemed_24h
             FROM students s
             LEFT JOIN activity_log al ON s.id = al.student_id
             WHERE s.active = TRUE 
@@ -391,7 +378,7 @@ def cron_daily_report():
         """)
         student_rows = cur.fetchall()
 
-        # 2. Fetch Recipient List
+        # 2. Fetch Email Recipients
         recipients = None
         cur.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'DAILY_POINT_LOG'")
         setting_row = cur.fetchone()
@@ -402,27 +389,25 @@ def cron_daily_report():
         
         conn.close()
 
-        # 3. Generate CSV (Now with 6 Columns)
+        # 3. Generate CSV
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow(['Student Name', 'Grade', 'Classroom', 'Total Points', 'Points Added (Last 24h)', 'Points Redeemed (Last 24h)'])
         
         for row in student_rows:
-            # Handle Dict/Tuple differences for robustness
             is_dict = isinstance(row, dict)
             r_name = row['full_name'] if is_dict else row[0]
             r_gr = row['grade'] if is_dict else row[1]
             r_cl = row['classroom'] if is_dict else row[2]
             r_pts = row['total_points'] if is_dict else row[3]
             r_added = row['points_added_24h'] if is_dict else row[4]
-            r_redeemed = row['points_redeemed_24h'] if is_dict else row[5] # <--- NEW COLUMN
-            
+            r_redeemed = row['points_redeemed_24h'] if is_dict else row[5]
             writer.writerow([r_name, r_gr, r_cl, r_pts, r_added, r_redeemed])
 
-        # 4. Send to the Group
+        # 4. Send Email
         alerts.send_alert(
             subject="Daily Student Balance Report",
-            message=f"Attached is the report for {datetime.datetime.now().strftime('%Y-%m-%d')}. It includes total balances, points earned, and points redeemed in the last 24 hours.",
+            message=f"Attached is the report for {datetime.datetime.now().strftime('%Y-%m-%d')}.",
             to_emails=recipients,
             attachment_name=f"Student_Balances_{datetime.datetime.now().strftime('%Y-%m-%d')}.csv",
             attachment_data=output.getvalue().encode('utf-8')
@@ -430,13 +415,18 @@ def cron_daily_report():
         
         # --- NEW: SEND SMS REMINDER ---
         try:
-            cur.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'ALERT_RECIPIENT_NUMBERS'")
-            row = cur.fetchone()
-            if row:
-                val = row['setting_value'] if isinstance(row, dict) else row[0]
-                if val and val.strip():
-                    sms_list = [e.strip() for e in val.split(',')]
-                    alerts.send_sms("Daily Report generated. Please check your email.", sms_list)
+            # We must open a new connection since the previous one was closed
+            conn_sms = get_db_connection()
+            if conn_sms:
+                cur_sms = conn_sms.cursor()
+                cur_sms.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'ALERT_RECIPIENT_NUMBERS'")
+                row = cur_sms.fetchone()
+                if row:
+                    val = row['setting_value'] if isinstance(row, dict) else row[0]
+                    if val and val.strip():
+                        sms_list = [e.strip() for e in val.split(',')]
+                        alerts.send_sms("Daily Report generated. Please check your email.", sms_list)
+                conn_sms.close()
         except Exception as sms_err:
             logger.error(f"Daily SMS Failed: {sms_err}")
         
@@ -451,15 +441,8 @@ def cron_daily_report():
 
     except Exception as e:
         logger.exception(f"Daily Student Point Log email Failed: {e}")
-        try:
-            transaction_manager.log_audit_event(
-                action_type="DAILY_REPORT_FAILED",
-                details=f"Error: {str(e)}",
-                recorded_by="system_cron"
-            )
-        except:
-            pass
         return jsonify({"error": str(e)}), 500
+        
             
 
 
