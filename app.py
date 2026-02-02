@@ -230,45 +230,39 @@ def maintain_db_connection():
 
 @app.before_request
 def before_request_logic():
-    # 1. Start the timer for Request Logging (Performance)
+    # 1. Start the timer for Request Logging
     request.start_time = datetime.datetime.utcnow()
     
-    # 2. Setup Session Lifetime
-    session.permanent = True
-    app.permanent_session_lifetime = datetime.timedelta(minutes=60)
+    # 2. SECURITY FIX: Do NOT make session permanent.
+    # This ensures the cookie is deleted when the browser closes.
+    session.permanent = False 
     
-    # 3. ZOMBIE CHECK: Catch expired sessions before they act
+    # 3. TIMEOUT CHECK (For users who leave the tab OPEN)
     if 'username' in session:
         now = datetime.datetime.now(datetime.timezone.utc)
         last_active = session.get('last_active')
         
-        # If we have a timestamp, check if it's too old
         if last_active:
-            # Ensure timezone awareness
             if last_active.tzinfo is None:
                 last_active = last_active.replace(tzinfo=datetime.timezone.utc)
             
-            # If > 60 minutes have passed since last click
+            # If the user left the tab open for > 60 mins, log it and kill it.
             if now - last_active > datetime.timedelta(minutes=60):
-                # --- LOG THE MISSING EVENT ---
                 try:
                     transaction_manager.log_audit_event(
                         action_type="SESSION_TIMEOUT",
-                        details=f"User session expired (Zombie/Closed Browser): {session.get('username')}",
+                        details=f"User session expired (Idle Tab): {session.get('username')}",
                         recorded_by="system"
                     )
-                except:
-                    pass # Don't crash on logging fail
+                except Exception:
+                    logger.exception("Error logging session timeout")
 
-                # Kill the session and force login
                 session.clear()
-                # Optional: Flash message if you want (usually lost on redirect but good practice)
-                # flash('Your session expired.', 'warning') 
-                return redirect(url_for('login'))
+                return redirect(url_for('login', error="Session expired due to inactivity."))
         
-        # Update timestamp for this new valid request
         session['last_active'] = now
-
+        
+        
 @app.after_request
 def log_request(response):
     # Calculate how long the request took
