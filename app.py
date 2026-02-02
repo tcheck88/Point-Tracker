@@ -57,6 +57,23 @@ def init_db():
 load_dotenv()  
 
 
+# ---- 1. Paths and App Setup ----
+APP_DIR = os.path.dirname(__file__)
+LOG_DIR = os.path.join(APP_DIR, 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_PATH = os.path.join(LOG_DIR, 'app.log')
+
+# Determine base directory for frozen (EXE) vs development
+if getattr(sys, 'frozen', False):
+    basedir = sys._MEIPASS
+else:
+    basedir = os.path.abspath(os.path.dirname(__file__))
+
+app = Flask(__name__, static_folder='static', static_url_path='/static')
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key-change-this")
+
+
+
 # ---- NEW: Public Compliance Page for Twilio ----
 @app.route('/sms-terms')
 def sms_terms():
@@ -98,20 +115,6 @@ def sms_terms():
     </html>
     """
 
-# ---- 1. Paths and App Setup ----
-APP_DIR = os.path.dirname(__file__)
-LOG_DIR = os.path.join(APP_DIR, 'logs')
-os.makedirs(LOG_DIR, exist_ok=True)
-LOG_PATH = os.path.join(LOG_DIR, 'app.log')
-
-# Determine base directory for frozen (EXE) vs development
-if getattr(sys, 'frozen', False):
-    basedir = sys._MEIPASS
-else:
-    basedir = os.path.abspath(os.path.dirname(__file__))
-
-app = Flask(__name__, static_folder='static', static_url_path='/static')
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key-change-this")
 
 # ---- 2. Babel Localization Setup ----
 
