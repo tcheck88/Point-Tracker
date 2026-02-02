@@ -83,7 +83,7 @@ def sms_terms():
     """
     return """
     <html>
-    <head><title>Leer México Read - SMS Terms & Privacy</title></head>
+    <head><title>Leer México Read - SMS Terms & Privacy</title><meta name="robots" content="noindex, nofollow"></head>
     <body style="font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px;">
         <h1>Leer México Read - SMS Alerts Program</h1>
         
