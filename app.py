@@ -83,12 +83,12 @@ def sms_terms():
     """
     return """
     <html>
-    <head><title>Leer México - SMS Terms & Privacy</title></head>
+    <head><title>Leer México Read - SMS Terms & Privacy</title></head>
     <body style="font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px;">
-        <h1>Leer México - SMS Alerts Program</h1>
+        <h1>Leer México Read - SMS Alerts Program</h1>
         
         <h3>Program Description</h3>
-        <p>This is an internal notification system for the Leer México school initiative. 
+        <p>This is an internal notification system for the Leer México Read school initiative. 
         Authorized staff and administrators receive automated SMS alerts regarding student milestones 
         (e.g., High Point Awards) and daily system reports.</p>
 
