@@ -56,6 +56,48 @@ def init_db():
 
 load_dotenv()  
 
+
+# ---- NEW: Public Compliance Page for Twilio ----
+@app.route('/sms-terms')
+def sms_terms():
+    """
+    Public page required by Twilio/Carriers to verify SMS compliance.
+    Describes the program, opt-in method, and privacy policy.
+    """
+    return """
+    <html>
+    <head><title>Leer México - SMS Terms & Privacy</title></head>
+    <body style="font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px;">
+        <h1>Leer México - SMS Alerts Program</h1>
+        
+        <h3>Program Description</h3>
+        <p>This is an internal notification system for the Leer México school initiative. 
+        Authorized staff and administrators receive automated SMS alerts regarding student milestones 
+        (e.g., High Point Awards) and daily system reports.</p>
+
+        <h3>How to Opt-In</h3>
+        <p>This is a closed, internal system. Phone numbers are not collected publicly. 
+        <strong>Consent is obtained manually</strong> from staff members during employment onboarding 
+        or via written consent forms at the school office. Administrators manually enter 
+        verified numbers into the secure database.</p>
+
+        <h3>Message Frequency</h3>
+        <p>Message frequency varies based on student activity, typically 0-5 messages per week.</p>
+
+        <h3>Pricing</h3>
+        <p>Message and data rates may apply.</p>
+
+        <h3>Support & Opt-Out</h3>
+        <p>To cancel receiving messages, reply <strong>STOP</strong> at any time. 
+        For help, reply <strong>HELP</strong> or contact the school administration.</p>
+
+        <h3>Privacy Policy</h3>
+        <p><strong>No mobile information will be shared with third parties or affiliates for marketing or promotional purposes.</strong> 
+        All data is strictly used for internal school administration and student tracking.</p>
+    </body>
+    </html>
+    """
+
 # ---- 1. Paths and App Setup ----
 APP_DIR = os.path.dirname(__file__)
 LOG_DIR = os.path.join(APP_DIR, 'logs')
@@ -382,6 +424,18 @@ def cron_daily_report():
             attachment_name=f"Student_Balances_{datetime.datetime.now().strftime('%Y-%m-%d')}.csv",
             attachment_data=output.getvalue().encode('utf-8')
         )
+        
+        # --- NEW: SEND SMS REMINDER ---
+        try:
+            cur.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'ALERT_RECIPIENT_NUMBERS'")
+            row = cur.fetchone()
+            if row:
+                val = row['setting_value'] if isinstance(row, dict) else row[0]
+                if val and val.strip():
+                    sms_list = [e.strip() for e in val.split(',')]
+                    alerts.send_sms("Daily Report generated. Please check your email.", sms_list)
+        except Exception as sms_err:
+            logger.error(f"Daily SMS Failed: {sms_err}")
         
         # 5. Log Audit Event
         transaction_manager.log_audit_event(
