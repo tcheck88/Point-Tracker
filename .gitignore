@@ -36,4 +36,10 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Node.js (WhatsApp service)
+node_modules/
+whatsapp_service/node_modules/
+whatsapp_service/.wwebjs_auth/
+whatsapp_service/.wwebjs_cache/
+
 static/Leer Mexico Read triptico.png

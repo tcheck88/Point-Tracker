@@ -54,9 +54,10 @@ def add_points(student_id, points, activity_type, description="", recorded_by="s
         # 5. ALERTS (High Point Threshold)
         if points > 0:
             threshold = 100 # Default
-            alert_recipients_email = None 
+            alert_recipients_email = None
             alert_recipients_sms = None       # Twilio
             alert_recipients_gateway = None   # Email-to-SMS
+            alert_recipients_whatsapp = None  # WhatsApp
             
             try:
                 # Fetch Threshold
@@ -90,6 +91,16 @@ def add_points(student_id, points, activity_type, description="", recorded_by="s
                     if val and val.strip():
                         alert_recipients_gateway = [e.strip() for e in val.split(',')]
 
+                # --- NEW: Fetch WhatsApp Recipients ---
+                cur.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'WHATSAPP_RECIPIENT_NUMBERS'")
+                row = cur.fetchone()
+                if row:
+                    val = row['setting_value'] if isinstance(row, dict) else row[0]
+                    if val and val.strip():
+                        alert_recipients_whatsapp = [e.strip() for e in val.split(',')]
+                else:
+                    alert_recipients_whatsapp = None
+
             except Exception as e:
                 logger.error(f"Alert Config Error: {e}")
 
@@ -121,9 +132,16 @@ def add_points(student_id, points, activity_type, description="", recorded_by="s
                         alerts.send_email_sms(gateway_body, alert_recipients_gateway)
                     except Exception:
                         logger.exception("Failed to trigger Gateway SMS")
-                        
-                        
-                # 4. Log Audit
+
+                # 4. WHATSAPP ALERT (NEW)
+                if alert_recipients_whatsapp:
+                    try:
+                        whatsapp_body = f"🏆 High Point Alert: {s_name} was awarded {points} points for {activity_type}. Staff: {recorded_by}"
+                        alerts.send_whatsapp(whatsapp_body, alert_recipients_whatsapp)
+                    except Exception:
+                        logger.exception("Failed to trigger WhatsApp Alert")
+
+                # 5. Log Audit
                 log_audit_event(
                     action_type="ALERT_TRIGGERED",
                     details=f"High points ({points}). Alerts sent to configured Email/SMS.",
