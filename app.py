@@ -906,6 +906,188 @@ def create_user():
         return redirect(url_for('manage_users', msg=f"System Error: {str(e)}"))
     finally:
         conn.close()
+
+
+# ---- WhatsApp Setup (Sysadmin Only) ----
+
+@app.route('/admin/whatsapp-setup')
+@login_required
+def whatsapp_setup():
+    """WhatsApp automation setup page - sysadmin only."""
+    if session.get('role') != 'sysadmin':
+        flash("Access denied. Sysadmin role required.", "error")
+        return redirect(url_for('index'))
+
+    # Get current WhatsApp configuration from system_settings
+    config = {
+        'enabled': False,
+        'sender_number': '',
+        'recipient_numbers': ''
+    }
+
+    conn = get_db_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT setting_key, setting_value FROM system_settings
+                WHERE setting_key IN ('ENABLE_WHATSAPP_AUTOMATION', 'WHATSAPP_SENDER_NUMBER', 'WHATSAPP_RECIPIENT_NUMBERS')
+            """)
+            rows = cur.fetchall()
+            for row in rows:
+                key = row['setting_key'] if isinstance(row, dict) else row[0]
+                val = row['setting_value'] if isinstance(row, dict) else row[1]
+                if key == 'ENABLE_WHATSAPP_AUTOMATION':
+                    config['enabled'] = str(val).lower() in ('true', '1', 'yes', 'on')
+                elif key == 'WHATSAPP_SENDER_NUMBER':
+                    config['sender_number'] = val or ''
+                elif key == 'WHATSAPP_RECIPIENT_NUMBERS':
+                    config['recipient_numbers'] = val or ''
+        except Exception as e:
+            logger.error(f"Error loading WhatsApp config: {e}")
+        finally:
+            conn.close()
+
+    # Check session status
+    session_status = alerts.check_whatsapp_session()
+
+    return render_template('whatsapp_setup.html', config=config, session_status=session_status)
+
+
+@app.route('/admin/whatsapp-setup/generate-qr', methods=['POST'])
+@login_required
+def whatsapp_generate_qr():
+    """Generate QR code for WhatsApp linking - sysadmin only."""
+    import subprocess
+
+    if session.get('role') != 'sysadmin':
+        return jsonify({'error': 'Access denied'}), 403
+
+    whatsapp_service_dir = os.path.join(os.path.dirname(__file__), 'whatsapp_service')
+    generate_script = os.path.join(whatsapp_service_dir, 'generate_qr.js')
+
+    if not os.path.exists(generate_script):
+        return jsonify({'error': 'WhatsApp service not installed'}), 500
+
+    try:
+        result = subprocess.run(
+            ['node', generate_script, 'base64'],
+            capture_output=True,
+            text=True,
+            timeout=130,  # 2+ minutes for QR scan
+            cwd=whatsapp_service_dir,
+            env={**os.environ, 'DATABASE_URL': os.getenv('DATABASE_URL', '')}
+        )
+
+        # Parse output - could be QR data or connection status
+        if result.stdout.strip():
+            import json
+            data = json.loads(result.stdout.strip())
+            return jsonify(data)
+        else:
+            return jsonify({'error': result.stderr or 'Unknown error'}), 500
+
+    except subprocess.TimeoutExpired:
+        return jsonify({'error': 'QR generation timed out. Please try again.'}), 504
+    except Exception as e:
+        logger.error(f"QR generation error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/admin/whatsapp-setup/save-config', methods=['POST'])
+@login_required
+def whatsapp_save_config():
+    """Save WhatsApp configuration - sysadmin only."""
+    if session.get('role') != 'sysadmin':
+        return jsonify({'error': 'Access denied'}), 403
+
+    data = request.get_json() or {}
+    enabled = data.get('enabled', False)
+    sender_number = data.get('sender_number', '').strip()
+    recipient_numbers = data.get('recipient_numbers', '').strip()
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+
+    try:
+        cur = conn.cursor()
+
+        # Upsert each setting
+        settings = [
+            ('ENABLE_WHATSAPP_AUTOMATION', 'true' if enabled else 'false'),
+            ('WHATSAPP_SENDER_NUMBER', sender_number),
+            ('WHATSAPP_RECIPIENT_NUMBERS', recipient_numbers)
+        ]
+
+        for key, value in settings:
+            cur.execute("""
+                INSERT INTO system_settings (setting_key, setting_value)
+                VALUES (%s, %s)
+                ON CONFLICT (setting_key)
+                DO UPDATE SET setting_value = EXCLUDED.setting_value
+            """, (key, value))
+
+        conn.commit()
+
+        # Audit log
+        transaction_manager.log_audit_event(
+            action_type="WHATSAPP_CONFIG_UPDATED",
+            details=f"Enabled: {enabled}, Recipients: {recipient_numbers}",
+            recorded_by=session.get('username', 'system')
+        )
+
+        return jsonify({'success': True, 'message': 'Configuration saved'})
+
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"WhatsApp config save error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/admin/whatsapp-setup/test', methods=['POST'])
+@login_required
+def whatsapp_test_message():
+    """Send a test WhatsApp message - sysadmin only."""
+    if session.get('role') != 'sysadmin':
+        return jsonify({'error': 'Access denied'}), 403
+
+    data = request.get_json() or {}
+    test_number = data.get('number', '').strip()
+
+    if not test_number:
+        return jsonify({'error': 'Phone number required'}), 400
+
+    # Temporarily enable for test
+    test_message = f"Test from Point Tracker - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}"
+
+    import subprocess
+    whatsapp_service_dir = os.path.join(os.path.dirname(__file__), 'whatsapp_service')
+    send_script = os.path.join(whatsapp_service_dir, 'send_message.js')
+
+    try:
+        result = subprocess.run(
+            ['node', send_script, test_number, test_message],
+            capture_output=True,
+            text=True,
+            timeout=90,
+            cwd=whatsapp_service_dir,
+            env={**os.environ, 'DATABASE_URL': os.getenv('DATABASE_URL', '')}
+        )
+
+        if result.returncode == 0:
+            return jsonify({'success': True, 'message': f'Test message sent to {test_number}'})
+        else:
+            return jsonify({'error': f'Failed (code {result.returncode}): {result.stderr}'}), 500
+
+    except subprocess.TimeoutExpired:
+        return jsonify({'error': 'Send timed out'}), 504
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # ---- Student Management API ----
 
 @app.route('/api/add_student', methods=['POST'])

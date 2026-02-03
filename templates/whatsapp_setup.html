@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block title %}WhatsApp Setup{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+            <a href="{{ url_for('index') }}" style="color: #1f6feb; text-decoration: none; font-size: 13px;">&larr; Back to Dashboard</a>
+            <h1 style="margin: 8px 0 0; color: #0f172a; font-size: 22px;">WhatsApp Automation Setup</h1>
+            <p style="margin: 4px 0 0; color: #64748b; font-size: 13px;">Link your WhatsApp account to send alerts and daily reports</p>
+        </div>
+    </div>
+
+    <!-- Session Status -->
+    <div id="session-status" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+        <h3 style="margin-top: 0; font-size: 14px; color: #334155; margin-bottom: 12px;">Connection Status</h3>
+
+        {% if session_status.status == 'valid' %}
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 12px; height: 12px; background: #16a34a; border-radius: 50%; animation: pulse 2s infinite;"></span>
+            <span style="color: #166534; font-weight: 600;">Connected</span>
+            <span style="color: #64748b; font-size: 12px;">Phone: {{ session_status.phone }}</span>
+        </div>
+        {% elif session_status.status == 'no_session' or session_status.status == 'expired' %}
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 12px; height: 12px; background: #dc2626; border-radius: 50%;"></span>
+            <span style="color: #dc2626; font-weight: 600;">Not Connected</span>
+            <span style="color: #64748b; font-size: 12px;">{{ session_status.message }}</span>
+        </div>
+        {% elif session_status.status == 'not_installed' %}
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 12px; height: 12px; background: #f59e0b; border-radius: 50%;"></span>
+            <span style="color: #b45309; font-weight: 600;">Service Not Installed</span>
+            <span style="color: #64748b; font-size: 12px;">Node.js dependencies need to be installed</span>
+        </div>
+        {% else %}
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 12px; height: 12px; background: #64748b; border-radius: 50%;"></span>
+            <span style="color: #64748b; font-weight: 600;">Unknown</span>
+            <span style="color: #94a3b8; font-size: 12px;">{{ session_status.message or 'Unable to determine status' }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- QR Code Section -->
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+        <h3 style="margin-top: 0; font-size: 14px; color: #334155; margin-bottom: 12px;">Link WhatsApp Account</h3>
+
+        <div id="qr-container" style="text-align: center; padding: 20px; display: none;">
+            <img id="qr-image" style="max-width: 300px; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px;" />
+            <p style="color: #64748b; font-size: 13px; margin-top: 12px;">Scan this QR code with WhatsApp on your phone</p>
+            <p style="color: #94a3b8; font-size: 11px;">Open WhatsApp > Settings > Linked Devices > Link a Device</p>
+        </div>
+
+        <div id="qr-status" style="text-align: center; padding: 20px;">
+            <p style="color: #64748b; font-size: 13px;">Click the button below to generate a QR code for linking.</p>
+        </div>
+
+        <div style="text-align: center;">
+            <button id="generate-qr-btn" onclick="generateQR()" style="padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer;">
+                Generate QR Code
+            </button>
+        </div>
+    </div>
+
+    <!-- Configuration -->
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+        <h3 style="margin-top: 0; font-size: 14px; color: #334155; margin-bottom: 12px;">Configuration</h3>
+
+        <form id="config-form" onsubmit="saveConfig(event)">
+            <div style="margin-bottom: 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="enabled" name="enabled" {% if config.enabled %}checked{% endif %} style="width: 18px; height: 18px;">
+                    <span style="font-size: 14px; font-weight: 600; color: #0f172a;">Enable WhatsApp Automation</span>
+                </label>
+                <p style="margin: 4px 0 0 26px; color: #64748b; font-size: 12px;">When enabled, alerts and daily reports will be sent via WhatsApp</p>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Sender Phone Number</label>
+                <input type="text" id="sender_number" name="sender_number" value="{{ config.sender_number }}" placeholder="+15551234567" style="width: 100%; max-width: 300px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+                <p style="margin: 4px 0 0; color: #94a3b8; font-size: 11px;">The phone number linked to WhatsApp (E.164 format)</p>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Recipient Phone Numbers</label>
+                <input type="text" id="recipient_numbers" name="recipient_numbers" value="{{ config.recipient_numbers }}" placeholder="+15551234567, +15559876543" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+                <p style="margin: 4px 0 0; color: #94a3b8; font-size: 11px;">Comma-separated list of numbers to receive alerts</p>
+            </div>
+
+            <button type="submit" style="padding: 9px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">
+                Save Configuration
+            </button>
+        </form>
+    </div>
+
+    <!-- Test Message -->
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+        <h3 style="margin-top: 0; font-size: 14px; color: #334155; margin-bottom: 12px;">Send Test Message</h3>
+
+        <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Phone Number</label>
+                <input type="text" id="test_number" placeholder="+15551234567" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+            </div>
+            <button onclick="sendTestMessage()" style="padding: 9px 16px; background: #8b5cf6; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">
+                Send Test
+            </button>
+        </div>
+        <div id="test-result" style="margin-top: 10px; font-size: 13px;"></div>
+    </div>
+
+    <!-- Warning -->
+    <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin-top: 24px;">
+        <h4 style="margin: 0 0 8px; color: #b45309; font-size: 13px;">Important Notes</h4>
+        <ul style="margin: 0; padding-left: 20px; color: #92400e; font-size: 12px; line-height: 1.6;">
+            <li>This uses unofficial WhatsApp Web automation. Use a dedicated phone number, not your personal one.</li>
+            <li>Keep message volume low (~100/month) to avoid detection.</li>
+            <li>The session may expire after ~2 weeks of inactivity. You'll receive an email alert if this happens.</li>
+            <li>After overnight shutdowns, the session will auto-reconnect from the saved credentials.</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+</style>
+
+<script>
+async function generateQR() {
+    const btn = document.getElementById('generate-qr-btn');
+    const container = document.getElementById('qr-container');
+    const status = document.getElementById('qr-status');
+    const img = document.getElementById('qr-image');
+
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+    status.innerHTML = '<p style="color: #3b82f6;">Connecting to WhatsApp... This may take a moment.</p>';
+    container.style.display = 'none';
+
+    try {
+        const response = await fetch('{{ url_for("whatsapp_generate_qr") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'qr_ready' && data.qr_data) {
+            img.src = data.qr_data;
+            container.style.display = 'block';
+            status.innerHTML = '<p style="color: #16a34a;">QR Code ready! Scan with WhatsApp.</p>';
+            btn.textContent = 'Regenerate QR Code';
+        } else if (data.status === 'connected') {
+            status.innerHTML = '<p style="color: #16a34a; font-weight: 600;">Connected successfully! Phone: ' + data.phone + '</p>';
+            btn.textContent = 'Generate QR Code';
+            // Refresh page to update status
+            setTimeout(() => location.reload(), 2000);
+        } else if (data.error) {
+            status.innerHTML = '<p style="color: #dc2626;">Error: ' + data.error + '</p>';
+            btn.textContent = 'Try Again';
+        }
+    } catch (err) {
+        status.innerHTML = '<p style="color: #dc2626;">Request failed: ' + err.message + '</p>';
+        btn.textContent = 'Try Again';
+    }
+
+    btn.disabled = false;
+}
+
+async function saveConfig(event) {
+    event.preventDefault();
+
+    const data = {
+        enabled: document.getElementById('enabled').checked,
+        sender_number: document.getElementById('sender_number').value,
+        recipient_numbers: document.getElementById('recipient_numbers').value
+    };
+
+    try {
+        const response = await fetch('{{ url_for("whatsapp_save_config") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert('Configuration saved successfully!');
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (err) {
+        alert('Request failed: ' + err.message);
+    }
+}
+
+async function sendTestMessage() {
+    const number = document.getElementById('test_number').value.trim();
+    const resultDiv = document.getElementById('test-result');
+
+    if (!number) {
+        resultDiv.innerHTML = '<span style="color: #dc2626;">Please enter a phone number</span>';
+        return;
+    }
+
+    resultDiv.innerHTML = '<span style="color: #3b82f6;">Sending test message...</span>';
+
+    try {
+        const response = await fetch('{{ url_for("whatsapp_test_message") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ number: number })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            resultDiv.innerHTML = '<span style="color: #16a34a;">' + result.message + '</span>';
+        } else {
+            resultDiv.innerHTML = '<span style="color: #dc2626;">Error: ' + result.error + '</span>';
+        }
+    } catch (err) {
+        resultDiv.innerHTML = '<span style="color: #dc2626;">Request failed: ' + err.message + '</span>';
+    }
+}
+</script>
+{% endblock %}
