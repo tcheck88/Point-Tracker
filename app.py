@@ -445,8 +445,23 @@ def cron_daily_report():
                 conn_gw.close()
         except Exception as gw_err:
             logger.error(f"Daily GATEWAY SMS Failed: {gw_err}")
-            
-            
+
+        # --- SEPARATE TRY BLOCK 3: WHATSAPP ---
+        try:
+            conn_wa = get_db_connection()
+            if conn_wa:
+                cur_wa = conn_wa.cursor()
+                cur_wa.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'WHATSAPP_RECIPIENT_NUMBERS'")
+                row_wa = cur_wa.fetchone()
+                if row_wa:
+                    val_wa = row_wa['setting_value'] if isinstance(row_wa, dict) else row_wa[0]
+                    if val_wa and val_wa.strip():
+                        wa_list = [e.strip() for e in val_wa.split(',')]
+                        alerts.send_whatsapp(f"📊 Daily Report generated for {datetime.datetime.now().strftime('%Y-%m-%d')}. Please check your email for the CSV attachment.", wa_list)
+                conn_wa.close()
+        except Exception as wa_err:
+            logger.error(f"Daily WHATSAPP Failed: {wa_err}")
+
         # 5. Log Audit Event
         transaction_manager.log_audit_event(
             action_type="DAILY_REPORT_RUN",
