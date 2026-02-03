@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Render Build Script for Point-Tracker
-# Installs Python dependencies and Node.js dependencies for WhatsApp service
+# Installs Python dependencies, Node.js dependencies, and Chromium for WhatsApp
 
 set -o errexit  # Exit on error
 
@@ -15,7 +15,12 @@ if command -v node &> /dev/null; then
 
     # Install WhatsApp service dependencies
     cd whatsapp_service
-    npm install --production
+    npm install
+
+    # Install Chromium for Puppeteer
+    echo "=== Installing Chromium for Puppeteer ==="
+    npx puppeteer browsers install chrome
+
     cd ..
 
     echo "WhatsApp service dependencies installed successfully"
