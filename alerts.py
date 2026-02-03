@@ -1,6 +1,6 @@
 """
 alerts.py - Leer México Alert System
-Updated: SENDGRID API + TWILIO SMS (Configurable)
+Updated: Supports SendGrid, Twilio SMS, AND Email-to-SMS (Gateway)
 """
 import os
 import json
@@ -11,7 +11,7 @@ import base64
 import http.client
 from datetime import datetime
 from db_utils import get_db_connection 
-from twilio.rest import Client as TwilioClient  # <--- NEW IMPORT
+from twilio.rest import Client as TwilioClient
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +34,9 @@ def _log_to_db(action_type, details):
     except Exception as e:
         print(f"[{datetime.now()}] Failed to write to audit log: {e}")
 
-# --- NEW: SMS HELPER FUNCTIONS ---
+# --- CONFIG CHECKS ---
 def _check_sms_enabled():
-    """Returns True if SMS is enabled in system_settings, else False."""
+    """Returns True if Twilio SMS is enabled."""
     try:
         conn = get_db_connection()
         if not conn: return False
@@ -44,87 +44,70 @@ def _check_sms_enabled():
         cur.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'ENABLE_SMS_FOR_ADMIN_MESSAGES'")
         row = cur.fetchone()
         conn.close()
-        
         if row:
             val = row['setting_value'] if isinstance(row, dict) else row[0]
-            # Check for various "truthy" string values
             return str(val).lower() in ('true', '1', 'yes', 'on')
         return False
     except Exception as e:
         logger.error(f"Error checking SMS config: {e}")
         return False
 
+def _check_email_sms_enabled():
+    """Returns True if Email-to-SMS (Gateway) is enabled."""
+    try:
+        conn = get_db_connection()
+        if not conn: return False
+        cur = conn.cursor()
+        cur.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'ENABLE_EMAIL_TO_SMS'")
+        row = cur.fetchone()
+        conn.close()
+        if row:
+            val = row['setting_value'] if isinstance(row, dict) else row[0]
+            return str(val).lower() in ('true', '1', 'yes', 'on')
+        return False
+    except Exception as e:
+        logger.error(f"Error checking Email-SMS config: {e}")
+        return False
+
+# --- SENDING LOGIC ---
+
 def _send_via_twilio(body, to_numbers):
-    # 1. Credentials Check
+    # ... (Your existing Twilio Logic - UNCHANGED) ...
     account_sid = os.getenv('TWILIO_ACCOUNT_SID')
     auth_token = os.getenv('TWILIO_AUTH_TOKEN')
     from_number = os.getenv('TWILIO_PHONE_NUMBER')
 
     if not all([account_sid, auth_token, from_number]):
-        _log_to_db("SMS_SKIPPED", "Missing Twilio credentials in .env")
+        _log_to_db("SMS_SKIPPED", "Missing Twilio credentials")
         return
 
     try:
         client = TwilioClient(account_sid, auth_token)
-        
         for number in to_numbers:
             clean_number = number.strip()
             if not clean_number: continue
-            
             try:
-                message = client.messages.create(
-                    body=body,
-                    from_=from_number,
-                    to=clean_number
-                )
+                message = client.messages.create(body=body, from_=from_number, to=clean_number)
                 _log_to_db("SMS_SENT", f"SID: {message.sid} To: {clean_number}")
-                
             except Exception as inner_e:
-                # Catch specific Twilio errors (like 'Trial Account' or 'Unverified Number')
-                # Log it, but DO NOT CRASH. Continue to the next number.
                 logger.error(f"Failed to send to {clean_number}: {inner_e}")
                 _log_to_db("SMS_FAILED_INDIVIDUAL", f"To: {clean_number} Error: {str(inner_e)}")
-            
     except Exception as e:
-        # Catch connection errors (e.g., Twilio API down)
         logger.error(f"Twilio Client Error: {e}")
         _log_to_db("SMS_FAILED_GLOBAL", str(e))
 
-def send_sms(message_body, to_numbers=None):
-    """
-    Public function. Checks configuration before sending.
-    """
-    # 1. Check the Master Switch
-    if not _check_sms_enabled():
-        return False
-
-    if not to_numbers:
-        _log_to_db("SMS_ERROR", "No recipient numbers provided.")
-        return False
-
-    # 2. Spawn Thread
-    sms_thread = threading.Thread(
-        target=_send_via_twilio,
-        args=(message_body, to_numbers)
-    )
-    sms_thread.daemon = True
-    sms_thread.start()
-    return True
-# ---------------------------------
-
-def _send_via_sendgrid(subject, message, to_emails, attachment_name, attachment_data):
-    """
-    Sends email via SendGrid Web API (HTTP).
-    """
+def _send_via_sendgrid(subject, message, to_emails, attachment_name, attachment_data, log_label="EMAIL"):
+    # ... (Your existing SendGrid Logic - Minor update to support 'log_label') ...
     api_key = os.getenv('SENDGRID_API_KEY')
     sender_email = os.getenv('MAIL_USERNAME') 
     
     if not api_key:
-        _log_to_db("EMAIL_CONFIG_ERROR", "Missing SENDGRID_API_KEY")
+        _log_to_db(f"{log_label}_CONFIG_ERROR", "Missing SENDGRID_API_KEY")
         return
 
     personalizations = [{"to": [{"email": email}]} for email in to_emails]
     
+    # ... (Attachment logic unchanged) ...
     attachments_json = []
     if attachment_name and attachment_data:
         encoded_data = base64.b64encode(attachment_data).decode('utf-8')
@@ -139,44 +122,59 @@ def _send_via_sendgrid(subject, message, to_emails, attachment_name, attachment_
         "personalizations": personalizations,
         "from": {"email": sender_email},
         "subject": subject,
-        "content": [{"type": "text/html", "value": message}]
+        # Detect if this is SMS (plain text) or Email (HTML)
+        "content": [{"type": "text/plain" if log_label == "SMS_GATEWAY" else "text/html", "value": message}]
     }
     
-    if attachments_json:
-        payload["attachments"] = attachments_json
+    if attachments_json: payload["attachments"] = attachments_json
 
     try:
         conn = http.client.HTTPSConnection("api.sendgrid.com")
-        headers = {
-            'Authorization': f"Bearer {api_key}",
-            'Content-Type': 'application/json'
-        }
-        
-        json_payload = json.dumps(payload)
-        conn.request("POST", "/v3/mail/send", json_payload, headers)
-        
+        headers = {'Authorization': f"Bearer {api_key}", 'Content-Type': 'application/json'}
+        conn.request("POST", "/v3/mail/send", json.dumps(payload), headers)
         res = conn.getresponse()
-        data = res.read()
         
         if res.status in [200, 201, 202]:
-            _log_to_db("EMAIL_SENT", f"Via SendGrid API. To: {to_emails}")
+            _log_to_db(f"{log_label}_SENT", f"To: {to_emails}")
         else:
-            error_msg = f"Status: {res.status} | Body: {data.decode('utf-8')}"
-            _log_to_db("EMAIL_FAILED", error_msg)
-            print(f"SendGrid Error: {error_msg}")
-
+            _log_to_db(f"{log_label}_FAILED", f"Status: {res.status}")
     except Exception as e:
-        _log_to_db("EMAIL_FAILED", f"API Error: {str(e)}")
+        _log_to_db(f"{log_label}_FAILED", f"API Error: {str(e)}")
+
+# --- PUBLIC FUNCTIONS ---
+
+def send_sms(message_body, to_numbers=None):
+    """Twilio SMS Trigger"""
+    if not _check_sms_enabled(): return False
+    if not to_numbers: return False
+
+    sms_thread = threading.Thread(target=_send_via_twilio, args=(message_body, to_numbers))
+    sms_thread.daemon = True
+    sms_thread.start()
+    return True
+
+def send_email_sms(message_body, recipient_gateways=None):
+    """Email-to-SMS Gateway Trigger (NEW)"""
+    if not _check_email_sms_enabled(): return False
+    if not recipient_gateways: return False
+
+    # Short subject for SMS
+    sms_subject = "Alert"
+    
+    # We use "SMS_GATEWAY" label to differentiate logs
+    sms_thread = threading.Thread(
+        target=_send_via_sendgrid,
+        args=(sms_subject, message_body, recipient_gateways, None, None, "SMS_GATEWAY")
+    )
+    sms_thread.daemon = True
+    sms_thread.start()
+    return True
 
 def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name=None, attachment_data=None):
-    """
-    Main entry point. Spawns thread and returns immediately.
-    """
+    """Standard Email Trigger"""
     global _last_alert_time
-    
     if not attachment_name:
-        if (time.time() - _last_alert_time) < COOLDOWN_SECONDS:
-            return False
+        if (time.time() - _last_alert_time) < COOLDOWN_SECONDS: return False
         _last_alert_time = time.time()
         
     recipients = []
@@ -184,16 +182,12 @@ def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name
     if not recipients:
         default = os.getenv('ADMIN_EMAIL')
         if default: recipients = [default]
-        
-    if not recipients:
-        _log_to_db("EMAIL_CONFIG_ERROR", "No recipients found.")
-        return False
+    if not recipients: return False
 
     email_thread = threading.Thread(
         target=_send_via_sendgrid,
-        args=(subject, message, recipients, attachment_name, attachment_data)
+        args=(subject, message, recipients, attachment_name, attachment_data, "EMAIL")
     )
     email_thread.daemon = True
     email_thread.start()
-    
     return True

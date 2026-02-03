@@ -413,9 +413,9 @@ def cron_daily_report():
             attachment_data=output.getvalue().encode('utf-8')
         )
         
-        # --- NEW: SEND SMS REMINDER ---
+        # --- SEND SMS REMINDER ---
+        # --- SEPARATE TRY BLOCK 1: TWILIO SMS ---
         try:
-            # We must open a new connection since the previous one was closed
             conn_sms = get_db_connection()
             if conn_sms:
                 cur_sms = conn_sms.cursor()
@@ -428,8 +428,25 @@ def cron_daily_report():
                         alerts.send_sms("Daily Report generated. Please check your email.", sms_list)
                 conn_sms.close()
         except Exception as sms_err:
-            logger.error(f"Daily SMS Failed: {sms_err}")
-        
+            logger.error(f"Daily TWILIO SMS Failed: {sms_err}") # Won't stop the next block
+
+        # --- SEPARATE TRY BLOCK 2: EMAIL-TO-SMS GATEWAY ---
+        try:
+            conn_gw = get_db_connection()
+            if conn_gw:
+                cur_gw = conn_gw.cursor()
+                cur_gw.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'EMAIL_TO_SMS_RECIPIENTS'")
+                row_gw = cur_gw.fetchone()
+                if row_gw:
+                    val_g = row_gw['setting_value'] if isinstance(row_gw, dict) else row_gw[0]
+                    if val_g and val_g.strip():
+                        gw_list = [e.strip() for e in val_g.split(',')]
+                        alerts.send_email_sms("Daily Report Sent.", gw_list)
+                conn_gw.close()
+        except Exception as gw_err:
+            logger.error(f"Daily GATEWAY SMS Failed: {gw_err}")
+            
+            
         # 5. Log Audit Event
         transaction_manager.log_audit_event(
             action_type="DAILY_REPORT_RUN",

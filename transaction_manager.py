@@ -50,12 +50,14 @@ def add_points(student_id, points, activity_type, description="", recorded_by="s
             VALUES (CURRENT_TIMESTAMP, 'TRANSACTION', %s, %s, %s, 'activity_log', %s, %s)
         """, (audit_action, recorded_by, recorded_by, new_trans_id, audit_details))
 
+
         # 5. ALERTS (High Point Threshold)
         if points > 0:
             threshold = 100 # Default
             alert_recipients_email = None 
-            alert_recipients_sms = None # <--- NEW
-
+            alert_recipients_sms = None       # Twilio
+            alert_recipients_gateway = None   # Email-to-SMS
+            
             try:
                 # Fetch Threshold
                 cur.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'POINT_ALERT_THRESHOLD'")
@@ -79,6 +81,14 @@ def add_points(student_id, points, activity_type, description="", recorded_by="s
                     val = row['setting_value'] if isinstance(row, dict) else row[0]
                     if val and val.strip():
                         alert_recipients_sms = [e.strip() for e in val.split(',')]
+                        
+                # --- NEW: Fetch Email-to-SMS Recipients ---
+                cur.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'EMAIL_TO_SMS_RECIPIENTS'")
+                row = cur.fetchone()
+                if row:
+                    val = row['setting_value'] if isinstance(row, dict) else row[0]
+                    if val and val.strip():
+                        alert_recipients_gateway = [e.strip() for e in val.split(',')]
 
             except Exception as e:
                 logger.error(f"Alert Config Error: {e}")
@@ -87,18 +97,33 @@ def add_points(student_id, points, activity_type, description="", recorded_by="s
             if points >= threshold:
                 
                 # 1. EMAIL ALERT
-                alerts.send_alert(
-                    subject=f"High Point Alert: {points} pts",
-                    message=f"Student <b>{s_name}</b> was awarded <b>{points} points</b>.<br>Reason: {activity_type}<br>Staff: {recorded_by}",
-                    to_emails=alert_recipients_email
-                )
+                try:
+                    alerts.send_alert(
+                        subject=f"High Point Alert: {points} pts",
+                        message=f"Student <b>{s_name}</b> was awarded <b>{points} points</b>.<br>Reason: {activity_type}<br>Staff: {recorded_by}",
+                        to_emails=alert_recipients_email
+                    )
+                except Exception:
+                    logger.exception("Failed to trigger Email Alert")
                 
-                # 2. SMS ALERT (NEW)
+                # 2. TWILIO SMS ALERT
                 if alert_recipients_sms:
-                    sms_body = f"High Point Alert: {points} pts awarded to {s_name}. Check email for details."
-                    alerts.send_sms(sms_body, alert_recipients_sms)
+                    try:
+                        sms_body = f"High Point Alert: {points} pts awarded to {s_name}. Check email for details."
+                        alerts.send_sms(sms_body, alert_recipients_sms)
+                    except Exception:
+                        logger.exception("Failed to trigger Twilio SMS")
 
-                # 3. Log Audit
+                # 3. EMAIL-TO-SMS GATEWAY (NEW)
+                if alert_recipients_gateway:
+                    try:
+                        gateway_body = f"High Point: {points} pts for {s_name}."
+                        alerts.send_email_sms(gateway_body, alert_recipients_gateway)
+                    except Exception:
+                        logger.exception("Failed to trigger Gateway SMS")
+                        
+                        
+                # 4. Log Audit
                 log_audit_event(
                     action_type="ALERT_TRIGGERED",
                     details=f"High points ({points}). Alerts sent to configured Email/SMS.",
