@@ -109,25 +109,88 @@ async function checkSessionExists() {
 }
 
 /**
+ * Find Chrome executable - checks Render's persistent cache first
+ */
+function findChromePath() {
+    const possiblePaths = [
+        // Render persistent cache (set during build)
+        '/opt/render/project/src/.puppeteer/chrome/linux-*/chrome-linux64/chrome',
+        // Default Puppeteer cache locations
+        '/opt/render/.cache/puppeteer/chrome/linux-*/chrome-linux64/chrome',
+        process.env.PUPPETEER_EXECUTABLE_PATH,
+    ].filter(Boolean);
+
+    const glob = require('path');
+    const fs = require('fs');
+
+    // Check Render persistent location first
+    const renderCacheBase = '/opt/render/project/src/.puppeteer/chrome';
+    if (fs.existsSync(renderCacheBase)) {
+        try {
+            const versions = fs.readdirSync(renderCacheBase);
+            for (const version of versions) {
+                const chromePath = path.join(renderCacheBase, version, 'chrome-linux64', 'chrome');
+                if (fs.existsSync(chromePath)) {
+                    console.error('INFO: Found Chrome at:', chromePath);
+                    return chromePath;
+                }
+            }
+        } catch (e) {
+            console.error('WARN: Error searching for Chrome:', e.message);
+        }
+    }
+
+    // Fall back to default Puppeteer cache
+    const defaultCacheBase = '/opt/render/.cache/puppeteer/chrome';
+    if (fs.existsSync(defaultCacheBase)) {
+        try {
+            const versions = fs.readdirSync(defaultCacheBase);
+            for (const version of versions) {
+                const chromePath = path.join(defaultCacheBase, version, 'chrome-linux64', 'chrome');
+                if (fs.existsSync(chromePath)) {
+                    console.error('INFO: Found Chrome at:', chromePath);
+                    return chromePath;
+                }
+            }
+        } catch (e) {
+            console.error('WARN: Error searching for Chrome:', e.message);
+        }
+    }
+
+    // Let Puppeteer find it automatically
+    console.error('INFO: No Chrome found in known paths, letting Puppeteer auto-detect');
+    return undefined;
+}
+
+/**
  * Create a WhatsApp client with session restoration support
  */
 function createClient() {
+    const executablePath = findChromePath();
+
+    const puppeteerConfig = {
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
+        ]
+    };
+
+    // Only set executablePath if we found one
+    if (executablePath) {
+        puppeteerConfig.executablePath = executablePath;
+    }
+
     const client = new Client({
         authStrategy: new LocalAuth({
             dataPath: LOCAL_SESSION_PATH
         }),
-        puppeteer: {
-            headless: true,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-accelerated-2d-canvas',
-                '--no-first-run',
-                '--no-zygote',
-                '--disable-gpu'
-            ]
-        }
+        puppeteer: puppeteerConfig
     });
 
     return client;
