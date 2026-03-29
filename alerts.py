@@ -121,18 +121,24 @@ def _send_via_twilio(body, to_numbers):
         _log_to_db("SMS_FAILED_GLOBAL", str(e))
 
 def _send_via_resend(subject, message, to_emails, attachment_name, attachment_data, log_label="EMAIL"):
-    """Updated: Uses Resend API instead of SendGrid."""
+    """
+    Sends email via Resend API.
+    Fixes 'domain not verified' error by using a custom domain.
+    Routes replies to a personal Gmail address.
+    """
     api_key = os.getenv('RESEND_API_KEY')
+    # CRITICAL: This MUST be an address on your verified domain (e.g., alerts@yourdomain.com)
     sender_email = os.getenv('MAIL_USERNAME') 
+    # This is your personal Gmail where you want to receive replies
+    reply_to_email = os.getenv('ADMIN_EMAIL') 
     
     if not api_key:
         _log_to_db(f"{log_label}_CONFIG_ERROR", "Missing RESEND_API_KEY")
         return
 
-    # Prep Attachments for Resend SDK
+    # Prep Attachments
     resend_attachments = []
     if attachment_name and attachment_data:
-        # Resend accepts base64 strings or bytes for content
         encoded_data = base64.b64encode(attachment_data).decode('utf-8')
         resend_attachments.append({
             "content": encoded_data,
@@ -140,26 +146,26 @@ def _send_via_resend(subject, message, to_emails, attachment_name, attachment_da
         })
 
     try:
-        # Determine content type (Text for SMS Gateway, HTML for standard Email)
         email_params = {
             "from": sender_email,
             "to": to_emails,
             "subject": subject,
+            "reply_to": reply_to_email, # NEW: Routes replies to your personal inbox
             "attachments": resend_attachments
         }
 
+        # Format content based on target
         if log_label == "SMS_GATEWAY":
             email_params["text"] = message
         else:
             email_params["html"] = message
 
-        # Trigger Send
         response = resend.Emails.send(email_params)
         
         if response and 'id' in response:
             _log_to_db(f"{log_label}_SENT", f"ID: {response['id']} To: {to_emails}")
         else:
-            _log_to_db(f"{log_label}_FAILED", f"Unexpected response format: {response}")
+            _log_to_db(f"{log_label}_FAILED", f"Unexpected response: {response}")
 
     except Exception as e:
         logger.error(f"Resend API Error: {e}")
