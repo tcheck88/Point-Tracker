@@ -119,21 +119,22 @@ def _send_via_twilio(body, to_numbers):
     except Exception as e:
         logger.error(f"Twilio Client Error: {e}")
         _log_to_db("SMS_FAILED_GLOBAL", str(e))
-
+        
+        
 def _send_via_resend(subject, message, to_emails, attachment_name, attachment_data, log_label="EMAIL"):
     """
-    Sends email via Resend API.
-    Fixes 'domain not verified' error by using a custom domain.
-    Routes replies to a personal Gmail address.
+    Core Email Engine.
+    Updated with Subject-Aware Audit Logging and Reply-To routing.
     """
     api_key = os.getenv('RESEND_API_KEY')
-    # CRITICAL: This MUST be an address on your verified domain (e.g., alerts@yourdomain.com)
     sender_email = os.getenv('MAIL_USERNAME') 
-    # This is your personal Gmail where you want to receive replies
     reply_to_email = os.getenv('ADMIN_EMAIL') 
     
-    if not api_key:
-        _log_to_db(f"{log_label}_CONFIG_ERROR", "Missing RESEND_API_KEY")
+    # Formatted string for comprehensive audit logs
+    log_details = f"Subject: '{subject}' | To: {to_emails}"
+    
+    if not api_key or not sender_email:
+        _log_to_db(f"{log_label}_CONFIG_ERROR", f"Missing API Key or Sender. {log_details}")
         return
 
     # Prep Attachments
@@ -150,7 +151,7 @@ def _send_via_resend(subject, message, to_emails, attachment_name, attachment_da
             "from": sender_email,
             "to": to_emails,
             "subject": subject,
-            "reply_to": reply_to_email, # NEW: Routes replies to your personal inbox
+            "reply_to": reply_to_email,
             "attachments": resend_attachments
         }
 
@@ -163,13 +164,14 @@ def _send_via_resend(subject, message, to_emails, attachment_name, attachment_da
         response = resend.Emails.send(email_params)
         
         if response and 'id' in response:
-            _log_to_db(f"{log_label}_SENT", f"ID: {response['id']} To: {to_emails}")
+            _log_to_db(f"{log_label}_SENT", f"ID: {response['id']} | {log_details}")
         else:
-            _log_to_db(f"{log_label}_FAILED", f"Unexpected response: {response}")
+            _log_to_db(f"{log_label}_FAILED", f"Unexpected response: {response} | {log_details}")
 
     except Exception as e:
         logger.error(f"Resend API Error: {e}")
-        _log_to_db(f"{log_label}_FAILED", f"API Error: {str(e)}")
+        _log_to_db(f"{log_label}_FAILED", f"API Error: {str(e)} | {log_details}")
+        
 
 def _send_via_whatsapp(body, to_numbers):
     send_script = os.path.join(WHATSAPP_SERVICE_DIR, 'send_message.js')
