@@ -2,6 +2,7 @@
 alerts.py - Leer México Alert System
 Updated: Switched from SendGrid to Resend for Email/SMS Gateway
 Supports Resend, Twilio SMS, and WhatsApp Automation
+Includes Subject-Aware Audit Logging
 """
 import os
 import json
@@ -119,22 +120,23 @@ def _send_via_twilio(body, to_numbers):
     except Exception as e:
         logger.error(f"Twilio Client Error: {e}")
         _log_to_db("SMS_FAILED_GLOBAL", str(e))
-        
-        
+
 def _send_via_resend(subject, message, to_emails, attachment_name, attachment_data, log_label="EMAIL"):
     """
-    Core Email Engine.
-    Updated with Subject-Aware Audit Logging and Reply-To routing.
+    Sends email via Resend API.
+    Fixes 'domain not verified' error by using a custom domain.
+    Routes replies to a personal Gmail address.
+    Includes comprehensive subject-aware logging.
     """
     api_key = os.getenv('RESEND_API_KEY')
     sender_email = os.getenv('MAIL_USERNAME') 
     reply_to_email = os.getenv('ADMIN_EMAIL') 
     
-    # Formatted string for comprehensive audit logs
+    # NEW: Formatted string for comprehensive audit logs
     log_details = f"Subject: '{subject}' | To: {to_emails}"
     
-    if not api_key or not sender_email:
-        _log_to_db(f"{log_label}_CONFIG_ERROR", f"Missing API Key or Sender. {log_details}")
+    if not api_key:
+        _log_to_db(f"{log_label}_CONFIG_ERROR", f"Missing RESEND_API_KEY. {log_details}")
         return
 
     # Prep Attachments
@@ -171,7 +173,6 @@ def _send_via_resend(subject, message, to_emails, attachment_name, attachment_da
     except Exception as e:
         logger.error(f"Resend API Error: {e}")
         _log_to_db(f"{log_label}_FAILED", f"API Error: {str(e)} | {log_details}")
-        
 
 def _send_via_whatsapp(body, to_numbers):
     send_script = os.path.join(WHATSAPP_SERVICE_DIR, 'send_message.js')
@@ -253,7 +254,7 @@ def send_email_sms(message_body, recipient_gateways=None):
     if not recipient_gateways: return False
     
     threading.Thread(
-        target=_send_via_resend, # Updated: Now points to Resend
+        target=_send_via_resend, 
         args=("Alert", message_body, recipient_gateways, None, None, "SMS_GATEWAY"),
         daemon=True
     ).start()
@@ -273,7 +274,7 @@ def send_alert(subject, message, error_obj=None, to_emails=None, attachment_name
     if not recipients: return False
 
     threading.Thread(
-        target=_send_via_resend, # Updated: Now points to Resend
+        target=_send_via_resend, 
         args=(subject, message, recipients, attachment_name, attachment_data, "EMAIL"),
         daemon=True
     ).start()
